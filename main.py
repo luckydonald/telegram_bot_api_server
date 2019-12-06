@@ -4,7 +4,7 @@ from typing import Dict
 from aiohttp import web
 from aiocron import crontab
 from asyncio import get_event_loop, create_task
-from telethon import TelegramClient, events
+from classes.webhook import TelegramClientWebhook
 from somewhere import TG_API_ID, TG_API_HASH
 from aiohttp_utils import flaskify_arguments
 from aiohttp.web_request import Request
@@ -23,18 +23,8 @@ if __name__ == '__main__':
 loop = get_event_loop()
 loop.set_debug(True)
 
-
-class WebhookInfo(object):
-    bot_instance: TelegramClient
-
-    def __init__(self, url: str, bot_instance: TelegramClient):
-        self.url = url
-        self.bot_instance = bot_instance
-    # end def
-# end class
-
-
-webhooks: Dict[str, WebhookInfo] = {
+webhooks: Dict[str, TelegramClientWebhook]
+webhooks: Dict[str, TelegramClientWebhook] = {
     # token: ('https://route/to/instance', bot),
 }
 
@@ -61,36 +51,26 @@ async def set_webhook(token, request: Request):
     logger.debug(f'Setting webhook for {token} to {url!r}.')
 
     if token in webhooks:
-        webhooks[token].url = url
+        webhooks[token].webhook_url = url
         return r_success(True, "Webhook was updated")
     # end if
     try:
         logger.debug(f'Launching telegram client for {token}.')
-        bot = TelegramClient(session='bot', api_id=TG_API_ID, api_hash=TG_API_HASH)
+        bot = TelegramClientWebhook(
+            session='bot', api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token, webhook_url=url,
+        )
         create_task(bot.start(bot_token=token))
+        bot.register_webhook_methods()
         logger.debug(f'Telegram client for {token} is enqueued.')
 
-        @bot.on(events.NewMessage(pattern='/start'))
-        async def start(event):
-            """Send a message when the command /start is issued."""
-            await event.respond('Hi!')
-            raise events.StopPropagation
-        # end def
-
-        @bot.on(events.NewMessage)
-        async def echo(event):
-            """Echo the user message."""
-            logger.info(f'account {token!r} got message: {event.text!r}')
-            # await event.respond()
-        # end def
         logger.debug(f'Done registering all the listeners for {token}.')
     except Exception as e:
         logger.warning('Registering bot failed', exc_info=True)
         return r_error(500, description=str(e))
     # end try
 
-    webhooks[token] = WebhookInfo(url=url, bot_instance=bot)
-    logger.debug(f'Added {token} to the list: {webhooks!r}.')
+    webhooks[token] = bot
+    logger.debug(f'Added {token} to the list: {bot!r}.')
     return r_success(True, "Webhook was set")
 # end def
 
