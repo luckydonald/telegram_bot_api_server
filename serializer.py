@@ -6,13 +6,22 @@ from datetime import datetime
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types.receivable.inline import InlineQuery
 from pytgbot.api_types.receivable.media import ChatPhoto, UserProfilePhotos, PhotoSize, MessageEntity, Location
-from pytgbot.api_types.receivable.payments import ShippingQuery, PreCheckoutQuery, OrderInfo
+from pytgbot.api_types.receivable.media import Contact, Venue, Video, Document, Animation
+from pytgbot.api_types.receivable.payments import ShippingQuery, PreCheckoutQuery, OrderInfo, Invoice
 from pytgbot.api_types.receivable.peer import User, Chat
 from pytgbot.api_types.receivable.updates import Message, Update, CallbackQuery
-from telethon.tl.custom import Forward
+from telethon.tl.custom import Forward as TForward
 from telethon.tl.types import User as TUser
 from telethon.tl.patched import Message as TMessage
 from telethon.tl.types import UserProfilePhoto as TUserProfilePhoto
+from telethon.tl.types import Document as TDocument
+from telethon.tl.types import DocumentAttributeAnimated as TDocumentAttributeAnimated
+from telethon.tl.types import DocumentAttributeAudio as TDocumentAttributeAudio
+from telethon.tl.types import DocumentAttributeFilename as TDocumentAttributeFilename
+from telethon.tl.types import DocumentAttributeHasStickers as TDocumentAttributeHasStickers
+from telethon.tl.types import DocumentAttributeImageSize as TDocumentAttributeImageSize
+from telethon.tl.types import DocumentAttributeSticker as TDocumentAttributeSticker
+from telethon.tl.types import DocumentAttributeVideo as TDocumentAttributeVideo
 from telethon.tl.types import MessageEntityBlockquote as TMessageEntityBlockquote
 from telethon.tl.types import MessageEntityBold as TMessageEntityBold
 from telethon.tl.types import MessageEntityBotCommand as TMessageEntityBotCommand
@@ -32,6 +41,7 @@ from telethon.tl.types import MessageEntityUnknown as TMessageEntityUnknown
 from telethon.tl.types import MessageEntityUrl as TMessageEntityUrl
 from telethon.tl.types import UpdateNewMessage as TUpdateNewMessage
 from telethon.tl.types import UpdateEditMessage as TUpdateEditMessage
+from telethon.tl.types import UpdateNewChannelMessage as TUpdateNewChannelMessage
 from telethon.tl.types import UpdateEditChannelMessage as TUpdateEditChannelMessage
 from telethon.tl.types import UpdateBotInlineQuery as TUpdateBotInlineQuery
 from telethon.tl.types import UpdateBotCallbackQuery as TUpdateBotCallbackQuery
@@ -41,6 +51,10 @@ from telethon.tl.types import GeoPointEmpty as TGeoPointEmpty
 from telethon.tl.types import GeoPoint as TGeoPoint
 from telethon.tl.types import PaymentRequestedInfo as TPaymentRequestedInfo
 from telethon.tl.types import Channel as TChannel
+from telethon.tl.types import MessageMediaContact as TMessageMediaContact
+from telethon.tl.types import MessageMediaVenue as TMessageMediaVenue
+from telethon.tl.types import MessageMediaInvoice as TMessageMediaInvoice
+from telethon.tl.types import PhotoSize as TPhotoSize
 from telethon.utils import pack_bot_file_id
 
 __author__ = 'luckydonald'
@@ -84,6 +98,11 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         return Update(
             update_id=o.pts,
             edited_message=await to_web_api(o.message),
+        )
+    if isinstance(o, TUpdateNewChannelMessage):
+        return Update(
+            update_id=o.pts,
+            channel_post=await to_web_api(o.message),
         )
     if isinstance(o, TUpdateEditChannelMessage):
         return Update(
@@ -151,6 +170,43 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             shipping_option_id=o.shipping_option_id,
             order_info=await to_web_api(o.info),
         )
+    if isinstance(o, TDocument):
+        file_id = None
+        thumb = await to_web_api(o.thumbs[0])
+        from telethon.tl.types import DocumentAttributeImageSize, DocumentAttributeAnimated, DocumentAttributeSticker, DocumentAttributeVideo, DocumentAttributeAudio, DocumentAttributeFilename, DocumentAttributeHasStickers
+        from telethon.tl.types import PhotoSizeEmpty, PhotoCachedSize, PhotoStrippedSize
+        TPhotoSize
+
+        DocumentAttributeImageSize
+        DocumentAttributeAnimated
+        DocumentAttributeSticker
+        DocumentAttributeVideo
+        DocumentAttributeAudio
+        DocumentAttributeFilename
+        DocumentAttributeHasStickers
+
+        for attr in o.attributes:
+            if isinstance(attr, TDocumentAttributeAnimated):
+                return Animation(
+                    file_id=file_id,
+
+                )
+            if isinstance(attr, TDocumentAttributeAudio):
+                return
+            if isinstance(attr, TDocumentAttributeFilename):
+                return
+            if isinstance(attr, TDocumentAttributeHasStickers):
+                return
+            if isinstance(attr, TDocumentAttributeImageSize):
+                return
+            if isinstance(attr, TDocumentAttributeSticker):
+                return
+            if isinstance(attr, TDocumentAttributeVideo):
+                return Video()
+            return Document(
+                file_id=file_id,
+                thumb=await to_web_api(o.thumbs[0])
+            )
     if isinstance(o, TGeoPointEmpty):
         return None
     if isinstance(o, TGeoPoint):
@@ -234,7 +290,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             message_id=o.id,
             date=await to_web_api(o.date),
             chat=await to_web_api(o.chat, user_as_chat=True),
-            from_peer=await to_web_api(o.sender),
+            from_peer=await to_web_api(o.sender) if not o.is_channel else None,  # must be None for channels.
             forward_from=await to_web_api(forward_from),
             forward_from_chat=await to_web_api(forward_from_chat),
             # TODO: forward_signature=,
@@ -243,8 +299,35 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             edit_date=await to_web_api(o.edit_date),
             # TODO: media_group_id=,
             author_signature=o.fwd_from.post_author if o.fwd_from else None,
-            text=o.text,
-            entities=await to_web_api(o.entities),
+            text=None if o.media else o.text,
+            caption=o.text if o.media else None,
+            entities=None if o.media else await to_web_api(o.entities),
+            caption_entities=await to_web_api(o.entities) if o.media else None,
+            document=await to_web_api(o.document), # MessageMediaDocument
+            # animation=await to_web_api(o.animation), TODO
+            # game=await to_web_api(o.game), TODO
+            photo=await to_web_api(o.photo),
+            sticker=await to_web_api(o.sticker),
+            video=await to_web_api(o.video),
+            voice=await to_web_api(o.voice),
+            video_note=await to_web_api(o.video_note),
+            contact=await to_web_api(o.contact),
+            location=await to_web_api(o.geo),
+            venue=await to_web_api(o.venue),
+            # new_chat_members=await to_web_api(o.new_chat_members), TODO
+            # left_chat_member=await to_web_api(o.left_chat_member), TODO
+            # new_chat_title=await to_web_api(o.), TODO
+            # new_chat_photo=, TODO
+            # delete_chat_photo=, TODO
+            # group_chat_created=, TODO
+            # supergroup_chat_created=, TODO
+            # channel_chat_created=, TODO
+            # migrate_to_chat_id=, TODO
+            # migrate_from_chat_id=, TODO
+            # pinned_message=, TODO
+            invoice=await to_web_api(o.invoice),
+            # successful_payment=o TODO
+            # connected_website=o TODO
         )
     if isinstance(o, TMessageEntityBlockquote):
         return MessageEntity(
@@ -349,6 +432,29 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             type='url',
             offset=o.offset,
             length=o.length,
+        )
+    if isinstance(o, TMessageMediaContact):
+        return Contact(
+            phone_number=o.phone_number,
+            first_name=o.first_name,
+            last_name=o.last_name,
+            user_id=o.user_id,
+            vcard=o.vcard,
+        )
+    if isinstance(o, TMessageMediaVenue):
+        return Venue(
+            location=await to_web_api(o.geo),
+            title=o.title,
+            address=o.address,
+            foursquare_id=o.venue_id if o.venue_type == 'foursquare' else None,
+        )
+    if isinstance(o, TMessageMediaInvoice):
+        return Invoice(
+            title=o.title,
+            description=o.description,
+            start_parameter=o.start_param,
+            currency=o.currency,
+            total_amount=o.total_amount,
         )
     if isinstance(o, datetime):
         return int(o.timestamp())
