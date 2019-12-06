@@ -31,10 +31,20 @@ def flaskify_arguments(function):
     # end if
 
     @functools.wraps(function)
-    def apply_matches_inner(request, *args, **kwargs):
-        if args or kwargs:
-            logger.debug('wrapped function called with additional arguments, not resolving `request.match_info`')
-            return function(request, *args, **kwargs)
+    async def apply_matches_inner(*args, **kwargs):
+        logger.debug(
+            f'function wrapper for {function} got arguments: *{args!r} and **{kwargs!r}'
+        )
+        args = list(args)
+        if 'request' in kwargs and len(args) == 0:
+            request = kwargs.pop('request')
+        elif not kwargs and len(args) == 1:
+            request = args.pop(0)
+        else:
+            logger.debug(
+                f'wrapped function {function} directly called with additional arguments *{args!r} and **{kwargs!r}, not resolving `request.match_info`'
+            )
+            return await function(*args, **kwargs)
         # end def
         params = dict(request.match_info)
         if apply_request_param:
@@ -45,7 +55,10 @@ def flaskify_arguments(function):
             # end if
             params['request'] = request
         # end if
-        return function(**params)
+        logger.debug(
+            f'calling function {function} with resolved variables: **{params!r}'
+        )
+        return await function(**params)
     # end def
 
     return apply_matches_inner

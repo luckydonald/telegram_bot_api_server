@@ -16,6 +16,7 @@ if __name__ == '__main__':
     logging.add_colored_handler(level=logging.DEBUG)
 # end if
 
+
 class WebhookInfo(object):
     bot_instance: TelegramClient
 
@@ -25,12 +26,12 @@ class WebhookInfo(object):
     # end def
 # end class
 
+
 webhooks: Dict[str, WebhookInfo] = {
     # token: ('https://route/to/instance', bot),
 }
 
 routes = web.RouteTableDef()
-
 
 
 async def handle(request: Request):
@@ -45,7 +46,7 @@ async def handle(request: Request):
 @flaskify_arguments
 async def set_webhook(token, request: Request):
     if 'url' not in request.query or not request.query['url']:
-        return delete_webhook(token, request)
+        return await delete_webhook(token, request)
     # end if
     url: str = request.query['url']
 
@@ -63,7 +64,8 @@ async def set_webhook(token, request: Request):
     return r_success(True, "Webhook was set")
 # end def
 
-@routes.get('/bot{token}/setWebhook')
+
+@routes.get('/bot{token}/deleteWebhook')
 @flaskify_arguments
 async def delete_webhook(token, request: Request):
     if 'url' in request.query and request.query['url']:
@@ -78,7 +80,6 @@ async def delete_webhook(token, request: Request):
 # end def
 
 
-
 @routes.get('/bot{token}/getMe')
 async def get_me(request):
     result = User(
@@ -90,12 +91,14 @@ async def get_me(request):
     return r_success(result, None)
 # end def
 
+
 @routes.get('/bot{token}/')
 async def not_found(request):
     return r_error(404, "Not Found")
 # end def
 
-async def r_error(error_code=500, description=None):
+
+def r_error(error_code=500, description=None):
     return web.json_response({
         "ok": False,
         "error_code": error_code,
@@ -103,7 +106,8 @@ async def r_error(error_code=500, description=None):
     }, status=error_code)
 # end def
 
-async def r_success(result, description=None, status_code=200):
+
+def r_success(result, description=None, status_code=200):
     return web.json_response({
         "ok": True,
         "result": result,
