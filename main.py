@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from typing import Dict
 from aiohttp import web
+from asyncio import get_event_loop
 from telethon import TelegramClient, events
 from aiohttp_utils import flaskify_arguments
 from aiohttp.web_request import Request
@@ -15,6 +16,9 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     logging.add_colored_handler(level=logging.DEBUG)
 # end if
+
+loop = get_event_loop()
+loop.set_debug(True)
 
 
 class WebhookInfo(object):
@@ -55,7 +59,7 @@ async def set_webhook(token, request: Request):
         return r_success(True, "Webhook was updated")
     # end if
     try:
-        bot = TelegramClient('bot', 11111, 'a1b2c3d4').start(bot_token=token)
+        bot = TelegramClient('bot', 11111, 'a1b2c3d4', loop=loop).start(bot_token=token)
     except Exception as e:
         return r_error(500, description=str(e))
     # end try
@@ -76,7 +80,7 @@ async def delete_webhook(token, request: Request):
         del webhooks[token]
         return r_success(True, "Webhook was deleted")
     # end if
-    return r_success(True, "Webhook was deleted")
+    return r_success(True, "Webhook was not set")
 # end def
 
 
@@ -120,4 +124,18 @@ app.router.add_routes(routes)
 app.router.add_get('/', handle)
 app.router.add_get('/{name:int}', handle)
 
-web.run_app(app, port=8080)
+if __name__ == '__main__':
+    try:
+        from aiohttp_devtools.runserver import run_app, runserver, INFER_HOST
+        run_app(*runserver(host=INFER_HOST, main_port=8080, debug_toolbar=True, verbose=True, livereload=True))
+    except ImportError:
+        try:
+            import aiohttp_debugtoolbar
+            # from aiohttp_debugtoolbar import toolbar_middleware_factory
+            aiohttp_debugtoolbar.setup(app)
+        except ImportError:
+            pass
+        # end try
+        web.run_app(app, port=8080)
+    # end iff
+# end if

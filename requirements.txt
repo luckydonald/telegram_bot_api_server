@@ -1,4 +1,6 @@
+aiohttp_debugtoolbar
 luckydonald-utils
 aiohttp[speedups]
+aiohttp-devtools
 telethon
 pytgbot
