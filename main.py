@@ -17,7 +17,7 @@ __author__ = 'luckydonald'
 
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
-    logging.add_colored_handler(level=logging.DEBUG)
+    logging.add_colored_handler(level=logging.DEBUG, date_formatter="%Y-%m-%d %H:%M:%S")
 # end if
 
 loop = get_event_loop()
@@ -52,10 +52,12 @@ async def handle(request: Request):
 @routes.get('/bot{token}/setWebhook')
 @flaskify_arguments
 async def set_webhook(token, request: Request):
+    logger.debug(f'Setting webhook for {token}...')
     if 'url' not in request.query or not request.query['url']:
         return await delete_webhook(token, request)
     # end if
     url: str = request.query['url']
+    logger.debug(f'Setting webhook for {token} to {url!r}.')
 
     if token in webhooks:
         webhooks[token].url = url
@@ -82,10 +84,12 @@ async def set_webhook(token, request: Request):
         # end def
         logger.debug(f'Done registering all the listeners for {token}.')
     except Exception as e:
+        logger.warning('Registering bot failed', exc_info=True)
         return r_error(500, description=str(e))
     # end try
 
     webhooks[token] = WebhookInfo(url=url, bot_instance=bot)
+    logger.debug(f'Added {token} to the list: {webhooks!r}.')
     return r_success(True, "Webhook was set")
 # end def
 
