@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 from typing import Dict
 from aiohttp import web
-from asyncio import get_event_loop
+from aiocron import crontab
+from asyncio import get_event_loop, create_task
 from telethon import TelegramClient, events
 from aiohttp_utils import flaskify_arguments
 from aiohttp.web_request import Request
@@ -99,6 +100,12 @@ async def get_me(request):
 @routes.get('/bot{token}/')
 async def not_found(request):
     return r_error(404, "Not Found")
+# end def
+
+
+@crontab('* * * * * */10', start=True)
+async def attime():
+    logger.debug(f'current listeners: {webhooks!r}')
 # end def
 
 

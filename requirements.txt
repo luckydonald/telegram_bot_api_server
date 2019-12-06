@@ -4,3 +4,4 @@ aiohttp[speedups]
 aiohttp-devtools
 telethon
 pytgbot
+aiocron
