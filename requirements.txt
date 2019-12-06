@@ -1,0 +1,2 @@
+aiohttp[speedups]
+luckydonald-utils
