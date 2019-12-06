@@ -1,2 +1,4 @@
-aiohttp[speedups]
 luckydonald-utils
+aiohttp[speedups]
+telethon
+pytgbot
