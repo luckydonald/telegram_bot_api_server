@@ -113,7 +113,7 @@ class TelegramClientWebhook(TelegramClient):
                 logger.info(f'Skipping Update type {type(event)}')
                 return
             try:
-                update = await to_web_api(event)
+                update: Update = await to_web_api(event)
             except TypeError as e:
                 logger.exception('Serializing element failed')
                 # await event.respond()
