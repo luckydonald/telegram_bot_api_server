@@ -10,7 +10,6 @@ from aiohttp_utils import flaskify_arguments
 from aiohttp.web_request import Request
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types.receivable.peer import User
-from pytgbot.api_types.receivable.updates import Update
 
 
 __author__ = 'luckydonald'
@@ -59,8 +58,10 @@ async def set_webhook(token, request: Request):
         bot = TelegramClientWebhook(
             session='bot', api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token, webhook_url=url,
         )
-        create_task(bot.start(bot_token=token))
+        bot.parse_mode = 'html'  # <- Render things nicely
+        await bot.connect()
         bot.register_webhook_methods()
+        await bot.sign_in(bot_token=bot.api_key)
         logger.debug(f'Telegram client for {token} is enqueued.')
 
         logger.debug(f'Done registering all the listeners for {token}.')
@@ -84,7 +85,9 @@ async def delete_webhook(token, request: Request):
     # end if
 
     if token in webhooks:
+        bot = webhooks[token]
         del webhooks[token]
+        bot.disconnect()
         return r_success(True, "Webhook was deleted")
     # end if
     return r_success(True, "Webhook was not set")
