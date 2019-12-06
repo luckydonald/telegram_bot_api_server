@@ -31,7 +31,11 @@ def flaskify_arguments(function):
     # end if
 
     @functools.wraps(function)
-    def apply_matches_inner(request):
+    def apply_matches_inner(request, *args, **kwargs):
+        if args or kwargs:
+            logger.debug('wrapped function called with additional arguments, not resolving `request.match_info`')
+            return function(request, *args, **kwargs)
+        # end def
         params = dict(request.match_info)
         if apply_request_param:
             if 'request' in params:
