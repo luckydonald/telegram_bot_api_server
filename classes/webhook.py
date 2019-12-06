@@ -5,11 +5,13 @@ import asyncio
 import typing
 
 import aiohttp
+from luckydonaldUtils.exceptions import assert_type_or_raise
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types.receivable.updates import Update, Message
 from telethon import TelegramClient, events
 from telethon.network import ConnectionTcpFull, Connection
 from telethon.sessions import Session
+from telethon.tl.types import TypeUpdate, UpdateChannelMessageViews
 
 from serializer import to_web_api
 
@@ -79,7 +81,7 @@ class TelegramClientWebhook(TelegramClient):
         self.webhook_url = webhook_url
     # end def
 
-    def send_event(self, data: Update):
+    async def send_event(self, data: Update):
         json = data.to_array()
         logger.debug(f"Sending event: {json!r}")
         return None
@@ -96,47 +98,29 @@ class TelegramClientWebhook(TelegramClient):
             """Send a message when the command /start is issued."""
             await event.respond('Hi!')
             raise events.StopPropagation
-
         # end def
 
-        @self.on(events.NewMessage)
-        async def echo(event: events.NewMessage):
-            """Echo the user message."""
-            logger.info(f'account {self.api_key!r} got message: {event.text!r}')
-
-            update = Update(
-                update_id=0,
-                message=to_web_api(event.message),
-                # TODO: edited_message=,
-                # TODO: channel_post=,
-                # TODO: edited_channel_post=,
-                # TODO: inline_query=,
-                # TODO: chosen_inline_result=,
-                # TODO: callback_query=,
-                # TODO: shipping_query=,
-                # TODO: pre_checkout_query=,
+        @self.on(events.Raw)
+        async def got_some_update(event: events.NewMessage):
+            """Process incomming Updates."""
+            logger.info(f'account {self.api_key!r} got message: {type(event)!r}')
+            assert_type_or_raise(
+                event,
+                *TypeUpdate.__args__,
+                parameter_name='event'
             )
+            if isinstance(event, (UpdateChannelMessageViews,)):
+                logger.info(f'Skipping Update type {type(event)}')
+                return
+            try:
+                update = to_web_api(event)
+            except TypeError as e:
+                logger.exception('Serializing element failed')
+                # await event.respond()
+                raise events.StopPropagation
+            # end def
             await self.send_event(update)
-            await event.respond()
-        # end def
-
-        @self.on(events.MessageEdited)
-        async def echo(event: events.NewMessage):
-            """Echo the user message."""
-            logger.info(f'account {self.api_key!r} got message: {event.text!r}')
-
-            update = Update(
-                update_id=0,
-                edited_message=to_web_api(event.message),
-                # TODO: channel_post=,
-                # TODO: edited_channel_post=,
-                # TODO: inline_query=,
-                # TODO: chosen_inline_result=,
-                # TODO: callback_query=,
-                # TODO: shipping_query=,
-                # TODO: pre_checkout_query=,
-            )
-            await self.send_event(update)
-            await event.respond()
+            # await event.respond()
+            raise events.StopPropagation
         # end def
 # end class
