@@ -159,6 +159,7 @@ app.router.add_get('/{name:int}', handle)
 
 if __name__ == '__main__':
     try:
+        raise ImportError()
         from aiohttp_devtools.runserver import run_app, runserver, INFER_HOST
         run_app(*runserver(host=INFER_HOST, main_port=8080, debug_toolbar=True, verbose=True, livereload=True))
     except ImportError:
