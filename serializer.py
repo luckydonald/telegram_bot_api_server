@@ -73,50 +73,50 @@ def load_message(msg_id: int, chat_id: int) -> Message:
 # end def
 
 
-def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False):
+async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False):
     if isinstance(o, TUpdateNewMessage):
         return Update(
             update_id=o.pts,
-            message=to_web_api(o.message),
+            message=await to_web_api(o.message),
         )
     if isinstance(o, TUpdateEditMessage):
         return Update(
             update_id=o.pts,
-            edited_message=to_web_api(o.message),
+            edited_message=await to_web_api(o.message),
         )
     if isinstance(o, TUpdateEditChannelMessage):
         return Update(
             update_id=o.pts,
-            edited_channel_post=to_web_api(o.message),
+            edited_channel_post=await to_web_api(o.message),
         )
     if isinstance(o, TUpdateBotInlineQuery):
         if prefer_update:
             return Update(
                 update_id=o.query_id,
-                inline_query=to_web_api(o, prefer_update=False)
+                inline_query=await to_web_api(o, prefer_update=False)
             )
         return InlineQuery(
             id=o.query_id,
             from_peer=load_user(o.user_id),
             query=o.query,
             offset=o.offset,
-            location=to_web_api(o.geo),
+            location=await to_web_api(o.geo),
         )
     # if isinstance(object, ???):
     #     return Update(
     #         update_id=object.pts,
-    #         chosen_inline_result=to_web_api(object.message),  # TODO
+    #         chosen_inline_result=await to_web_api(object.message),  # TODO
     #     )
     if isinstance(o, TUpdateBotCallbackQuery):
         if prefer_update:
             return Update(
                 update_id=0,
-                callback_query=to_web_api(o, prefer_update=False),
+                callback_query=await to_web_api(o, prefer_update=False),
             )
         # end if
         return CallbackQuery(
             id=o.query_id,
-            from_peer=to_web_api(o.peer),
+            from_peer=await to_web_api(o.peer),
             chat_instance=str(o.chat_instance),
             message=load_message(o.msg_id, o.chat_instance),
             # inline_message_id=object TODO
@@ -127,7 +127,7 @@ def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False):
         if prefer_update:
             return Update(
                 update_id=0,
-                shipping_query=to_web_api(o, prefer_update=False),
+                shipping_query=await to_web_api(o, prefer_update=False),
             )
         return ShippingQuery(
             id=o.query_id,
@@ -139,7 +139,7 @@ def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False):
         if prefer_update:
             return Update(
                 update_id=0,
-                pre_checkout_query=to_web_api(o, prefer_update=False),
+                pre_checkout_query=await to_web_api(o, prefer_update=False),
             )
         return PreCheckoutQuery(
             id=o.query_id,
@@ -148,7 +148,7 @@ def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False):
             total_amount=o.total_amount,
             invoice_payload=o.payload,
             shipping_option_id=o.shipping_option_id,
-            order_info=to_web_api(o.info),
+            order_info=await to_web_api(o.info),
         )
     if isinstance(o, TGeoPointEmpty):
         return None
@@ -174,7 +174,7 @@ def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False):
                 last_name=o.last_name,
                 username=o.username,
                 # TODO: all_members_are_administrators=,
-                photo=to_web_api(o.photo) if load_photos else None,
+                photo=await to_web_api(o.photo) if load_photos else None,
                 # description=None,
                 # invite_link=None,
                 # pinned_message=None,
@@ -193,8 +193,8 @@ def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False):
     if isinstance(o, TUserProfilePhoto):
         if user_as_chat:
             return ChatPhoto(
-                small_file_id=to_web_api(o.photo_small),
-                big_file_id=to_web_api(o.photo_big),
+                small_file_id=await to_web_api(o.photo_small),
+                big_file_id=await to_web_api(o.photo_big),
             )
         return UserProfilePhotos(
             total_count=2,
@@ -216,28 +216,27 @@ def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False):
         if o.is_reply:
             reply = await o.get_reply_message()
         # end if
-        forward: Forward = o.forward
         forward_from = None
         forward_from_chat = None
         if o.forward:
-            forward_from = forward.get_sender()
-            forward_from_chat = o.forward.get_chat()
+            forward_from = await o.forward.get_sender()
+            forward_from_chat = await o.forward.get_chat()
         # end if
         return Message(
             message_id=o.id,
-            date=to_web_api(o.date),
-            chat=to_web_api(o.chat, user_as_chat=True),
-            from_peer=to_web_api(o.sender),
-            forward_from=to_web_api(forward_from),
-            forward_from_chat=to_web_api(forward_from_chat),
+            date=await to_web_api(o.date),
+            chat=await to_web_api(o.chat, user_as_chat=True),
+            from_peer=await to_web_api(o.sender),
+            forward_from=await to_web_api(forward_from),
+            forward_from_chat=await to_web_api(forward_from_chat),
             # TODO: forward_signature=,
-            forward_date=to_web_api(o.forward.date) if o.fwd_from else None,
-            reply_to_message=to_web_api(reply),
-            edit_date=to_web_api(o.edit_date),
+            forward_date=await to_web_api(o.forward.date) if o.fwd_from else None,
+            reply_to_message=await to_web_api(reply),
+            edit_date=await to_web_api(o.edit_date),
             # TODO: media_group_id=,
             author_signature=o.fwd_from.post_author if o.fwd_from else None,
             text=o.text,
-            entities=to_web_api(o.entities),
+            entities=await to_web_api(o.entities),
         )
     if isinstance(o, TMessageEntityBlockquote):
         return MessageEntity(
@@ -346,11 +345,11 @@ def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False):
     if isinstance(o, datetime):
         return int(o.timestamp())
     if isinstance(o, tuple):
-        return tuple(to_web_api(list(o)))
+        return tuple(await to_web_api(list(o)))
     if isinstance(o, list):
-        return [to_web_api(x) for x in o]
+        return [await to_web_api(x) for x in o]
     if isinstance(o, dict):
-        return {k: to_web_api(v) for k, v in o.items()}
+        return {k: await to_web_api(v) for k, v in o.items()}
     if isinstance(o, (bool, str, int, float)):
         return o
     if o is None:
