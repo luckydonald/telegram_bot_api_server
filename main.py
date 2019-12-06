@@ -5,11 +5,13 @@ from aiohttp import web
 from aiocron import crontab
 from asyncio import get_event_loop, create_task
 from telethon import TelegramClient, events
+from somewhere import TG_API_ID, TG_API_HASH
 from aiohttp_utils import flaskify_arguments
 from aiohttp.web_request import Request
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types.receivable.peer import User
 from pytgbot.api_types.receivable.updates import Update
+
 
 __author__ = 'luckydonald'
 
@@ -60,7 +62,25 @@ async def set_webhook(token, request: Request):
         return r_success(True, "Webhook was updated")
     # end if
     try:
-        bot = TelegramClient('bot', 11111, 'a1b2c3d4', loop=loop).start(bot_token=token)
+        logger.debug(f'Launching telegram client for {token}.')
+        bot = TelegramClient(session='bot', api_id=TG_API_ID, api_hash=TG_API_HASH)
+        create_task(bot.start(bot_token=token))
+        logger.debug(f'Telegram client for {token} is enqueued.')
+
+        @bot.on(events.NewMessage(pattern='/start'))
+        async def start(event):
+            """Send a message when the command /start is issued."""
+            await event.respond('Hi!')
+            raise events.StopPropagation
+        # end def
+
+        @bot.on(events.NewMessage)
+        async def echo(event):
+            """Echo the user message."""
+            logger.info(f'account {token!r} got message: {event.text!r}')
+            # await event.respond()
+        # end def
+        logger.debug(f'Done registering all the listeners for {token}.')
     except Exception as e:
         return r_error(500, description=str(e))
     # end try
