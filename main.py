@@ -52,6 +52,7 @@ async def handle(request: Request):
 @routes.get('/bot{token}/setWebhook')
 @flaskify_arguments
 async def set_webhook(token, request: Request):
+    global webhooks
     logger.debug(f'Setting webhook for {token}...')
     if 'url' not in request.query or not request.query['url']:
         return await delete_webhook(token, request)
@@ -97,6 +98,7 @@ async def set_webhook(token, request: Request):
 @routes.get('/bot{token}/deleteWebhook')
 @flaskify_arguments
 async def delete_webhook(token, request: Request):
+    global webhooks
     if 'url' in request.query and request.query['url']:
         return set_webhook(token, request)
     # end if
