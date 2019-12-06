@@ -40,6 +40,7 @@ from telethon.tl.types import UpdateBotPrecheckoutQuery as TUpdateBotPrecheckout
 from telethon.tl.types import GeoPointEmpty as TGeoPointEmpty
 from telethon.tl.types import GeoPoint as TGeoPoint
 from telethon.tl.types import PaymentRequestedInfo as TPaymentRequestedInfo
+from telethon.tl.types import Channel as TChannel
 from telethon.utils import pack_bot_file_id
 
 __author__ = 'luckydonald'
@@ -190,6 +191,13 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             language_code=o.lang_code,
         )
     # end if
+    if isinstance(o, TChannel):
+        return Chat(
+            id=o.id,
+            type='channel',
+            title=o.title,
+            username=o.username,
+        )
     if isinstance(o, TUserProfilePhoto):
         if user_as_chat:
             return ChatPhoto(
