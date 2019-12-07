@@ -374,6 +374,15 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         )
     # end if
     if isinstance(o, TChannel):
+        if o.megagroup:  # or maybe o.broadcast?
+            # https://t.me/BotDevelopment/109268
+            return Chat(
+                id=as_channel_id(o.id),
+                type='supergroup',
+                title=o.title,
+                username=o.username,
+            )
+        # end if
         return Chat(
             id=as_channel_id(o.id),
             type='channel',
