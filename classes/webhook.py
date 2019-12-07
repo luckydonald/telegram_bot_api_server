@@ -11,7 +11,7 @@ from pytgbot.api_types.receivable.updates import Update, Message
 from telethon import TelegramClient, events
 from telethon.network import ConnectionTcpFull, Connection
 from telethon.sessions import Session
-from telethon.tl.types import TypeUpdate, UpdateChannelMessageViews
+from telethon.tl.types import TypeUpdate, UpdateChannelMessageViews, UpdateChannel
 
 from serializer import to_web_api
 
@@ -109,7 +109,7 @@ class TelegramClientWebhook(TelegramClient):
                 *TypeUpdate.__args__,
                 parameter_name='event'
             )
-            if isinstance(event, (UpdateChannelMessageViews,)):
+            if isinstance(event, (UpdateChannelMessageViews, UpdateChannel)):
                 logger.info(f'Skipping Update type {type(event)}')
                 return
             try:
