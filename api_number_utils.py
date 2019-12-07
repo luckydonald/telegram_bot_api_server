@@ -74,47 +74,45 @@ def num_startswith(number: int, start: int) -> bool:
 
 
 # https://github.com/tdlib/td/blob/56163c2460a65afc4db2c57ece576b8c38ea194b/td/telegram/DialogId.cpp#L54-L72
-def get_user_id(id: int) -> int:
+def as_user_id(id: int) -> int:
     assert TYPE_PRIVATE in type_from_id(id)
     return id
 # end def
 
 
-def get_chat_id(id: int) -> int:
+def as_chat_id(id: int) -> int:
     assert TYPE_GROUP in type_from_id(id);
     return -id
 # end def
 
 
-def get_channel_id(id: int) -> int:
-    assert TYPE_CHANNEL in type_from_id(id)
-    return MAX_CHANNEL_ID - id
-# end def
-
-
-def get_secret_chat_id(id: int) -> int:
-    assert TYPE_SECRET in type_from_id(id)
-    return id - ZERO_SECRET_ID
-# end def
-
-
-def as_user_id(id: int) -> int:
-    return id
-# end def
-
-
-def as_chat_id(id: int) -> int:
-    return -id
-# end def
-
-
 def as_channel_id(id: int) -> int:
-    assert TYPE_CHANNEL in type_from_id(id)
+    # assert TYPE_CHANNEL in type_from_id(id)
     return MAX_CHANNEL_ID - id
 # end def
 
 
 def as_secret_chat_id(id: int) -> int:
-    assert TYPE_SECRET in type_from_id(id)
+    # assert TYPE_SECRET in type_from_id(id)
     return id - ZERO_SECRET_ID
+# end def
+
+
+def from_user_id(id: int) -> int:
+    return id
+# end def
+
+
+def from_chat_id(id: int) -> int:
+    return -id
+# end def
+
+
+def from_channel_id(id: int) -> int:
+    return MAX_CHANNEL_ID + id
+# end def
+
+
+def from_secret_chat_id(id: int) -> int:
+    return id + ZERO_SECRET_ID
 # end def
