@@ -71,6 +71,8 @@ from telethon.tl.types import InputStickerSetAnimatedEmoji as TInputStickerSetAn
 from telethon.tl.types import Photo as TPhoto
 from telethon.utils import pack_bot_file_id
 
+from api_number_utils import as_channel_id, as_user_id
+
 __author__ = 'luckydonald'
 
 logger = logging.getLogger(__name__)
@@ -348,7 +350,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
     if isinstance(o, TUser):
         if user_as_chat:
             return Chat(
-                id=o.id,
+                id=as_user_id(o.id),
                 type='private',
                 # title=None,
                 first_name=o.first_name,
@@ -373,7 +375,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
     # end if
     if isinstance(o, TChannel):
         return Chat(
-            id=o.id,
+            id=as_channel_id(o.id),
             type='channel',
             title=o.title,
             username=o.username,
