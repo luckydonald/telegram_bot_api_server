@@ -19,13 +19,6 @@ from telethon.tl.types import User as TUser
 from telethon.tl.patched import Message as TMessage
 from telethon.tl.types import UserProfilePhoto as TUserProfilePhoto
 from telethon.tl.types import Document as TDocument
-from telethon.tl.types import DocumentAttributeAnimated as TDocumentAttributeAnimated
-from telethon.tl.types import DocumentAttributeAudio as TDocumentAttributeAudio
-from telethon.tl.types import DocumentAttributeFilename as TDocumentAttributeFilename
-from telethon.tl.types import DocumentAttributeHasStickers as TDocumentAttributeHasStickers
-from telethon.tl.types import DocumentAttributeImageSize as TDocumentAttributeImageSize
-from telethon.tl.types import DocumentAttributeSticker as TDocumentAttributeSticker
-from telethon.tl.types import DocumentAttributeVideo as TDocumentAttributeVideo
 from telethon.tl.types import MessageEntityBlockquote as TMessageEntityBlockquote
 from telethon.tl.types import MessageEntityBold as TMessageEntityBold
 from telethon.tl.types import MessageEntityBotCommand as TMessageEntityBotCommand
