@@ -64,10 +64,11 @@ from telethon.tl.types import PhotoSizeEmpty as TPhotoSizeEmpty
 from telethon.tl.types import PhotoCachedSize as TPhotoCachedSize
 from telethon.tl.types import PhotoStrippedSize as TPhotoStrippedSize
 from telethon.tl.types import MaskCoords as TMaskCoords
-from telethon.tl.types import InputStickerSetID as InputStickerSetID
-from telethon.tl.types import InputStickerSetEmpty as InputStickerSetEmpty
-from telethon.tl.types import InputStickerSetShortName as InputStickerSetShortName
-from telethon.tl.types import InputStickerSetAnimatedEmoji as InputStickerSetAnimatedEmoji
+from telethon.tl.types import InputStickerSetID as TInputStickerSetID
+from telethon.tl.types import InputStickerSetEmpty as TInputStickerSetEmpty
+from telethon.tl.types import InputStickerSetShortName as TInputStickerSetShortName
+from telethon.tl.types import InputStickerSetAnimatedEmoji as TInputStickerSetAnimatedEmoji
+from telethon.tl.types import Photo as TPhoto
 from telethon.utils import pack_bot_file_id
 
 __author__ = 'luckydonald'
@@ -259,6 +260,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
                     file_id=data['file_id'],
                     width=data['width'],
                     height=data['height'],
+                    # is_animated=data.get('is_animated', False),
                     thumb=data.get('thumb'),
                     emoji=data.get('emoji'),
                     set_name=data.get('set_name'),
@@ -579,15 +581,18 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             currency=o.currency,
             total_amount=o.total_amount,
         )
-    if isinstance(o, InputStickerSetID):
+    if isinstance(o, TInputStickerSetID):
         return None
         pass
-    if isinstance(o, InputStickerSetEmpty):
+    if isinstance(o, TInputStickerSetEmpty):
         return ''
-    if isinstance(o, InputStickerSetShortName):
+    if isinstance(o, TInputStickerSetShortName):
         return o.short_name
-    if isinstance(o, InputStickerSetAnimatedEmoji):
+    if isinstance(o, TInputStickerSetAnimatedEmoji):
         return None
+    if isinstance(o, TPhoto):
+        file_id = pack_bot_file_id(o)
+        return [x for x in await to_web_api(o.sizes, file_id=file_id) if x]  # filter out None (TPhotoSizeEmpty)
     if isinstance(o, datetime):
         return int(o.timestamp())
     if isinstance(o, tuple):
