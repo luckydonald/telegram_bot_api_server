@@ -2,15 +2,18 @@
 # -*- coding: utf-8 -*-
 from builtins import object
 from datetime import datetime
+from typing import Union
 
+from luckydonaldUtils.exceptions import assert_type_or_raise
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types.receivable.inline import InlineQuery
 from pytgbot.api_types.receivable.media import ChatPhoto, UserProfilePhotos, PhotoSize, MessageEntity, Location
+from pytgbot.api_types.receivable.media import Sticker, VideoNote
 from pytgbot.api_types.receivable.media import Contact, Venue, Video, Document, Animation
 from pytgbot.api_types.receivable.payments import ShippingQuery, PreCheckoutQuery, OrderInfo, Invoice
 from pytgbot.api_types.receivable.peer import User, Chat
+from pytgbot.api_types.receivable.stickers import MaskPosition
 from pytgbot.api_types.receivable.updates import Message, Update, CallbackQuery
-from telethon.tl.custom import Forward as TForward
 from telethon.tl.types import User as TUser
 from telethon.tl.patched import Message as TMessage
 from telethon.tl.types import UserProfilePhoto as TUserProfilePhoto
@@ -54,7 +57,19 @@ from telethon.tl.types import Channel as TChannel
 from telethon.tl.types import MessageMediaContact as TMessageMediaContact
 from telethon.tl.types import MessageMediaVenue as TMessageMediaVenue
 from telethon.tl.types import MessageMediaInvoice as TMessageMediaInvoice
+from telethon.tl.types import TypePhotoSize as TTypePhotoSize
+from telethon.tl.types import DocumentAttributeImageSize as TDocumentAttributeImageSize
+from telethon.tl.types import DocumentAttributeAnimated as TDocumentAttributeAnimated
+from telethon.tl.types import DocumentAttributeSticker as TDocumentAttributeSticker
+from telethon.tl.types import DocumentAttributeVideo as TDocumentAttributeVideo
+from telethon.tl.types import DocumentAttributeAudio as TDocumentAttributeAudio
+from telethon.tl.types import DocumentAttributeFilename as TDocumentAttributeFilename
+from telethon.tl.types import DocumentAttributeHasStickers as TDocumentAttributeHasStickers
 from telethon.tl.types import PhotoSize as TPhotoSize
+from telethon.tl.types import PhotoSizeEmpty as TPhotoSizeEmpty
+from telethon.tl.types import PhotoCachedSize as TPhotoCachedSize
+from telethon.tl.types import PhotoStrippedSize as TPhotoStrippedSize
+from telethon.tl.types import MaskCoords as TMaskCoords
 from telethon.utils import pack_bot_file_id
 
 __author__ = 'luckydonald'
@@ -88,7 +103,15 @@ def load_message(msg_id: int, chat_id: int) -> Message:
 # end def
 
 
-async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False):
+MASK_POSITIONS = {
+    0: "forehead",
+    1: "eyes",
+    2: "mouth",
+    3: "chin",
+}
+
+
+async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False, file_id: Union[str, None] = None):
     if isinstance(o, TUpdateNewMessage):
         return Update(
             update_id=o.pts,
@@ -170,43 +193,125 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             shipping_option_id=o.shipping_option_id,
             order_info=await to_web_api(o.info),
         )
+    if isinstance(o, TPhotoSizeEmpty):
+        return None
+    if isinstance(o, TPhotoSize):
+        assert_type_or_raise(file_id, str, parameter_name='file_id')
+        return PhotoSize(
+            file_id=file_id,
+            width=o.w,
+            height=o.h,
+            file_size=o.size,
+        )
+    if isinstance(o, TPhotoCachedSize):
+        assert_type_or_raise(file_id, str, parameter_name='file_id')
+        return PhotoSize(
+            file_id=file_id,
+            width=o.w,
+            height=o.h,
+            file_size=len(o.bytes),
+        )
+    if isinstance(o, TPhotoStrippedSize):
+        assert_type_or_raise(file_id, str, parameter_name='file_id')
+        return PhotoSize(
+            file_id=file_id,
+            width=0,  # TODO
+            height=0,  # TODO
+            file_size=len(o.bytes),
+        )
     if isinstance(o, TDocument):
-        file_id = None
-        thumb = await to_web_api(o.thumbs[0])
-        from telethon.tl.types import DocumentAttributeImageSize, DocumentAttributeAnimated, DocumentAttributeSticker, DocumentAttributeVideo, DocumentAttributeAudio, DocumentAttributeFilename, DocumentAttributeHasStickers
-        from telethon.tl.types import PhotoSizeEmpty, PhotoCachedSize, PhotoStrippedSize
-        TPhotoSize
-
-        DocumentAttributeImageSize
-        DocumentAttributeAnimated
-        DocumentAttributeSticker
-        DocumentAttributeVideo
-        DocumentAttributeAudio
-        DocumentAttributeFilename
-        DocumentAttributeHasStickers
+        data = {
+            'file_id': pack_bot_file_id(o),
+            'thumb': None,
+        }
+        # thumb: TTypePhotoSize = o.thumbs[0]
+        # thumb = await to_web_api(thumb, file_id=thumb.location)
 
         for attr in o.attributes:
             if isinstance(attr, TDocumentAttributeAnimated):
-                return Animation(
-                    file_id=file_id,
-
-                )
+                continue
             if isinstance(attr, TDocumentAttributeAudio):
-                return
+                data['duration'] = attr.duration
+                data['voice'] = attr.voice
+                data['title'] = attr.title
+                data['performer'] = attr.performer
+                # data['waveform'] = attr.waveform
             if isinstance(attr, TDocumentAttributeFilename):
-                return
-            if isinstance(attr, TDocumentAttributeHasStickers):
-                return
+                data['file_name'] = attr.file_name
             if isinstance(attr, TDocumentAttributeImageSize):
-                return
+                data['width'] = attr.w
+                data['height'] = attr.h
+                # end if
             if isinstance(attr, TDocumentAttributeSticker):
-                return
+                data['emoji'] = attr.alt
+                data['set_name'] = attr.stickerset.short_name
+                data['mask'] = attr.mask
+                data['mask_position'] = await to_web_api(attr.mask_coords)
+            # end if
             if isinstance(attr, TDocumentAttributeVideo):
-                return Video()
-            return Document(
-                file_id=file_id,
-                thumb=await to_web_api(o.thumbs[0])
-            )
+                data['width'] = attr.w
+                data['height'] = attr.h
+                data['duration'] = attr.duration
+            # end if
+        # end for
+        for attr in o.attributes:
+            if isinstance(attr, TDocumentAttributeSticker):
+                return Sticker(
+                    file_id=data['file_id'],
+                    width=data['width'],
+                    height=data['height'],
+                    thumb=data.get('thumb'),
+                    emoji=data.get('emoji'),
+                    set_name=data.get('set_name'),
+                    mask_position=data.get('mask_position'),
+                    file_size=data.get('file_size'),
+                )
+            # end if
+            if isinstance(attr, TDocumentAttributeAnimated):
+                return Animation(
+                    file_id=data['file_id'],
+                    width=data['width'],
+                    height=data['height'],
+                    duration=data['duration'],
+                    thumb=data.get('thumb'),
+                    file_name=data.get('file_name'),
+                    mime_type=data.get('mime_type'),
+                    file_size=data.get('file_size'),
+                )
+            if isinstance(attr, TDocumentAttributeVideo):
+                if attr.round_message:
+                    return VideoNote(
+                        file_id=data['file_id'],
+                        length=data['length'],
+                        duration=data['duration'],
+                        thumb=data.get('thumb'),
+                        file_size=data.get('file_size'),
+                    )
+                # end if
+                return Video(
+                    file_id=data['file_id'],
+                    width=data['width'],
+                    height=data['height'],
+                    duration=data['duration'],
+                    thumb=data.get('thumb'),
+                    mime_type=data.get('mime_type'),
+                    file_size=data.get('file_size'),
+                )
+            # end if
+            if isinstance(attr, TDocumentAttributeHasStickers):
+                raise ValueError(f'Unexpected {type(attr)}')
+        # end for
+        return Document(
+            file_id=file_id,
+            thumb=await to_web_api(o.thumbs[0])
+        )
+    if isinstance(o, TMaskCoords):
+        return MaskPosition(
+            point=MASK_POSITIONS[o.n],  # One of “forehead”, “eyes”, “mouth”, or “chin”.
+            x_shift=o.x,
+            y_shift=o.y,
+            scale=o.zoom,
+        )
     if isinstance(o, TGeoPointEmpty):
         return None
     if isinstance(o, TGeoPoint):
