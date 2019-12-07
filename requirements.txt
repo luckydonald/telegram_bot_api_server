@@ -2,6 +2,10 @@ aiohttp_debugtoolbar
 luckydonald-utils
 aiohttp[speedups]
 aiohttp-devtools
-telethon
-pytgbot
 aiocron
+
+
+# telethon
+Telethon==1.10.8
+# pytgbot
+pytgbot==4.4.0

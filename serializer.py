@@ -262,7 +262,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
                     file_id=data['file_id'],
                     width=data['width'],
                     height=data['height'],
-                    # is_animated=data.get('is_animated', False),
+                    is_animated=data.get('is_animated', False),
                     thumb=data.get('thumb'),
                     emoji=data.get('emoji'),
                     set_name=data.get('set_name'),
