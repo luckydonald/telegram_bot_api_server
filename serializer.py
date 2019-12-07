@@ -4,6 +4,7 @@ from builtins import object
 from datetime import datetime
 from typing import Union
 
+from luckydonaldUtils.encoding import to_native
 from luckydonaldUtils.exceptions import assert_type_or_raise
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types.receivable.inline import InlineQuery
@@ -11,7 +12,8 @@ from pytgbot.api_types.receivable.media import ChatPhoto, UserProfilePhotos, Pho
 from pytgbot.api_types.receivable.media import Audio
 from pytgbot.api_types.receivable.media import Sticker, VideoNote
 from pytgbot.api_types.receivable.media import Contact, Venue, Video, Document, Animation
-from pytgbot.api_types.receivable.payments import ShippingQuery, PreCheckoutQuery, OrderInfo, Invoice
+from pytgbot.api_types.receivable.passport import PassportData, EncryptedCredentials, EncryptedPassportElement
+from pytgbot.api_types.receivable.payments import ShippingQuery, PreCheckoutQuery, OrderInfo, Invoice, SuccessfulPayment
 from pytgbot.api_types.receivable.peer import User, Chat
 from pytgbot.api_types.receivable.stickers import MaskPosition
 from pytgbot.api_types.receivable.updates import Message, Update, CallbackQuery
@@ -51,7 +53,6 @@ from telethon.tl.types import Channel as TChannel
 from telethon.tl.types import MessageMediaContact as TMessageMediaContact
 from telethon.tl.types import MessageMediaVenue as TMessageMediaVenue
 from telethon.tl.types import MessageMediaInvoice as TMessageMediaInvoice
-from telethon.tl.types import TypePhotoSize as TTypePhotoSize
 from telethon.tl.types import DocumentAttributeImageSize as TDocumentAttributeImageSize
 from telethon.tl.types import DocumentAttributeAnimated as TDocumentAttributeAnimated
 from telethon.tl.types import DocumentAttributeSticker as TDocumentAttributeSticker
@@ -69,6 +70,28 @@ from telethon.tl.types import InputStickerSetEmpty as TInputStickerSetEmpty
 from telethon.tl.types import InputStickerSetShortName as TInputStickerSetShortName
 from telethon.tl.types import InputStickerSetAnimatedEmoji as TInputStickerSetAnimatedEmoji
 from telethon.tl.types import Photo as TPhoto
+from telethon.tl.patched import MessageService as TMessageService
+from telethon.tl.types import PeerChannel as TPeerChannel
+# ignoring: TMessageActionEmpty, TMessageActionHistoryClear, TMessageActionGameScore
+# ingoring: TMessageActionPaymentSent, TMessageActionPhoneCall, TMessageActionScreenshotTaken
+# ingoring: TMessageActionCustomAction, TMessageActionSecureValuesSent, TMessageActionContactSignUp
+from telethon.tl.types import MessageActionChatEditTitle as TMessageActionChatEditTitle  # new_chat_title
+from telethon.tl.types import MessageActionChatEditPhoto as TMessageActionChatEditPhoto  # new_chat_photo
+from telethon.tl.types import MessageActionChatDeletePhoto as TMessageActionChatDeletePhoto  # delete_chat_photo
+from telethon.tl.types import MessageActionChatAddUser as TMessageActionChatAddUser  # new_chat_members
+from telethon.tl.types import MessageActionChatDeleteUser as TMessageActionChatDeleteUser  # left_chat_member
+from telethon.tl.types import MessageActionChatJoinedByLink as TMessageActionChatJoinedByLink  # new_chat_members
+from telethon.tl.types import MessageActionChannelCreate as TMessageActionChannelCreate  # supergroup_chat_created, channel_chat_created
+from telethon.tl.types import MessageActionChatCreate as TMessageActionChatCreate  # supergroup_chat_created, channel_chat_created
+from telethon.tl.types import MessageActionChatMigrateTo as TMessageActionChatMigrateTo  # migrate_to_chat_id
+from telethon.tl.types import MessageActionChannelMigrateFrom as TMessageActionChannelMigrateFrom  # migrate_from_chat_id
+from telethon.tl.types import MessageActionPinMessage as TMessageActionPinMessage  # pinned_message
+from telethon.tl.types import MessageActionPaymentSentMe as TMessageActionPaymentSentMe  # successful_payment
+from telethon.tl.types import MessageActionCustomAction as TMessageActionCustomAction  # TODO
+from telethon.tl.types import MessageActionBotAllowed as TMessageActionBotAllowed  # connected_website
+from telethon.tl.types import MessageActionSecureValuesSentMe as TMessageActionSecureValuesSentMe  # passport_data
+from telethon.tl.types import SecureValue as TSecureValue
+from telethon.tl.types import SecureCredentialsEncrypted as TSecureCredentialsEncrypted
 from telethon.utils import pack_bot_file_id
 
 from api_number_utils import as_channel_id, as_user_id
@@ -81,12 +104,12 @@ if __name__ == '__main__':
 # end if
 
 
-def load_user(id: int) -> User:
+def load_user(user_id: int) -> User:
     # TODO.
-    return User(
-        id=id,
+    return User(  # maybe just call to_web_api()
+        id=user_id,
         is_bot=False,
-        first_name=f"user#{id}",
+        first_name=f"user#{user_id}",
         # last_name=None,
         # username=None,
         # language_code=None,
@@ -96,12 +119,22 @@ def load_user(id: int) -> User:
 
 def load_message(msg_id: int, chat_id: int) -> Message:
     # TODO.
-    return Message(
+    return Message(  # maybe just call to_web_api()
         message_id=msg_id,
         date=0,
         chat=Chat(chat_id, 'private'),
     )
 # end def
+
+
+def load_chat(channel_id: int) -> Chat:
+    # TODO.
+    return Chat(  # maybe just call to_web_api()
+        id=channel_id,
+        type='todo',
+        title="todo",
+    )
+
 
 
 MASK_POSITIONS = {
@@ -465,6 +498,203 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             # successful_payment=o TODO
             # connected_website=o TODO
         )
+    if isinstance(o, TMessageService):
+        if isinstance(o.action, TMessageActionChatAddUser):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                new_chat_members=[load_user(u) for u in o.users],
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionChatEditTitle):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                new_chat_title=o.action.title,
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionChatEditPhoto):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                new_chat_photo=await to_web_api(o.action.photo),
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionChatDeletePhoto):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                delete_chat_photo=True,
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionChatDeleteUser):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                left_chat_member=load_user(o.action.user_id),
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionChatJoinedByLink):
+            return Message(  # TODO is swapping from_peer(inviter_id) and new_chat_members(from_id), is that correct?
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.action.inviter_id),
+                new_chat_members=[load_user(o.from_id)],
+                invoice=None,
+            )
+        if isinstance(o.action, (TMessageActionChannelCreate, TMessageActionChatCreate)):
+            raise ValueError('Eeee? is this channel or supergroup?')
+            chat: Chat = await to_web_api(o.to_id)
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=chat,
+                from_peer=load_user(o.from_id),
+                group_chat_created=chat.type == 'group',  # either group, chat or supergroup
+                supergroup_chat_created=chat.type == 'supergroup',  # either group, chat or supergroup
+                channel_chat_created=chat.type == 'chat',  # either group, chat or supergroup
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionChatMigrateTo):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                migrate_to_chat_id=o.action.channel_id,
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionChannelMigrateFrom):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                migrate_from_chat_id=o.action.chat_id,
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionPinMessage):
+            # TODO
+            # maybe o.message?
+            # or we have to load the message with o.id, like in get_pinned_message()
+            # raise ValueError('Pins need to load the message')
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                pinned_message=load_message(o.to_id, o.from_id),
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionPaymentSentMe):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                invoice=None,
+                successful_payment=await to_web_api(o.action),
+            )
+        if isinstance(o.action, TMessageActionCustomAction):
+            raise ValueError(f'Unknown custom action {o.action.message!r} (o.action = TMessageActionCustomAction)')
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionBotAllowed):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                invoice=None,
+                connected_website=o.action.domain,
+            )
+        if isinstance(o.action, TMessageActionSecureValuesSentMe):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                invoice=None,
+                passport_data=await to_web_api(o.action)
+            )
+        if isinstance(o.action, TMessageActionChatAddUser):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                invoice=None,
+            )
+        if isinstance(o.action, TMessageActionChatAddUser):
+            return Message(
+                message_id=o.id,
+                date=await to_web_api(o.date),
+                chat=await to_web_api(o.to_id),
+                from_peer=load_user(o.from_id),
+                invoice=None,
+            )
+    if isinstance(o, TMessageActionPaymentSentMe):
+        return SuccessfulPayment(
+            currency=o.currency,
+            total_amount=o.total_amount,
+            invoice_payload=o.payload,
+            telegram_payment_charge_id=o.charge.id,
+            provider_payment_charge_id=o.charge.provider_charge_id,
+            shipping_option_id=o.shipping_option_id,
+            order_info=await to_web_api(o.info) if o.info else None,
+        ),
+    if isinstance(o, TMessageActionSecureValuesSentMe):
+        return PassportData(
+            data=await to_web_api(o.values),
+            credentials=await to_web_api(o.credentials),
+        ),
+    if isinstance(o, TSecureValue):
+        raise ValueError('TSecureValue not implemented')
+        return EncryptedPassportElement(
+            type=await to_web_api(o, o.type),
+            # One of “personal_details”, “passport”, “driver_license”, “identity_card”, “internal_passport”, “address”, “utility_bill”, “bank_statement”, “rental_agreement”, “passport_registration”, “temporary_registration”, “phone_number”, “email”.
+            # TypeSecureValueType = SecureValueTypePersonalDetails,SecureValueTypePassport,SecureValueTypeDriverLicense,SecureValueTypeIdentityCard,SecureValueTypeInternalPassport,SecureValueTypeAddress,SecureValueTypeUtilityBill,SecureValueTypeBankStatement,SecureValueTypeRentalAgreement,SecureValueTypePassportRegistration,SecureValueTypeTemporaryRegistration,SecureValueTypePhone,SecureValueTypeEmail
+            hash=to_native(o.hash),
+            data=await to_web_api(o.data),  # TypeSecureData = SecureData
+            phone_number=o.ph,
+            email=None,
+            files=None,
+            front_side=None,
+            reverse_side=None,
+            selfie=None,
+            translation=None,
+        )
+    if isinstance(o, TSecureCredentialsEncrypted):
+        return EncryptedCredentials(
+            data=o.data,
+            hash=o.hash,
+            secret=o.secret,
+        )
+    if isinstance(o, TPaymentRequestedInfo):
+        return OrderInfo(
+            name=o.name,
+            phone_number=o.phone,
+            email=o.email,
+            shipping_address=o.shipping_address,
+        )
+    if isinstance(o, TPeerChannel):
+        return load_chat(o.channel_id)
     if isinstance(o, TMessageEntityBlockquote):
         return MessageEntity(
             type='blockquote',  # Todo
@@ -524,7 +754,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             type='text_mention',
             offset=o.offset,
             length=o.length,
-            user=load_user(id=o.user_id),  # TODO: load user
+            user=load_user(user_id=o.user_id),  # TODO: load user
         )
     if isinstance(o, TMessageEntityPhone):
         return MessageEntity(
