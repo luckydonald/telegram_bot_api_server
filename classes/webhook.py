@@ -116,9 +116,22 @@ class TelegramClientWebhook(TelegramClient):
                 update: Update = await to_web_api(event)
             except TypeError as e:
                 logger.exception('Serializing element failed')
+
+                from datetime import datetime
+                with open(f'update_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as f:
+                    f.write(str(e))
+                # end with
+
                 # await event.respond()
                 raise events.StopPropagation
             # end def
+
+            from datetime import datetime
+            import json
+            with open(f'update_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.json', 'w') as f:
+                json.dump(update.to_array(), f)
+            # end with
+
             await self.send_event(update)
             # await event.respond()
             raise events.StopPropagation
