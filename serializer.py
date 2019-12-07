@@ -425,7 +425,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             caption=o.text if o.media else None,
             entities=None if o.media else await to_web_api(o.entities),
             caption_entities=await to_web_api(o.entities) if o.media else None,
-            document=None if any(o.photo, o.sticker, o.video, o.voice, o.video_note) else await to_web_api(o.document),
+            document=None if any([o.photo, o.sticker, o.video, o.voice, o.video_note]) else await to_web_api(o.document),
             # animation=await to_web_api(o.animation), TODO
             audio=await to_web_api(o.audio),
             # game=await to_web_api(o.game), TODO
