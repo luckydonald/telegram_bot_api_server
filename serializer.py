@@ -7,7 +7,8 @@ from typing import Union
 from luckydonaldUtils.exceptions import assert_type_or_raise
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types.receivable.inline import InlineQuery
-from pytgbot.api_types.receivable.media import ChatPhoto, UserProfilePhotos, PhotoSize, MessageEntity, Location
+from pytgbot.api_types.receivable.media import ChatPhoto, UserProfilePhotos, PhotoSize, MessageEntity, Location, Voice
+from pytgbot.api_types.receivable.media import Audio
 from pytgbot.api_types.receivable.media import Sticker, VideoNote
 from pytgbot.api_types.receivable.media import Contact, Venue, Video, Document, Animation
 from pytgbot.api_types.receivable.payments import ShippingQuery, PreCheckoutQuery, OrderInfo, Invoice
@@ -70,6 +71,10 @@ from telethon.tl.types import PhotoSizeEmpty as TPhotoSizeEmpty
 from telethon.tl.types import PhotoCachedSize as TPhotoCachedSize
 from telethon.tl.types import PhotoStrippedSize as TPhotoStrippedSize
 from telethon.tl.types import MaskCoords as TMaskCoords
+from telethon.tl.types import InputStickerSetID as InputStickerSetID
+from telethon.tl.types import InputStickerSetEmpty as InputStickerSetEmpty
+from telethon.tl.types import InputStickerSetShortName as InputStickerSetShortName
+from telethon.tl.types import InputStickerSetAnimatedEmoji as InputStickerSetAnimatedEmoji
 from telethon.utils import pack_bot_file_id
 
 __author__ = 'luckydonald'
@@ -229,7 +234,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
 
         for attr in o.attributes:
             if isinstance(attr, TDocumentAttributeAnimated):
-                continue
+                data['is_animated'] = True
             if isinstance(attr, TDocumentAttributeAudio):
                 data['duration'] = attr.duration
                 data['voice'] = attr.voice
@@ -243,8 +248,9 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
                 data['height'] = attr.h
                 # end if
             if isinstance(attr, TDocumentAttributeSticker):
+                sticker_set: Union[str, None] = await to_web_api(attr.stickerset)
                 data['emoji'] = attr.alt
-                data['set_name'] = attr.stickerset.short_name
+                data['set_name'] = sticker_set
                 data['mask'] = attr.mask
                 data['mask_position'] = await to_web_api(attr.mask_coords)
             # end if
@@ -277,6 +283,24 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
                     file_name=data.get('file_name'),
                     mime_type=data.get('mime_type'),
                     file_size=data.get('file_size'),
+                )
+            if isinstance(attr, TDocumentAttributeAudio):
+                if attr.voice:
+                    return Voice(
+                        file_id=data['file_id'],
+                        duration=data['duration'],
+                        mime_type=data.get('mime_type'),
+                        file_size=data.get('file_size'),
+                    )
+                # end if
+                return Audio(
+                    file_id=data['file_id'],
+                    duration=data['duration'],
+                    performer=data.get('performer'),
+                    title=data.get('title'),
+                    mime_type=data.get('mime_type'),
+                    file_size=data.get('file_size'),
+                    thumb=data.get('thumb'),
                 )
             if isinstance(attr, TDocumentAttributeVideo):
                 if attr.round_message:
@@ -408,12 +432,13 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             caption=o.text if o.media else None,
             entities=None if o.media else await to_web_api(o.entities),
             caption_entities=await to_web_api(o.entities) if o.media else None,
-            document=await to_web_api(o.document), # MessageMediaDocument
+            document=None if any(o.photo, o.sticker, o.video, o.voice, o.video_note) else await to_web_api(o.document),
             # animation=await to_web_api(o.animation), TODO
+            audio=await to_web_api(o.audio),
             # game=await to_web_api(o.game), TODO
             photo=await to_web_api(o.photo),
             sticker=await to_web_api(o.sticker),
-            video=await to_web_api(o.video),
+            video=None if o.video_note else await to_web_api(o.video),
             voice=await to_web_api(o.voice),
             video_note=await to_web_api(o.video_note),
             contact=await to_web_api(o.contact),
@@ -561,6 +586,15 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             currency=o.currency,
             total_amount=o.total_amount,
         )
+    if isinstance(o, InputStickerSetID):
+        return None
+        pass
+    if isinstance(o, InputStickerSetEmpty):
+        return ''
+    if isinstance(o, InputStickerSetShortName):
+        return o.short_name
+    if isinstance(o, InputStickerSetAnimatedEmoji):
+        return None
     if isinstance(o, datetime):
         return int(o.timestamp())
     if isinstance(o, tuple):
