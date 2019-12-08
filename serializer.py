@@ -503,20 +503,8 @@ async def to_web_api(
             contact=await to_web_api(o.contact, client),
             location=await to_web_api(o.geo, client),
             venue=await to_web_api(o.venue, client),
-            # new_chat_members=await to_web_api(o.new_chat_members), TODO
-            # left_chat_member=await to_web_api(o.left_chat_member), TODO
-            # new_chat_title=await to_web_api(o.), TODO
-            # new_chat_photo=, TODO
-            # delete_chat_photo=, TODO
-            # group_chat_created=, TODO
-            # supergroup_chat_created=, TODO
-            # channel_chat_created=, TODO
-            # migrate_to_chat_id=, TODO
-            # migrate_from_chat_id=, TODO
             # pinned_message=, TODO
             invoice=await to_web_api(o.invoice, client),
-            # successful_payment=o TODO
-            # connected_website=o TODO
         )
     if isinstance(o, TMessageService):
         if isinstance(o.action, TMessageActionChatAddUser):
