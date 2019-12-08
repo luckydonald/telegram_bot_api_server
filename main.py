@@ -153,6 +153,6 @@ if __name__ == '__main__':
         except ImportError:
             pass
         # end try
-        web.run_app(app, port=8081, reuse_address=True, reuse_port=True)
+        web.run_app(app, port=8080, reuse_address=True, reuse_port=True)
     # end iff
 # end if
