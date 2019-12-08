@@ -33,7 +33,7 @@ class MyTestCase(asynctest.TestCase):
                 to_id=PeerChannel(
                     channel_id=1032895287
                 ),
-                date=datetime(2019, 12, 7, 18, 22, 54, tzinfo=timezone.utc),
+                date=datetime.datetime(2019, 12, 7, 18, 22, 54, tzinfo=datetime.timezone.utc),
                 action=MessageActionChatAddUser(users=[357231198]),
                 out=False, mentioned=False, media_unread=False, silent=False, post=False, legacy=False,
                 from_id=10717954, reply_to_msg_id=None
@@ -98,7 +98,7 @@ class MyTestCase(asynctest.TestCase):
                 to_id=PeerChannel(
                     channel_id=1443587969
                 ),
-                date=datetime(2019, 12, 7, 23, 31, tzinfo=timezone.utc),
+                date=datetime.datetime(2019, 12, 7, 23, 31, tzinfo=datetime.timezone.utc),
                 action=MessageActionChatEditTitle(title='Derp [test]'),
                 out=False, mentioned=False, media_unread=False, silent=False, post=False, legacy=False,
                 from_id=10717954, reply_to_msg_id=None
