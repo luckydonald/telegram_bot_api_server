@@ -7,6 +7,8 @@ from telethon.tl.patched import *
 import datetime
 from typing import Dict
 
+from serializer import to_web_api
+
 false = False
 true = True
 
@@ -45,10 +47,8 @@ class MyTestCase(asynctest.TestCase):
             pts=4320,
             pts_count=1
         )
-        from serializer import to_web_api
-        x = await to_web_api(event, None)
 
-        y = {
+        expected = {
             "message": {
                 "chat": {
                     "id": -1001032895287,
@@ -87,9 +87,13 @@ class MyTestCase(asynctest.TestCase):
             },
             "update_id": 4320
         }
+
+        result = await to_web_api(event, None)
+        result = result.to_array()
+
         self.assertEqual(
-            json.dumps(x.to_array(), indent=2, sort_keys=True),
-            json.dumps(y, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            json.dumps(expected, indent=2, sort_keys=True),
             'generated vs real one'
         )
     # end def
@@ -112,12 +116,10 @@ class MyTestCase(asynctest.TestCase):
                 reply_to_msg_id=None
             ),
             pts=171,
-            pts_count=1)
+            pts_count=1
+        )
 
-        from serializer import to_web_api
-        x = await to_web_api(event, None)
-
-        y = {
+        expected = {
             "message": {
                 "chat": {
                     "id": -1001443587969,
@@ -137,10 +139,14 @@ class MyTestCase(asynctest.TestCase):
             },
             "update_id": 862109754
         }
+
+        result = await to_web_api(event, None)
+        result = result.to_array()
+
         self.assertEqual(
-            json.dumps(x.to_array(), indent=2, sort_keys=True),
-            json.dumps(y, indent=2, sort_keys=True),
-            'generated vs real one'
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            'real one vs generated one'
         )
     # end def
 
@@ -178,10 +184,7 @@ class MyTestCase(asynctest.TestCase):
             pts_count=1
         )
 
-        from serializer import to_web_api
-        x = await to_web_api(event, None)
-
-        y = {
+        expected = {
             "message": {
                 "chat": {
                     "id": -1001443587969,
@@ -201,10 +204,14 @@ class MyTestCase(asynctest.TestCase):
             },
             "update_id": 184
         }
+
+        result = await to_web_api(event, None)
+        result = result.to_array()
+
         self.assertEqual(
-            json.dumps(x.to_array(), indent=2, sort_keys=True),
-            json.dumps(y, indent=2, sort_keys=True),
-            'generated vs real one'
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            'real one vs generated one'
         )
     # end def
 
@@ -253,19 +260,23 @@ class MyTestCase(asynctest.TestCase):
                 post_author=None,
                 grouped_id=None,
                 restriction_reason=[]
-            ), pts=20134, pts_count=1)
+            ),
+            pts=20134,
+            pts_count=1
+        )
 
-        from serializer import to_web_api
-        x = await to_web_api(event, None)
-
-        y = {
+        expected = {
             "message": "see test_channel_message_2_forwareded, just witout the forward.",
             "update_id": 184
         }
+
+        result = await to_web_api(event, None)
+        result = result.to_array()
+
         self.assertEqual(
-            json.dumps(x.to_array(), indent=2, sort_keys=True),
-            json.dumps(y, indent=2, sort_keys=True),
-            'generated vs real one'
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            'real one vs generated one'
         )
     # end def
 
@@ -339,10 +350,7 @@ class MyTestCase(asynctest.TestCase):
             pts_count=1
         )
 
-        from serializer import to_web_api
-        x = await to_web_api(event, client)
-
-        y = {
+        expected = {
             "message": {
                 "caption": "No-nonsense sorting algorithm\nhttps://redd.it/e7sjqu\n\nby @programmer_humor",
                 "caption_entities": [
@@ -396,10 +404,23 @@ class MyTestCase(asynctest.TestCase):
             },
             "update_id": 445804458
         }
+
+        from serializer import to_web_api
+        result = await to_web_api(event, client)
+        result = result.to_array()
+
+        # for i, result_photo in enumerate(expected["message"]["photo"]):
+        #     expected_photo = result["message"]["photo"][i]
+        #     self.assertEquals(len(expected_photo['file_id']), len(result_photo['file_id']), "length should be same")
+        #     # now delete the file id's as we don't like that to butcher up the comparision
+        #     del result_photo['file_id']
+        #     del expected_photo['file_id']
+        # # end if
+
         self.assertEqual(
-            json.dumps(x.to_array(), indent=2, sort_keys=True),
-            json.dumps(y, indent=2, sort_keys=True),
-            'generated vs real one'
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            'real one vs generated one'
         )
     # end def
 # end class
