@@ -440,227 +440,225 @@ async def to_web_api(
                 ),
             ],
         )
-    if isinstance(o, TMessage):
-        reply = None
-        if o.is_reply:
-            reply = await o.get_reply_message()
-        # end if
-        forward_date = None
-        forward_from = None
-        forward_from_chat = None
-        if o.forward:
-            forward_date = o.fwd_from.date
-            forward_from = await o.forward.get_sender()
-            forward_from_chat = await o.forward.get_chat()
-        # end if
-        chat: Chat = await to_web_api(await client.get_entity(o.chat_id), client, user_as_chat=True)
-        from_peer: Union[None, User] = None
-        if chat and chat.type != TYPE_CHANNEL:
-            from_peer = await to_web_api(await client.get_entity(o.sender_id), client)
-        # end if
-        return Message(
-            message_id=o.id,
-            date=await to_web_api(o.date, client),
-            chat=chat,
-            from_peer=from_peer,  # must be None for 'channel's.
-            forward_from=await to_web_api(forward_from, client),
-            forward_from_chat=await to_web_api(forward_from_chat, client),
-            # TODO: forward_signature=,
-            forward_date=await to_web_api(forward_date, client),
-            reply_to_message=await to_web_api(reply, client),
-            edit_date=await to_web_api(o.edit_date, client),
-            # TODO: media_group_id=,
-            author_signature=o.fwd_from.post_author if o.fwd_from else None,
-            text=None if o.media else o.raw_text,
-            caption=o.raw_text if o.media else None,
-            entities=None if o.media else await to_web_api(o.entities, client),
-            caption_entities=await to_web_api(o.entities, client) if o.media else None,
-            document=None if any([o.photo, o.sticker, o.video, o.voice, o.video_note]) else await to_web_api(o.document, client),
-            # animation=await to_web_api(o.animation), TODO
-            audio=await to_web_api(o.audio, client),
-            # game=await to_web_api(o.game), TODO
-            photo=await to_web_api(o.photo, client),
-            sticker=await to_web_api(o.sticker, client),
-            video=None if o.video_note else await to_web_api(o.video, client),
-            voice=await to_web_api(o.voice, client),
-            video_note=await to_web_api(o.video_note, client),
-            contact=await to_web_api(o.contact, client),
-            location=await to_web_api(o.geo, client),
-            venue=await to_web_api(o.venue, client),
-            # pinned_message=, TODO
-            invoice=await to_web_api(o.invoice, client),
-        )
-    if isinstance(o, TMessageService):
+    if isinstance(o, (TMessage, TMessageService)):
         chat: Chat = await to_web_api(await client.get_entity(o.chat_id), client, user_as_chat=True)
         from_peer: Union[None, User] = None
         if chat and chat.type != TYPE_CHANNEL:
             from_peer = await to_web_api(await client.get_entity(o.sender_id), client)
         # end if
         date = await to_web_api(o.date, client)
-        if isinstance(o.action, TMessageActionChatAddUser):
+
+        if isinstance(o, TMessage):
+            reply = None
+            if o.is_reply:
+                reply = await o.get_reply_message()
+            # end if
+            forward_date = None
+            forward_from = None
+            forward_from_chat = None
+            if o.forward:
+                forward_date = o.fwd_from.date
+                forward_from = await o.forward.get_sender()
+                forward_from_chat = await o.forward.get_chat()
+            # end if
             return Message(
                 message_id=o.id,
                 date=date,
                 chat=chat,
-                from_peer=from_peer,
-                new_chat_members=[load_user(u) for u in o.action.users],
-                invoice=None,
+                from_peer=from_peer,  # must be None for 'channel's.
+                forward_from=await to_web_api(forward_from, client),
+                forward_from_chat=await to_web_api(forward_from_chat, client),
+                # TODO: forward_signature=,
+                forward_date=await to_web_api(forward_date, client),
+                reply_to_message=await to_web_api(reply, client),
+                edit_date=await to_web_api(o.edit_date, client),
+                # TODO: media_group_id=,
+                author_signature=o.fwd_from.post_author if o.fwd_from else None,
+                text=None if o.media else o.raw_text,
+                caption=o.raw_text if o.media else None,
+                entities=None if o.media else await to_web_api(o.entities, client),
+                caption_entities=await to_web_api(o.entities, client) if o.media else None,
+                document=None if any([o.photo, o.sticker, o.video, o.voice, o.video_note]) else await to_web_api(o.document, client),
+                # animation=await to_web_api(o.animation), TODO
+                audio=await to_web_api(o.audio, client),
+                # game=await to_web_api(o.game), TODO
+                photo=await to_web_api(o.photo, client),
+                sticker=await to_web_api(o.sticker, client),
+                video=None if o.video_note else await to_web_api(o.video, client),
+                voice=await to_web_api(o.voice, client),
+                video_note=await to_web_api(o.video_note, client),
+                contact=await to_web_api(o.contact, client),
+                location=await to_web_api(o.geo, client),
+                venue=await to_web_api(o.venue, client),
+                # pinned_message=, TODO
+                invoice=await to_web_api(o.invoice, client),
             )
-        # end if
-        if isinstance(o.action, TMessageActionChatEditTitle):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                new_chat_title=o.action.title,
-                invoice=None,
-            )
-        # end if
-        if isinstance(o.action, TMessageActionChatEditPhoto):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                new_chat_photo=await to_web_api(o.action.photo, client),
-                invoice=None,
-            )
-        # end if
-        if isinstance(o.action, TMessageActionChatDeletePhoto):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                delete_chat_photo=True,
-                invoice=None,
-            )
-        if isinstance(o.action, TMessageActionChatDeleteUser):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                left_chat_member=load_user(o.action.user_id),
-                invoice=None,
-            )
-        # end if
-        if isinstance(o.action, TMessageActionChatJoinedByLink):
-            return Message(  # TODO is swapping from_peer(inviter_id) and new_chat_members(from_id), is that correct?
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                new_chat_members=[load_user(o.from_id)],
-                invoice=None,
-            )
-        # end if
-        if isinstance(o.action, (TMessageActionChannelCreate, TMessageActionChatCreate)):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                group_chat_created=chat.type == 'group',  # either group, chat or supergroup
-                supergroup_chat_created=chat.type == 'supergroup',  # either group, chat or supergroup
-                channel_chat_created=chat.type == 'chat',  # either group, chat or supergroup
-                invoice=None,
-            )
-        # end if
-        if isinstance(o.action, TMessageActionChatMigrateTo):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                migrate_to_chat_id=o.action.channel_id,
-                invoice=None,
-            )
-        # end if
-        if isinstance(o.action, TMessageActionChannelMigrateFrom):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                migrate_from_chat_id=o.action.chat_id,
-                invoice=None,
-            )
-        # end if
-        if isinstance(o.action, TMessageActionPinMessage):
-            # TODO
-            # maybe o.message?
-            # or we have to load the message with o.id, like in get_pinned_message()
-            # raise ValueError('Pins need to load the message')
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                pinned_message=load_message(o.to_id, o.from_id),
-                invoice=None,
-            )
-        # end if
-        if isinstance(o.action, TMessageActionPaymentSentMe):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                invoice=None,
-                successful_payment=await to_web_api(o.action, client),
-            )
-        # end if
-        if isinstance(o.action, TMessageActionCustomAction):
-            raise ValueError(f'Unknown custom action {o.action.message!r} (o.action = TMessageActionCustomAction)')
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                invoice=None,
-            )
-        # end if
-        if isinstance(o.action, TMessageActionBotAllowed):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                invoice=None,
-                connected_website=o.action.domain,
-            )
-        # end if
-        if isinstance(o.action, TMessageActionSecureValuesSentMe):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                invoice=None,
-                passport_data=await to_web_api(o.action, client)
-            )
-        # end if
-        if isinstance(o.action, TMessageActionChatAddUser):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                invoice=None,
-            )
-        # end if
-        if isinstance(o.action, TMessageActionChatAddUser):
-            return Message(
-                message_id=o.id,
-                date=date,
-                chat=chat,
-                from_peer=from_peer,
-                invoice=None,
-            )
-        # end if
-    # end if TMessageService
+        else:  # must be TMessageService
+            assert isinstance(o, TMessageService)
+            if isinstance(o.action, TMessageActionChatAddUser):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    new_chat_members=[load_user(u) for u in o.action.users],
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionChatEditTitle):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    new_chat_title=o.action.title,
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionChatEditPhoto):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    new_chat_photo=await to_web_api(o.action.photo, client),
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionChatDeletePhoto):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    delete_chat_photo=True,
+                    invoice=None,
+                )
+            if isinstance(o.action, TMessageActionChatDeleteUser):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    left_chat_member=load_user(o.action.user_id),
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionChatJoinedByLink):
+                return Message(  # TODO is swapping from_peer(inviter_id) and new_chat_members(from_id), is that correct?
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    new_chat_members=[load_user(o.from_id)],
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, (TMessageActionChannelCreate, TMessageActionChatCreate)):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    group_chat_created=chat.type == 'group',  # either group, chat or supergroup
+                    supergroup_chat_created=chat.type == 'supergroup',  # either group, chat or supergroup
+                    channel_chat_created=chat.type == 'chat',  # either group, chat or supergroup
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionChatMigrateTo):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    migrate_to_chat_id=o.action.channel_id,
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionChannelMigrateFrom):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    migrate_from_chat_id=o.action.chat_id,
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionPinMessage):
+                # TODO
+                # maybe o.message?
+                # or we have to load the message with o.id, like in get_pinned_message()
+                # raise ValueError('Pins need to load the message')
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    pinned_message=load_message(o.to_id, o.from_id),
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionPaymentSentMe):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    invoice=None,
+                    successful_payment=await to_web_api(o.action, client),
+                )
+            # end if
+            if isinstance(o.action, TMessageActionCustomAction):
+                raise ValueError(f'Unknown custom action {o.action.message!r} (o.action = TMessageActionCustomAction)')
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionBotAllowed):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    invoice=None,
+                    connected_website=o.action.domain,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionSecureValuesSentMe):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    invoice=None,
+                    passport_data=await to_web_api(o.action, client)
+                )
+            # end if
+            if isinstance(o.action, TMessageActionChatAddUser):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    invoice=None,
+                )
+            # end if
+            if isinstance(o.action, TMessageActionChatAddUser):
+                return Message(
+                    message_id=o.id,
+                    date=date,
+                    chat=chat,
+                    from_peer=from_peer,
+                    invoice=None,
+                )
+            # end if
+        # end if TMessageService
     if isinstance(o, TMessageActionPaymentSentMe):
         return SuccessfulPayment(
             currency=o.currency,
