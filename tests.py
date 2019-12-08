@@ -35,17 +35,10 @@ class MyTestCase(asynctest.TestCase):
                 ),
                 date=datetime(2019, 12, 7, 18, 22, 54, tzinfo=timezone.utc),
                 action=MessageActionChatAddUser(users=[357231198]),
-                out=False,
-                mentioned=False,
-                media_unread=False,
-                silent=False,
-                post=False,
-                legacy=False,
-                from_id=10717954,
-                reply_to_msg_id=None
+                out=False, mentioned=False, media_unread=False, silent=False, post=False, legacy=False,
+                from_id=10717954, reply_to_msg_id=None
             ),
-            pts=4320,
-            pts_count=1
+            pts=4320, pts_count=1
         )
 
         expected = {
@@ -101,22 +94,16 @@ class MyTestCase(asynctest.TestCase):
     async def test_channel_rename(self):
         event = UpdateNewChannelMessage(
             message=MessageService(
-                id=168, to_id=PeerChannel(
+                id=168,
+                to_id=PeerChannel(
                     channel_id=1443587969
                 ),
                 date=datetime(2019, 12, 7, 23, 31, tzinfo=timezone.utc),
                 action=MessageActionChatEditTitle(title='Derp [test]'),
-                out=False,
-                mentioned=False,
-                media_unread=False,
-                silent=False,
-                post=False,
-                legacy=False,
-                from_id=10717954,
-                reply_to_msg_id=None
+                out=False, mentioned=False, media_unread=False, silent=False, post=False, legacy=False,
+                from_id=10717954, reply_to_msg_id=None
             ),
-            pts=171,
-            pts_count=1
+            pts=171, pts_count=1
         )
 
         expected = {
@@ -158,30 +145,12 @@ class MyTestCase(asynctest.TestCase):
                     channel_id=1443587969
                 ),
                 date=datetime.datetime(2019, 12, 8, 1, 22, 38, tzinfo=datetime.timezone.utc),
-                message='🧑\u200d💻',
-                out=False,
-                mentioned=False,
-                media_unread=False,
-                silent=False,
-                post=False,
-                from_scheduled=False,
-                legacy=False,
-                edit_hide=False,
-                from_id=10717954,
-                fwd_from=None,
-                via_bot_id=None,
-                reply_to_msg_id=None,
-                media=None,
-                reply_markup=None,
-                entities=[],
-                views=None,
-                edit_date=None,
-                post_author=None,
-                grouped_id=None,
-                restriction_reason=[]
+                message='🧑\u200d💻', out=False, mentioned=False, media_unread=False, silent=False, post=False,
+                from_scheduled=False, legacy=False, edit_hide=False, from_id=10717954, fwd_from=None, via_bot_id=None,
+                reply_to_msg_id=None, media=None, reply_markup=None, entities=[], views=None, edit_date=None,
+                post_author=None, grouped_id=None, restriction_reason=[]
             ),
-            pts=187,
-            pts_count=1
+            pts=187, pts_count=1
         )
 
         expected = {
@@ -222,18 +191,8 @@ class MyTestCase(asynctest.TestCase):
                 to_id=PeerChannel(channel_id=1127537892),
                 date=datetime.datetime(2019, 12, 8, 12, 26, 9, tzinfo=datetime.timezone.utc),
                 message='No-nonsense sorting algorithm\nhttps://redd.it/e7sjqu\n\nby @programmer_humor',
-                out=False,
-                mentioned=False,
-                media_unread=False,
-                silent=False,
-                post=True,
-                from_scheduled=False,
-                legacy=False,
-                edit_hide=False,
-                from_id=None,
-                fwd_from=None,
-                via_bot_id=None,
-                reply_to_msg_id=None,
+                out=False, mentioned=False, media_unread=False, silent=False, post=True, from_scheduled=False,
+                legacy=False, edit_hide=False, from_id=None, fwd_from=None, via_bot_id=None, reply_to_msg_id=None,
                 media=MessageMediaPhoto(
                     photo=Photo(
                         id=5433926979075288090,
@@ -255,14 +214,9 @@ class MyTestCase(asynctest.TestCase):
                     MessageEntityUrl(offset=30, length=22),
                     MessageEntityMention(offset=57, length=17)
                 ],
-                views=1,
-                edit_date=None,
-                post_author=None,
-                grouped_id=None,
-                restriction_reason=[]
+                views=1, edit_date=None, post_author=None, grouped_id=None, restriction_reason=[]
             ),
-            pts=20134,
-            pts_count=1
+            pts=20134, pts_count=1
         )
 
         expected = {
@@ -299,15 +253,8 @@ class MyTestCase(asynctest.TestCase):
                 to_id=PeerChannel(channel_id=1443587969),
                 date=datetime.datetime(2019, 12, 8, 12, 33, 53, tzinfo=datetime.timezone.utc),
                 message='No-nonsense sorting algorithm\nhttps://redd.it/e7sjqu\n\nby @programmer_humor',
-                out=False,
-                mentioned=False,
-                media_unread=False,
-                silent=False,
-                post=False,
-                from_scheduled=False,
-                legacy=False,
-                edit_hide=False,
-                from_id=10717954,
+                out=False, mentioned=False, media_unread=False, silent=False, post=False, from_scheduled=False,
+                legacy=False, edit_hide=False, from_id=10717954,
                 fwd_from=MessageFwdHeader(
                     date=datetime.datetime(2019, 12, 8, 12, 26, 9, tzinfo=datetime.timezone.utc),
                     from_id=None,
@@ -318,8 +265,7 @@ class MyTestCase(asynctest.TestCase):
                     saved_from_peer=None,
                     saved_from_msg_id=None
                 ),
-                via_bot_id=None,
-                reply_to_msg_id=None,
+                via_bot_id=None,  reply_to_msg_id=None,
                 media=MessageMediaPhoto(
                     photo=Photo(
                         id=5433926979075288090,
@@ -331,8 +277,7 @@ class MyTestCase(asynctest.TestCase):
                             PhotoSize(type='m', location=FileLocationToBeDeprecated(volume_id=257712969, local_id=167617), w=320, h=176, size=16636),
                             PhotoSize(type='x', location=FileLocationToBeDeprecated(volume_id=257712969, local_id=167615), w=720, h=395, size=34533)
                         ],
-                        dc_id=2,
-                        has_stickers=False
+                        dc_id=2, has_stickers=False
                     ),
                     ttl_seconds=None
                 ),
@@ -341,14 +286,9 @@ class MyTestCase(asynctest.TestCase):
                     MessageEntityUrl(offset=30, length=22),
                     MessageEntityMention(offset=57, length=17)
                 ],
-                views=366,
-                edit_date=None,
-                post_author=None,
-                grouped_id=None,
-                restriction_reason=[]
+                views=366, edit_date=None, post_author=None, grouped_id=None, restriction_reason=[]
             ),
-            pts=200,
-            pts_count=1
+            pts=200, pts_count=1
         )
 
         expected = {
@@ -529,7 +469,66 @@ class MyTestCase(asynctest.TestCase):
             'real one vs generated one'
         )
     # end def
+
+
+    async def test_channel_post_with_signature(self):
+        client = FakeClient(
+            lookups={
+                10717954: User(id=10717954, is_self=False, contact=False, mutual_contact=False, deleted=False, bot=False, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, access_hash=-2993714178598625124, first_name='luckydonald', last_name=None, username='luckydonald', phone=None, photo=UserProfilePhoto(photo_id=46033262366284583, photo_small=FileLocationToBeDeprecated(volume_id=263834989, local_id=209571), photo_big=FileLocationToBeDeprecated(volume_id=263834989, local_id=209573), dc_id=2), status=UserStatusRecently(), bot_info_version=None, restriction_reason=[], bot_inline_placeholder=None, lang_code='en'),
+                -1001443587969: Channel(id=1443587969, title='Derp [test] rename', photo=ChatPhoto(photo_small=FileLocationToBeDeprecated(volume_id=226613135, local_id=158488), photo_big=FileLocationToBeDeprecated(volume_id=226613135, local_id=158490), dc_id=2), date=datetime.datetime(2019, 6, 16, 22, 38, 57, tzinfo=datetime.timezone.utc), version=0, creator=False, left=False, broadcast=False, verified=False, megagroup=True, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-7101147752375680853, username=None, restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=ChatBannedRights(until_date=datetime.datetime(2038, 1, 19, 3, 14, 7, tzinfo=datetime.timezone.utc), view_messages=False, send_messages=False, send_media=False, send_stickers=False, send_gifs=False, send_games=False, send_inline=False, embed_links=False, send_polls=False, change_info=False, invite_users=False, pin_messages=False), participants_count=None),
+                -1001391635462: Channel(id=1391635462, title='〠 R2Test 〠', photo=ChatPhotoEmpty(), date=datetime.datetime(2019, 4, 4, 8, 47, 30, tzinfo=datetime.timezone.utc), version=0, creator=False, left=True, broadcast=True, verified=False, megagroup=False, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-3128376223792150891, username='R2Test', restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=None, participants_count=None),
+            },
+            update_id=445804458
+        )
+        event = UpdateNewChannelMessage(
+            message=Message(
+                id=37840,
+                to_id=PeerChannel(channel_id=1391635462),
+                date=datetime.datetime(2019, 12, 8, 16, 44, 20, tzinfo=datetime.timezone.utc),
+                message='test', out=False, mentioned=False, media_unread=False, silent=False, post=True,
+                from_scheduled=False, legacy=False, edit_hide=False, from_id=None, fwd_from=None, via_bot_id=None,
+                reply_to_msg_id=None, media=None, reply_markup=None, entities=[], views=1, edit_date=None,
+                post_author='luckydonald', grouped_id=None, restriction_reason=[]
+            ), pts=37885, pts_count=1
+        )
+
+        expected = {
+            "channel_post": {
+                "author_signature": "luckydonald",
+                "chat": {
+                    "id": -1001391635462,
+                    "title": "〠 R2Test 〠",
+                    "type": "channel",
+                    "username": "R2Test"
+                },
+                "date": 1575823460,
+                "message_id": 37840,
+                "text": "test"
+            },
+            "update_id": 862109776
+        }
+
+        from serializer import to_web_api
+        result = await to_web_api(event, client)
+        result = result.to_array()
+
+        # for i, result_photo in enumerate(expected["message"]["photo"]):
+        #     expected_photo = result["message"]["photo"][i]
+        #     self.assertEquals(len(expected_photo['file_id']), len(result_photo['file_id']), "length should be same")
+        #     # now delete the file id's as we don't like that to butcher up the comparision
+        #     del result_photo['file_id']
+        #     del expected_photo['file_id']
+        # # end if
+
+        self.assertEqual(
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            'real one vs generated one'
+        )
+    # end def
 # end class
+
 
 if __name__ == '__main__':
     unittest.main()
+# end if
