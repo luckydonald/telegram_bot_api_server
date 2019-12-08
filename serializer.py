@@ -461,9 +461,11 @@ async def to_web_api(
         if o.is_reply:
             reply = await o.get_reply_message()
         # end if
+        forward_date = None
         forward_from = None
         forward_from_chat = None
         if o.forward:
+            forward_date = o.fwd_from.date
             forward_from = await o.forward.get_sender()
             forward_from_chat = await o.forward.get_chat()
         # end if
@@ -480,7 +482,7 @@ async def to_web_api(
             forward_from=await to_web_api(forward_from, client),
             forward_from_chat=await to_web_api(forward_from_chat, client),
             # TODO: forward_signature=,
-            forward_date=await to_web_api(o.forward.date, client) if o.fwd_from else None,
+            forward_date=await to_web_api(forward_date, client),
             reply_to_message=await to_web_api(reply, client),
             edit_date=await to_web_api(o.edit_date, client),
             # TODO: media_group_id=,
