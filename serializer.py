@@ -155,7 +155,7 @@ async def to_web_api(
                 update_id=client.update_id,
                 inline_query=await to_web_api(o, client, prefer_update=False)
             )
-        user = await client.get_entity(o.user_id)
+        user = await get_entity(client, o.user_id)
         return InlineQuery(
             id=o.query_id,
             from_peer=await to_web_api(user, client),
@@ -191,7 +191,7 @@ async def to_web_api(
                 shipping_query=await to_web_api(o, client, prefer_update=False),
             )
         # end if
-        user = await client.get_entity(o.user_id)
+        user = await get_entity(client, o.user_id)
         user = await to_web_api(user)
         return ShippingQuery(
             id=o.query_id,
@@ -206,7 +206,7 @@ async def to_web_api(
                 pre_checkout_query=await to_web_api(o, client, prefer_update=False),
             )
         # end if
-        user = await client.get_entity(o.user_id)
+        user = await get_entity(client, o.user_id)
         user = await to_web_api(user)
         return PreCheckoutQuery(
             id=o.query_id,
@@ -434,10 +434,10 @@ async def to_web_api(
             ],
         )
     if isinstance(o, (TMessage, TMessageService)):
-        chat: Chat = await to_web_api(await client.get_entity(o.chat_id), client, user_as_chat=True)
+        chat: Chat = await to_web_api(await get_entity(client, o.chat_id), client, user_as_chat=True)
         from_peer: Union[None, User] = None
         if chat and chat.type != TYPE_CHANNEL:  # supposed to be None for 'channel's.
-            from_peer = await client.get_entity(o.sender_id)
+            from_peer = await get_entity(client, o.sender_id)
             from_peer = await to_web_api(from_peer, client)
         # end if
         date = await to_web_api(o.date, client)
@@ -460,12 +460,12 @@ async def to_web_api(
                     # e.g. 1127537892 -> -1001127537892
                     channel_id = as_channel_id(o.fwd_from.channel_id)
 
-                    forward_from_chat = await client.get_entity(channel_id)
+                    forward_from_chat = await get_entity(client, channel_id)
                     forward_from_chat = await to_web_api(forward_from_chat, client)
                     forward_from_message_id = o.fwd_from.channel_post
                 # end if
                 if o.fwd_from.from_id:
-                    forward_from = await client.get_entity(o.fwd_from.from_id)
+                    forward_from = await get_entity(client, o.fwd_from.from_id)
                     forward_from = await to_web_api(forward_from, client)
                 # end if
                 forward_signature = o.fwd_from.post_author
@@ -511,7 +511,7 @@ async def to_web_api(
             # end if
             users = []
             for user_id in o.action.users:
-                user = await client.get_entity(o.user_id)
+                user = await get_entity(client, o.user_id)
                 user = await to_web_api(user_id)
                 users.append(user)
             # end for
@@ -555,7 +555,7 @@ async def to_web_api(
                     invoice=None,
                 )
             if isinstance(o.action, TMessageActionChatDeleteUser):
-                user = await client.get_entity(o.action.user_id)
+                user = await get_entity(client, o.action.user_id)
                 user = await to_web_api(user)
                 return Message(
                     message_id=o.id,
@@ -567,7 +567,7 @@ async def to_web_api(
                 )
             # end if
             if isinstance(o.action, TMessageActionChatJoinedByLink):
-                user = await client.get_entity(o.from_id)
+                user = await get_entity(client, o.from_id)
                 user = await to_web_api(user)
                 # TODO is swapping from_peer(inviter_id) and new_chat_members(from_id), is that correct?
                 return Message(
@@ -729,7 +729,7 @@ async def to_web_api(
             shipping_address=o.shipping_address,
         )
     if isinstance(o, TPeerChannel):
-        peer = await client.get_entity(o.to_id)
+        peer = await get_entity(client, o)
         return await to_web_api(peer, client)
     if isinstance(o, TMessageEntityBlockquote):
         return MessageEntity(
@@ -786,7 +786,7 @@ async def to_web_api(
             length=o.length,
         )
     if isinstance(o, TMessageEntityMentionName):
-        user = await client.get_entity(o.user_id)
+        user = await get_entity(client, o.user_id)
         user = await to_web_api(user)
         return MessageEntity(
             type='text_mention',
@@ -889,4 +889,15 @@ async def to_web_api(
     if o is None:
         return None
     raise TypeError(f'Type not handled: {type(o)} with value {o!r}')
+
+
+async def get_entity(client, peer):
+    """ wrapper for debug. """
+    entity = await client.get_entity(peer)
+    with open(f'logs/peer_{peer!s}.txt', 'w') as f:
+        f.write('from telethon.tl.types import *\nfrom telethon.tl.patched import *\nimport datetime\n\n')
+        f.write(f'input = {peer}')
+        f.write(f'result = {entity!s}')
+    # end with
+    return entity
 # end def

@@ -7,7 +7,10 @@ from telethon.tl.patched import *
 import datetime
 from typing import Dict
 
+import serializer
 from serializer import to_web_api
+
+serializer.get_entity = lambda c, o: c.get_entity(o)
 
 false = False
 true = True
