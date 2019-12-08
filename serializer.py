@@ -522,6 +522,7 @@ async def to_web_api(
                 new_chat_members=[load_user(u) for u in o.action.users],
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, TMessageActionChatEditTitle):
             return Message(
                 message_id=o.id,
@@ -531,6 +532,7 @@ async def to_web_api(
                 new_chat_title=o.action.title,
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, TMessageActionChatEditPhoto):
             return Message(
                 message_id=o.id,
@@ -540,6 +542,7 @@ async def to_web_api(
                 new_chat_photo=await to_web_api(o.action.photo, client),
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, TMessageActionChatDeletePhoto):
             return Message(
                 message_id=o.id,
@@ -558,6 +561,7 @@ async def to_web_api(
                 left_chat_member=load_user(o.action.user_id),
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, TMessageActionChatJoinedByLink):
             return Message(  # TODO is swapping from_peer(inviter_id) and new_chat_members(from_id), is that correct?
                 message_id=o.id,
@@ -567,6 +571,7 @@ async def to_web_api(
                 new_chat_members=[load_user(o.from_id)],
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, (TMessageActionChannelCreate, TMessageActionChatCreate)):
             raise ValueError('Eeee? is this channel or supergroup?')
             chat: Chat = await to_web_api(o.to_id, client)
@@ -580,6 +585,7 @@ async def to_web_api(
                 channel_chat_created=chat.type == 'chat',  # either group, chat or supergroup
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, TMessageActionChatMigrateTo):
             return Message(
                 message_id=o.id,
@@ -589,6 +595,7 @@ async def to_web_api(
                 migrate_to_chat_id=o.action.channel_id,
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, TMessageActionChannelMigrateFrom):
             return Message(
                 message_id=o.id,
@@ -598,6 +605,7 @@ async def to_web_api(
                 migrate_from_chat_id=o.action.chat_id,
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, TMessageActionPinMessage):
             # TODO
             # maybe o.message?
@@ -611,6 +619,7 @@ async def to_web_api(
                 pinned_message=load_message(o.to_id, o.from_id),
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, TMessageActionPaymentSentMe):
             return Message(
                 message_id=o.id,
@@ -620,6 +629,7 @@ async def to_web_api(
                 invoice=None,
                 successful_payment=await to_web_api(o.action, client),
             )
+        # end if
         if isinstance(o.action, TMessageActionCustomAction):
             raise ValueError(f'Unknown custom action {o.action.message!r} (o.action = TMessageActionCustomAction)')
             return Message(
@@ -629,6 +639,7 @@ async def to_web_api(
                 from_peer=from_peer,
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, TMessageActionBotAllowed):
             return Message(
                 message_id=o.id,
@@ -638,6 +649,7 @@ async def to_web_api(
                 invoice=None,
                 connected_website=o.action.domain,
             )
+        # end if
         if isinstance(o.action, TMessageActionSecureValuesSentMe):
             return Message(
                 message_id=o.id,
@@ -647,6 +659,7 @@ async def to_web_api(
                 invoice=None,
                 passport_data=await to_web_api(o.action, client)
             )
+        # end if
         if isinstance(o.action, TMessageActionChatAddUser):
             return Message(
                 message_id=o.id,
@@ -655,6 +668,7 @@ async def to_web_api(
                 from_peer=from_peer,
                 invoice=None,
             )
+        # end if
         if isinstance(o.action, TMessageActionChatAddUser):
             return Message(
                 message_id=o.id,
@@ -663,6 +677,8 @@ async def to_web_api(
                 from_peer=from_peer,
                 invoice=None,
             )
+        # end if
+    # end if TMessageService
     if isinstance(o, TMessageActionPaymentSentMe):
         return SuccessfulPayment(
             currency=o.currency,
