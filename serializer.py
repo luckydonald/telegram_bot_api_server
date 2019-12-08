@@ -473,7 +473,7 @@ async def to_web_api(
                 # end if
                 if o.fwd_from.from_id:
                     forward_from = await client.get_entity(o.fwd_from.from_id)
-                    forward_from = await to_web_api(forward_from_chat, client)
+                    forward_from = await to_web_api(forward_from, client)
                 # end if
                 forward_signature = o.fwd_from.post_author
             # end if
