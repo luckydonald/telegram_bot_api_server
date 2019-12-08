@@ -13,6 +13,15 @@ false = False
 true = True
 
 
+RECYCLE_PEERS: Dict[int, TypePeer] = {
+    10717954: User(id=10717954, is_self=False, contact=False, mutual_contact=False, deleted=False, bot=False, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, access_hash=-2993714178598625124, first_name='luckydonald', last_name=None, username='luckydonald', phone=None, photo=UserProfilePhoto(photo_id=46033262366284583, photo_small=FileLocationToBeDeprecated(volume_id=263834989, local_id=209571), photo_big=FileLocationToBeDeprecated(volume_id=263834989, local_id=209573), dc_id=2), status=UserStatusRecently(), bot_info_version=None, restriction_reason=[], bot_inline_placeholder=None, lang_code='en'),
+    133378542: User(id=133378542, is_self=True, contact=False, mutual_contact=False, deleted=False, bot=True, bot_chat_history=True, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, access_hash=8294665920163040443, first_name='Test Bot i do tests with', last_name=None, username='test4458bot', phone=None, photo=None, status=None, bot_info_version=13, restriction_reason=[], bot_inline_placeholder='This bot is for testing purposes.', lang_code=None),
+    -1001443587969: Channel(id=1443587969, title='Derp [test] rename', photo=ChatPhoto(photo_small=FileLocationToBeDeprecated(volume_id=226613135, local_id=158488), photo_big=FileLocationToBeDeprecated(volume_id=226613135, local_id=158490), dc_id=2), date=datetime.datetime(2019, 6, 16, 22, 38, 57, tzinfo=datetime.timezone.utc), version=0, creator=False, left=False, broadcast=False, verified=False, megagroup=True, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-7101147752375680853, username=None, restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=ChatBannedRights(until_date=datetime.datetime(2038, 1, 19, 3, 14, 7, tzinfo=datetime.timezone.utc), view_messages=False, send_messages=False, send_media=False, send_stickers=False, send_gifs=False, send_games=False, send_inline=False, embed_links=False, send_polls=False, change_info=False, invite_users=False, pin_messages=False), participants_count=None),
+    -1001391635462: Channel(id=1391635462, title='〠 R2Test 〠', photo=ChatPhotoEmpty(), date=datetime.datetime(2019, 4, 4, 8, 47, 30, tzinfo=datetime.timezone.utc), version=0, creator=False, left=True, broadcast=True, verified=False, megagroup=False, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-3128376223792150891, username='R2Test', restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=None, participants_count=None),
+    -1001127537892: Channel(id=1127537892, title='Programmer Humor', photo=ChatPhoto(photo_small=FileLocationToBeDeprecated(volume_id=226613135, local_id=158488), photo_big=FileLocationToBeDeprecated(volume_id=226613135, local_id=158490), dc_id=2), date=datetime.datetime(2019, 6, 16, 22, 38, 57, tzinfo=datetime.timezone.utc), version=0, creator=False, left=False, broadcast=False, verified=False, megagroup=False, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-7101147752375680853, username='programmer_humor', restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=ChatBannedRights(until_date=datetime.datetime(2038, 1, 19, 3, 14, 7, tzinfo=datetime.timezone.utc), view_messages=False, send_messages=False, send_media=False, send_stickers=False, send_gifs=False, send_games=False, send_inline=False, embed_links=False, send_polls=False, change_info=False, invite_users=False, pin_messages=False), participants_count=None),
+}
+
+
 class FakeClient(object):
     def __init__(self, lookups: Dict[int, TypePeer], update_id: int):
         self.lookups = lookups
@@ -78,10 +87,11 @@ class MyTestCase(asynctest.TestCase):
                 #     "username": "bonbotics"
                 # }
             },
-            "update_id": 4320
+            "update_id": 44581337
         }
 
-        result = await to_web_api(event, None)
+        client = FakeClient(lookups=RECYCLE_PEERS, update_id=44581337)
+        result = await to_web_api(event, client)
         result = result.to_array()
 
         self.assertEqual(
@@ -171,10 +181,11 @@ class MyTestCase(asynctest.TestCase):
                 "message_id": 184,
                 "text": "🧑‍💻"
             },
-            "update_id": 184
+            "update_id": 4204458
         }
 
-        result = await to_web_api(event, None)
+        client = FakeClient(lookups=RECYCLE_PEERS, update_id=4204458)
+        result = await to_web_api(event, client)
         result = result.to_array()
 
         self.assertEqual(
@@ -221,9 +232,10 @@ class MyTestCase(asynctest.TestCase):
 
         expected = {
             "message": "see test_channel_message_2_forwareded, just witout the forward.",
-            "update_id": 184
+            "update_id": 4458007
         }
 
+        client = FakeClient(lookups=RECYCLE_PEERS, update_id=4458007)
         result = await to_web_api(event, None)
         result = result.to_array()
 
@@ -239,14 +251,6 @@ class MyTestCase(asynctest.TestCase):
         Same as test_channel_message_2, but forwarded to another channel.
         :return:
         """
-        client = FakeClient(
-            lookups={
-                10717954: User(id=10717954, is_self=False, contact=False, mutual_contact=False, deleted=False, bot=False, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, access_hash=-2993714178598625124, first_name='luckydonald', last_name=None, username='luckydonald', phone=None, photo=UserProfilePhoto(photo_id=46033262366284583, photo_small=FileLocationToBeDeprecated(volume_id=263834989, local_id=209571), photo_big=FileLocationToBeDeprecated(volume_id=263834989, local_id=209573), dc_id=2), status=UserStatusRecently(), bot_info_version=None, restriction_reason=[], bot_inline_placeholder=None, lang_code='en'),
-                -1001443587969: Channel(id=1443587969, title='Derp [test] rename', photo=ChatPhoto(photo_small=FileLocationToBeDeprecated(volume_id=226613135, local_id=158488), photo_big=FileLocationToBeDeprecated(volume_id=226613135, local_id=158490), dc_id=2), date=datetime.datetime(2019, 6, 16, 22, 38, 57, tzinfo=datetime.timezone.utc), version=0, creator=False, left=False, broadcast=False, verified=False, megagroup=True, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-7101147752375680853, username=None, restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=ChatBannedRights(until_date=datetime.datetime(2038, 1, 19, 3, 14, 7, tzinfo=datetime.timezone.utc), view_messages=False, send_messages=False, send_media=False, send_stickers=False, send_gifs=False, send_games=False, send_inline=False, embed_links=False, send_polls=False, change_info=False, invite_users=False, pin_messages=False), participants_count=None),
-                -1001127537892: Channel(id=1127537892, title='Programmer Humor', photo=ChatPhoto(photo_small=FileLocationToBeDeprecated(volume_id=226613135, local_id=158488), photo_big=FileLocationToBeDeprecated(volume_id=226613135, local_id=158490), dc_id=2), date=datetime.datetime(2019, 6, 16, 22, 38, 57, tzinfo=datetime.timezone.utc), version=0, creator=False, left=False, broadcast=False, verified=False, megagroup=False, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-7101147752375680853, username='programmer_humor', restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=ChatBannedRights(until_date=datetime.datetime(2038, 1, 19, 3, 14, 7, tzinfo=datetime.timezone.utc), view_messages=False, send_messages=False, send_media=False, send_stickers=False, send_gifs=False, send_games=False, send_inline=False, embed_links=False, send_polls=False, change_info=False, invite_users=False, pin_messages=False), participants_count=None),
-            },
-            update_id=445804458
-        )
         event = UpdateNewChannelMessage(
             message=Message(
                 id=197,
@@ -346,7 +350,7 @@ class MyTestCase(asynctest.TestCase):
             "update_id": 445804458
         }
 
-        from serializer import to_web_api
+        client = FakeClient(lookups=RECYCLE_PEERS, update_id=445804458)
         result = await to_web_api(event, client)
         result = result.to_array()
 
@@ -367,11 +371,7 @@ class MyTestCase(asynctest.TestCase):
 
     async def test_channel_forward_from_user(self):
         client = FakeClient(
-            lookups={
-                10717954: User(id=10717954, is_self=False, contact=False, mutual_contact=False, deleted=False, bot=False, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, access_hash=-2993714178598625124, first_name='luckydonald', last_name=None, username='luckydonald', phone=None, photo=UserProfilePhoto(photo_id=46033262366284583, photo_small=FileLocationToBeDeprecated(volume_id=263834989, local_id=209571), photo_big=FileLocationToBeDeprecated(volume_id=263834989, local_id=209573), dc_id=2), status=UserStatusRecently(), bot_info_version=None, restriction_reason=[], bot_inline_placeholder=None, lang_code='en'),
-                -1001443587969: Channel(id=1443587969, title='Derp [test] rename', photo=ChatPhoto(photo_small=FileLocationToBeDeprecated(volume_id=226613135, local_id=158488), photo_big=FileLocationToBeDeprecated(volume_id=226613135, local_id=158490), dc_id=2), date=datetime.datetime(2019, 6, 16, 22, 38, 57, tzinfo=datetime.timezone.utc), version=0, creator=False, left=False, broadcast=False, verified=False, megagroup=True, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-7101147752375680853, username=None, restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=ChatBannedRights(until_date=datetime.datetime(2038, 1, 19, 3, 14, 7, tzinfo=datetime.timezone.utc), view_messages=False, send_messages=False, send_media=False, send_stickers=False, send_gifs=False, send_games=False, send_inline=False, embed_links=False, send_polls=False, change_info=False, invite_users=False, pin_messages=False), participants_count=None),
-                133378542: User(id=133378542, is_self=True, contact=False, mutual_contact=False, deleted=False, bot=True, bot_chat_history=True, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, access_hash=8294665920163040443, first_name='Test Bot i do tests with', last_name=None, username='test4458bot', phone=None, photo=None, status=None, bot_info_version=13, restriction_reason=[], bot_inline_placeholder='This bot is for testing purposes.', lang_code=None),
-            },
+            lookups=RECYCLE_PEERS,
             update_id=445804458
         )
         event = UpdateNewChannelMessage(
@@ -470,16 +470,138 @@ class MyTestCase(asynctest.TestCase):
         )
     # end def
 
+    async def test_channel_forward_video_from_channel_with_signature(self):
+        event = UpdateNewChannelMessage(
+            message=Message(
+                id=211,
+                to_id=PeerChannel(channel_id=1443587969),
+                date=datetime.datetime(2019, 12, 8, 16, 18, 50, tzinfo=datetime.timezone.utc),
+                message="I'm so confused\nhttps://redd.it/cwhfln\nby @R2Test",
+                out=False, mentioned=False, media_unread=False, silent=False, post=False, from_scheduled=False,
+                legacy=False, edit_hide=False, from_id=10717954,
+                fwd_from=MessageFwdHeader(
+                    date=datetime.datetime(2019, 8, 28, 12, 36, 2, tzinfo=datetime.timezone.utc),
+                    from_id=None,
+                    from_name=None,
+                    channel_id=1391635462,
+                    channel_post=36351,
+                    post_author='r2tBot',
+                    saved_from_peer=None,
+                    saved_from_msg_id=None
+                ),
+                via_bot_id=None, reply_to_msg_id=None,
+                media=MessageMediaDocument(
+                    document=Document(
+                        id=5995755528964276486,
+                        access_hash=-8945241733828268115,
+                        file_reference=b'\x02V\x0bg\x81\x00\x00\x00\xd3]\xed"j2\xc2E\xeeq\x8a\xc2\x15\xab\x95\xce\x06\xb7\xde\xb2\x9d',
+                        date=datetime.datetime(2019, 8, 28, 5, 27, 20, tzinfo=datetime.timezone.utc),
+                        mime_type='video/mp4',
+                        size=7611122,
+                        dc_id=4,
+                        attributes=[
+                            DocumentAttributeVideo(duration=43, w=684, h=854, round_message=False, supports_streaming=True),
+                            DocumentAttributeFilename(file_name='R7TYwBo.mp4')
+                        ],
+                        thumbs=[
+                            PhotoStrippedSize(type='i', bytes=b'\x01( \xb0\x8c\x92\x0c\xa9\xa8D\xf9\xb9\xf2\xc0\x04z\xd3\x8c\xab\x12\x90\xeac\xee\x00\xfeT\xcbT\x0b!,y\xdbJ\xe3"\x95\xc4wa\xa4\xfb\xac\xb8\xcf\xa5]\x8c\x87\x1dA\xf7\xaa\xf7\x91\xa3\xae\t\xc1\xedT\x91\xa5\xb7<\x0c\x8ac\xb5\xcbW$2\xb4\x8f\xeb\xc5C\x103\r\xcc\xe4(5$\xa3zl\xf5\xa9 \x84"`\xf3R\x90\xd9\x1d\xd3\xc8\xc0\x02\xa1q\xc8\xc1\xa4\x86Uq\x83\xc3T\xcd\x02\xec#\x9e{\xf7\xaa\xac\x86\x17\xe3\x90{\xd0\xd0E\x96\xe2\x8b\xbbu\xa9x\x14QT\x89b\x13QJ\xa1\x874QL\x0f'),
+                            PhotoSize(type='m', location=FileLocationToBeDeprecated(volume_id=463406930, local_id=7134), w=256, h=320, size=13003)
+                        ]
+                    ),
+                    ttl_seconds=None),
+                reply_markup=None,
+                entities=[
+                    MessageEntityBold(offset=0, length=15),
+                    MessageEntityUrl(offset=16, length=22),
+                    MessageEntityMention(offset=42, length=7)
+                ], views=1,
+                edit_date=None, post_author=None, grouped_id=None, restriction_reason=[]
+            ),
+            pts=215, pts_count=1
+        )
+
+        expected = {
+            "message": {
+                "caption": "I'm so confused\nhttps://redd.it/cwhfln\nby @R2Test",
+                "caption_entities": [
+                    {
+                        "length": 15,
+                        "offset": 0,
+                        "type": "bold"
+                    },
+                    {
+                        "length": 22,
+                        "offset": 16,
+                        "type": "url"
+                    },
+                    {
+                        "length": 7,
+                        "offset": 42,
+                        "type": "mention"
+                    }
+                ],
+                "chat": {
+                    "id": -1001443587969,
+                    "title": "Derp [test] rename",
+                    "type": "supergroup"
+                },
+                "date": 1575821930,
+                "forward_date": 1566995762,
+                "forward_from_chat": {
+                    "id": -1001391635462,
+                    "title": "〠 R2Test 〠",
+                    "type": "channel",
+                    "username": "R2Test"
+                },
+                "forward_from_message_id": 36351,
+                "forward_signature": "r2tBot",
+                "from": {
+                    "first_name": "luckydonald",
+                    "id": 10717954,
+                    "is_bot": false,
+                    "language_code": "en",
+                    "username": "luckydonald"
+                },
+                "message_id": 211,
+                "video": {
+                    "duration": 43,
+                    "file_id": "BAADBAADBgEAAuMzNVPsG0GS6vWgChYE",
+                    "file_size": 7611122,
+                    "height": 854,
+                    "mime_type": "video/mp4",
+                    "thumb": {
+                        "file_id": "AAQEAAMGAQAC4zM1U-wbQZLq9aAKUgefGwAEAQAHbQAD3hsAAhYE",
+                        "file_size": 13003,
+                        "height": 320,
+                        "width": 256
+                    },
+                    "width": 684
+                }
+            },
+            "update_id": 13374458
+        }
+
+        client = FakeClient(lookups=RECYCLE_PEERS, update_id=13374458)
+        result = await to_web_api(event, client)
+        result = result.to_array()
+
+        # for i, result_photo in enumerate(expected["message"]["photo"]):
+        #     expected_photo = result["message"]["photo"][i]
+        #     self.assertEquals(len(expected_photo['file_id']), len(result_photo['file_id']), "length should be same")
+        #     # now delete the file id's as we don't like that to butcher up the comparision
+        #     del result_photo['file_id']
+        #     del expected_photo['file_id']
+        # # end if
+
+        self.assertEqual(
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            'real one vs generated one'
+        )
+    # end def
+
 
     async def test_channel_post_with_signature(self):
-        client = FakeClient(
-            lookups={
-                10717954: User(id=10717954, is_self=False, contact=False, mutual_contact=False, deleted=False, bot=False, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, access_hash=-2993714178598625124, first_name='luckydonald', last_name=None, username='luckydonald', phone=None, photo=UserProfilePhoto(photo_id=46033262366284583, photo_small=FileLocationToBeDeprecated(volume_id=263834989, local_id=209571), photo_big=FileLocationToBeDeprecated(volume_id=263834989, local_id=209573), dc_id=2), status=UserStatusRecently(), bot_info_version=None, restriction_reason=[], bot_inline_placeholder=None, lang_code='en'),
-                -1001443587969: Channel(id=1443587969, title='Derp [test] rename', photo=ChatPhoto(photo_small=FileLocationToBeDeprecated(volume_id=226613135, local_id=158488), photo_big=FileLocationToBeDeprecated(volume_id=226613135, local_id=158490), dc_id=2), date=datetime.datetime(2019, 6, 16, 22, 38, 57, tzinfo=datetime.timezone.utc), version=0, creator=False, left=False, broadcast=False, verified=False, megagroup=True, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-7101147752375680853, username=None, restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=ChatBannedRights(until_date=datetime.datetime(2038, 1, 19, 3, 14, 7, tzinfo=datetime.timezone.utc), view_messages=False, send_messages=False, send_media=False, send_stickers=False, send_gifs=False, send_games=False, send_inline=False, embed_links=False, send_polls=False, change_info=False, invite_users=False, pin_messages=False), participants_count=None),
-                -1001391635462: Channel(id=1391635462, title='〠 R2Test 〠', photo=ChatPhotoEmpty(), date=datetime.datetime(2019, 4, 4, 8, 47, 30, tzinfo=datetime.timezone.utc), version=0, creator=False, left=True, broadcast=True, verified=False, megagroup=False, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-3128376223792150891, username='R2Test', restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=None, participants_count=None),
-            },
-            update_id=445804458
-        )
         event = UpdateNewChannelMessage(
             message=Message(
                 id=37840,
@@ -505,10 +627,10 @@ class MyTestCase(asynctest.TestCase):
                 "message_id": 37840,
                 "text": "test"
             },
-            "update_id": 862109776
+            "update_id": 44581234
         }
 
-        from serializer import to_web_api
+        client = FakeClient(lookups=RECYCLE_PEERS, update_id=44581234)
         result = await to_web_api(event, client)
         result = result.to_array()
 
