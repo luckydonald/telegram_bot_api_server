@@ -472,6 +472,7 @@ async def to_web_api(
             # end if
             author_signature = o.post_author
 
+            entities = None if not o.entities else await to_web_api(o.entities, client)  # [] should be None
             return Message(
                 message_id=o.id,
                 date=date,
@@ -488,8 +489,8 @@ async def to_web_api(
                 author_signature=author_signature,
                 text=None if o.media else o.raw_text,
                 caption=o.raw_text if o.media else None,
-                entities=None if o.media else await to_web_api(o.entities, client),
-                caption_entities=await to_web_api(o.entities, client) if o.media else None,
+                entities=None if o.media else entities,  # entities can be ether part of a caption or text
+                caption_entities=entities if o.media else None,  # entities can be ether part of a caption or text
                 document=None if any([o.photo, o.sticker, o.video, o.voice, o.video_note]) else await to_web_api(o.document, client),
                 # animation=await to_web_api(o.animation), TODO
                 audio=await to_web_api(o.audio, client),
