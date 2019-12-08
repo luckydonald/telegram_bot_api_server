@@ -117,22 +117,6 @@ def load_user(user_id: int) -> User:
 # end def
 
 
-def load_message(msg_id: int, chat_id: int) -> Message:
-    # TODO.
-    return Message(  # maybe just call to_web_api()
-        message_id=msg_id,
-        date=0,
-        chat=Chat(chat_id, 'private'),
-    )
-# end def
-
-
-def load_chat(*args) -> Chat:
-    # TODO.
-    return None
-
-
-
 MASK_POSITIONS = {
     0: "forehead",
     1: "eyes",
