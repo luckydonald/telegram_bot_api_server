@@ -142,46 +142,46 @@ MASK_POSITIONS = {
 
 
 async def to_web_api(
-    o, client, user_as_chat=False, prefer_update=True, load_photos=False, file_id: Union[str, None] = None
+    o, client: 'classes.webhook.TelegramClientWebhook', user_as_chat=False, prefer_update=True, load_photos=False, file_id: Union[str, None] = None
 ):
     if isinstance(o, TUpdateNewMessage):
         return Update(
-            update_id=o.pts,
+            update_id=client.update_id,
             message=await to_web_api(o.message, client),
         )
     if isinstance(o, TUpdateEditMessage):
         return Update(
-            update_id=o.pts,
+            update_id=client.update_id,
             edited_message=await to_web_api(o.message, client),
         )
     if isinstance(o, TUpdateNewChannelMessage):
         message: Message = await to_web_api(o.message, client)
         if message.chat.type == 'channel':
             return Update(
-                update_id=o.pts,
+                update_id=client.update_id,
                 channel_post=message,
             )
         # end if
         return Update(
-            update_id=o.pts,
+            update_id=client.update_id,
             message=message,
         )
     if isinstance(o, TUpdateEditChannelMessage):
         message: Message = await to_web_api(o.message, client)
         if message.chat.type == 'channel':
             return Update(
-                update_id=o.pts,
+                update_id=client.update_id,
                 edited_channel_post=message,
             )
         # end if
         return Update(
-            update_id=o.pts,
+            update_id=client.update_id,
             edited_message=message,
         )
     if isinstance(o, TUpdateBotInlineQuery):
         if prefer_update:
             return Update(
-                update_id=o.query_id,
+                update_id=client.update_id,
                 inline_query=await to_web_api(o, client, prefer_update=False)
             )
         user = await client.get_entity(o.user_id)
@@ -194,13 +194,13 @@ async def to_web_api(
         )
     # if isinstance(object, ???):
     #     return Update(
-    #         update_id=object.pts,
+    #         update_id=client.update_id,
     #         chosen_inline_result=await to_web_api(object.message),  # TODO
     #     )
     if isinstance(o, TUpdateBotCallbackQuery):
         if prefer_update:
             return Update(
-                update_id=0,
+                update_id=client.update_id,
                 callback_query=await to_web_api(o, client, prefer_update=False),
             )
         # end if
@@ -216,7 +216,7 @@ async def to_web_api(
     if isinstance(o, TUpdateBotShippingQuery):
         if prefer_update:
             return Update(
-                update_id=0,
+                update_id=client.update_id,
                 shipping_query=await to_web_api(o, client, prefer_update=False),
             )
         return ShippingQuery(
@@ -228,7 +228,7 @@ async def to_web_api(
     if isinstance(o, TUpdateBotPrecheckoutQuery):
         if prefer_update:
             return Update(
-                update_id=0,
+                update_id=client.update_id,
                 pre_checkout_query=await to_web_api(o, client, prefer_update=False),
             )
         return PreCheckoutQuery(

@@ -24,11 +24,14 @@ if __name__ == '__main__':
 
 
 class TelegramClientWebhook(TelegramClient):
-    api_key: str
-    webhook_url: str
     """
     A TelegramClient which remember it's API_KEY and WEBHOOK
     """
+
+    api_key: str
+    webhook_url: str
+    update_id: int
+
     def __init__(
         self: 'TelegramClient',
         session: typing.Union[str, Session],
@@ -79,6 +82,7 @@ class TelegramClientWebhook(TelegramClient):
         )
         self.api_key = api_key
         self.webhook_url = webhook_url
+        self.update_id = 0
     # end def
 
     async def send_event(self, data: Update):
@@ -97,7 +101,7 @@ class TelegramClientWebhook(TelegramClient):
         async def start(event):
             """Send a message when the command /start is issued."""
             await event.respond('Hi!')
-            raise events.StopPropagation
+            # raise events.StopPropagation
         # end def
 
         @self.on(events.Raw)
@@ -139,7 +143,13 @@ class TelegramClientWebhook(TelegramClient):
 
             await self.send_event(update)
             # await event.respond()
+
+            # TODO: Update identifiers start from a certain positive number and increase sequentially.
+            # TODO: If there are no new updates for at least a week, then identifier of the next update will be chosen randomly instead of sequentially.
             self.update_id += 1
+            if self.update_id > 999999999:
+                self.update_id = 0
+            # end if
             raise events.StopPropagation
         # end def
 # end class
