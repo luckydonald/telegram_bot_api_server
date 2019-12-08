@@ -94,7 +94,7 @@ from telethon.tl.types import SecureValue as TSecureValue
 from telethon.tl.types import SecureCredentialsEncrypted as TSecureCredentialsEncrypted
 from telethon.utils import pack_bot_file_id, get_peer_id
 
-from api_number_utils import TYPE_CHANNEL
+from api_number_utils import TYPE_CHANNEL, as_channel_id
 
 __author__ = 'luckydonald'
 
@@ -443,8 +443,9 @@ async def to_web_api(
     if isinstance(o, (TMessage, TMessageService)):
         chat: Chat = await to_web_api(await client.get_entity(o.chat_id), client, user_as_chat=True)
         from_peer: Union[None, User] = None
-        if chat and chat.type != TYPE_CHANNEL:
-            from_peer = await to_web_api(await client.get_entity(o.sender_id), client)
+        if chat and chat.type != TYPE_CHANNEL:  # supposed to be None for 'channel's.
+            from_peer = await client.get_entity(o.sender_id)
+            from_peer = await to_web_api(from_peer, client)
         # end if
         date = await to_web_api(o.date, client)
 
@@ -456,20 +457,40 @@ async def to_web_api(
             forward_date = None
             forward_from = None
             forward_from_chat = None
-            if o.forward:
+            forward_signature = None
+            forward_from_message_id = None
+            if o.fwd_from:
                 forward_date = o.fwd_from.date
-                forward_from = await o.forward.get_sender()
-                forward_from_chat = await o.forward.get_chat()
+                forward_date = await to_web_api(forward_date, client)
+                if o.fwd_from.channel_id:
+                    # we forwarded from a channel
+                    # e.g. 1127537892 -> -1001127537892
+                    channel_id = as_channel_id(o.fwd_from.channel_id)
+
+                    forward_from_chat = await client.get_entity(channel_id)
+                    forward_from_chat = await to_web_api(forward_from_chat, client)
+                    forward_from_message_id = o.fwd_from.channel_post
+                # end if
+                if False:
+                    raise ValueError('Implement me.')
+                    forward_from = await o.forward.get_sender()
+                    forward_from = await to_web_api(forward_from, client)
+                    forward_from_chat = await o.forward.get_chat()
+                    forward_from_chat = await to_web_api(forward_from_chat, client)
+                # end if
+                forward_signature = o.fwd_from.post_author
             # end if
+
             return Message(
                 message_id=o.id,
                 date=date,
                 chat=chat,
-                from_peer=from_peer,  # must be None for 'channel's.
-                forward_from=await to_web_api(forward_from, client),
-                forward_from_chat=await to_web_api(forward_from_chat, client),
-                # TODO: forward_signature=,
-                forward_date=await to_web_api(forward_date, client),
+                from_peer=from_peer,
+                forward_from=forward_from,
+                forward_from_chat=forward_from_chat,
+                forward_from_message_id=forward_from_message_id,
+                forward_signature=forward_signature,
+                forward_date=forward_date,
                 reply_to_message=await to_web_api(reply, client),
                 edit_date=await to_web_api(o.edit_date, client),
                 # TODO: media_group_id=,
