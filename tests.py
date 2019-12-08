@@ -603,7 +603,6 @@ class MyTestCase(asynctest.TestCase):
         )
     # end def
 
-
     async def test_channel_post_with_signature(self):
         event = UpdateNewChannelMessage(
             message=Message(
@@ -651,6 +650,91 @@ class MyTestCase(asynctest.TestCase):
             'real one vs generated one'
         )
     # end def
+
+    async def test_reply_to_user_mention(self):
+        event = UpdateNewChannelMessage(
+            message=Message(
+                id=3525,
+                to_id=PeerChannel(channel_id=1032895287),
+                date=datetime.datetime(2019, 12, 8, 19, 15, 6, tzinfo=datetime.timezone.utc),
+                message='Woop.', out=False, mentioned=False, media_unread=False, silent=False, post=False,
+                from_scheduled=False, legacy=False, edit_hide=False, from_id=10717954, fwd_from=None, via_bot_id=None,
+                reply_to_msg_id=3516, media=None, reply_markup=None, entities=[], views=None, edit_date=None,
+                post_author=None, grouped_id=None, restriction_reason=[]
+            ),
+            pts=4351, pts_count=1
+        )
+
+        expected = {
+            "message": {
+                "chat": {
+                    "id": -1001032895287,
+                    "title": "Test Supergroup [test] #PUBLIC",
+                    "type": "supergroup"
+                },
+                "date": 1575832506,
+                "from": {
+                    "first_name": "luckydonald",
+                    "id": 10717954,
+                    "is_bot": false,
+                    "language_code": "en",
+                    "username": "luckydonald"
+                },
+                "message_id": 3525,
+                "reply_to_message": {
+                    "chat": {
+                        "id": -1001032895287,
+                        "title": "Test Supergroup [test] #PUBLIC",
+                        "type": "supergroup"
+                    },
+                    "date": 1575746583,
+                    "entities": [
+                        {
+                            "length": 9,
+                            "offset": 0,
+                            "type": "text_mention",
+                            "user": {
+                                "first_name": "Bonbotics",
+                                "id": 357231198,
+                                "is_bot": false,
+                                "username": "bonbotics"
+                            }
+                        }
+                    ],
+                    "from": {
+                        "first_name": "Captcha",
+                        "id": 629864526,
+                        "is_bot": true,
+                        "username": "JoinCaptchaBot"
+                    },
+                    "message_id": 3516,
+                    "text": "Bonbotics kicked."
+                },
+                "text": "Woop."
+            },
+            "update_id": 862109783
+        }
+
+        client = FakeClient(lookups=RECYCLE_PEERS, update_id=44581234)
+        result = await to_web_api(event, client)
+        result = result.to_array()
+
+        # for i, result_photo in enumerate(expected["message"]["photo"]):
+        #     expected_photo = result["message"]["photo"][i]
+        #     self.assertEquals(len(expected_photo['file_id']), len(result_photo['file_id']), "length should be same")
+        #     # now delete the file id's as we don't like that to butcher up the comparision
+        #     del result_photo['file_id']
+        #     del expected_photo['file_id']
+        # # end if
+
+        self.assertEqual(
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            'real one vs generated one'
+        )
+    # end def
+
+
 # end class
 
 
