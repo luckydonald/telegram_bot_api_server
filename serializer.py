@@ -470,6 +470,7 @@ async def to_web_api(
                 # end if
                 forward_signature = o.fwd_from.post_author
             # end if
+            author_signature = o.post_author
 
             return Message(
                 message_id=o.id,
@@ -484,7 +485,7 @@ async def to_web_api(
                 reply_to_message=await to_web_api(reply, client),
                 edit_date=await to_web_api(o.edit_date, client),
                 # TODO: media_group_id=,
-                author_signature=o.fwd_from.post_author if o.fwd_from else None,
+                author_signature=author_signature,
                 text=None if o.media else o.raw_text,
                 caption=o.raw_text if o.media else None,
                 entities=None if o.media else await to_web_api(o.entities, client),
