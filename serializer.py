@@ -94,7 +94,7 @@ from telethon.tl.types import SecureValue as TSecureValue
 from telethon.tl.types import SecureCredentialsEncrypted as TSecureCredentialsEncrypted
 from telethon.utils import pack_bot_file_id, get_peer_id
 
-from api_number_utils import as_channel_id, as_user_id
+from api_number_utils import TYPE_CHANNEL
 
 __author__ = 'luckydonald'
 
@@ -467,11 +467,16 @@ async def to_web_api(
             forward_from = await o.forward.get_sender()
             forward_from_chat = await o.forward.get_chat()
         # end if
+        chat: Chat = await to_web_api(o.chat, client, user_as_chat=True)
+        from_peer: Union[None, User] = None
+        if chat and chat.type != TYPE_CHANNEL:
+            from_peer = await to_web_api(await client.get_entity(o.from_id), client)
+        # end if
         return Message(
             message_id=o.id,
             date=await to_web_api(o.date, client),
-            chat=await to_web_api(o.chat, client, user_as_chat=True),
-            from_peer=await to_web_api(o.sender, client) if not o.is_channel else None,  # must be None for channels.
+            chat=chat,
+            from_peer=from_peer,  # must be None for 'channel's.
             forward_from=await to_web_api(forward_from, client),
             forward_from_chat=await to_web_api(forward_from_chat, client),
             # TODO: forward_signature=,
