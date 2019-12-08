@@ -5,13 +5,20 @@ from datetime import timezone
 from telethon.tl.types import *
 from telethon.tl.patched import *
 import datetime
+from typing import Dict
 
 false = False
 true = True
 
+
 class FakeClient(object):
-    def get_entity(self, obj):
-        raise NotImplementedError('mock me plz')
+    def __init__(self, lookups: Dict[int, TypePeer], update_id: int):
+        self.lookups = lookups
+        self.update_id = update_id
+    # end if
+
+    async def get_entity(self, peer_id):
+        return self.lookups[peer_id]
     # end def
 # end clas
 
@@ -267,6 +274,13 @@ class MyTestCase(asynctest.TestCase):
         Same as test_channel_message_2, but forwarded to another channel.
         :return:
         """
+        client = FakeClient(
+            lookups={
+                10717954: User(id=10717954, is_self=False, contact=False, mutual_contact=False, deleted=False, bot=False, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, access_hash=-2993714178598625124, first_name='luckydonald', last_name=None, username='luckydonald', phone=None, photo=UserProfilePhoto(photo_id=46033262366284583, photo_small=FileLocationToBeDeprecated(volume_id=263834989, local_id=209571), photo_big=FileLocationToBeDeprecated(volume_id=263834989, local_id=209573), dc_id=2), status=UserStatusRecently(), bot_info_version=None, restriction_reason=[], bot_inline_placeholder=None, lang_code='en'),
+                -1001443587969: Channel(id=1443587969, title='Derp [test] rename', photo=ChatPhoto(photo_small=FileLocationToBeDeprecated(volume_id=226613135, local_id=158488), photo_big=FileLocationToBeDeprecated(volume_id=226613135, local_id=158490), dc_id=2), date=datetime.datetime(2019, 6, 16, 22, 38, 57, tzinfo=datetime.timezone.utc), version=0, creator=False, left=False, broadcast=False, verified=False, megagroup=True, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-7101147752375680853, username=None, restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=ChatBannedRights(until_date=datetime.datetime(2038, 1, 19, 3, 14, 7, tzinfo=datetime.timezone.utc), view_messages=False, send_messages=False, send_media=False, send_stickers=False, send_gifs=False, send_games=False, send_inline=False, embed_links=False, send_polls=False, change_info=False, invite_users=False, pin_messages=False), participants_count=None),
+            },
+            update_id=445804458
+        )
         event = UpdateNewChannelMessage(
             message=Message(
                 id=197,
@@ -326,7 +340,7 @@ class MyTestCase(asynctest.TestCase):
         )
 
         from serializer import to_web_api
-        x = await to_web_api(event, None)
+        x = await to_web_api(event, client)
 
         y = {
             "message": {
@@ -380,7 +394,7 @@ class MyTestCase(asynctest.TestCase):
                     }
                 ]
             },
-            "update_id": 862109767
+            "update_id": 445804458
         }
         self.assertEqual(
             json.dumps(x.to_array(), indent=2, sort_keys=True),
