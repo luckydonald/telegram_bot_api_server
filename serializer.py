@@ -430,7 +430,7 @@ async def to_web_api(
             )
         # end if
         return Chat(
-            id=as_channel_id(o.id),
+            id=get_peer_id(o),
             type='channel',
             title=o.title,
             username=o.username,
@@ -480,7 +480,7 @@ async def to_web_api(
             edit_date=await to_web_api(o.edit_date, client),
             # TODO: media_group_id=,
             author_signature=o.fwd_from.post_author if o.fwd_from else None,
-            text=None if o.media else o.text,
+            text=None if o.media else o.raw_text,
             caption=o.text if o.media else None,
             entities=None if o.media else await to_web_api(o.entities, client),
             caption_entities=await to_web_api(o.entities, client) if o.media else None,
