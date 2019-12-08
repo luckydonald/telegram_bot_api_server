@@ -469,10 +469,10 @@ async def to_web_api(
             forward_from = await o.forward.get_sender()
             forward_from_chat = await o.forward.get_chat()
         # end if
-        chat: Chat = await to_web_api(o.chat, client, user_as_chat=True)
+        chat: Chat = await to_web_api(await client.get_entity(o.chat_id), client, user_as_chat=True)
         from_peer: Union[None, User] = None
         if chat and chat.type != TYPE_CHANNEL:
-            from_peer = await to_web_api(await client.get_entity(o.from_id), client)
+            from_peer = await to_web_api(await client.get_entity(o.sender_id), client)
         # end if
         return Message(
             message_id=o.id,
@@ -507,10 +507,10 @@ async def to_web_api(
             invoice=await to_web_api(o.invoice, client),
         )
     if isinstance(o, TMessageService):
-        chat: Chat = await to_web_api(o.chat, client, user_as_chat=True)
+        chat: Chat = await to_web_api(await client.get_entity(o.chat_id), client, user_as_chat=True)
         from_peer: Union[None, User] = None
         if chat and chat.type != TYPE_CHANNEL:
-            from_peer = await to_web_api(await client.get_entity(o.from_id), client)
+            from_peer = await to_web_api(await client.get_entity(o.sender_id), client)
         # end if
         date = await to_web_api(o.date, client)
         if isinstance(o.action, TMessageActionChatAddUser):
