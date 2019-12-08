@@ -865,7 +865,7 @@ async def to_web_api(
         return [
             await to_web_api(size, client, file_id=file_id)
             for size in o.sizes
-            if not isinstance(size, TPhotoSizeEmpty)
+            if not isinstance(size, (TPhotoSizeEmpty, TPhotoStrippedSize))
         ]
     if isinstance(o, datetime):
         return int(o.timestamp())
