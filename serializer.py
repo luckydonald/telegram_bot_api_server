@@ -894,10 +894,9 @@ async def to_web_api(
 async def get_entity(client, peer):
     """ wrapper for debug. """
     entity = await client.get_entity(peer)
-    with open(f'logs/peer_{peer!s}.txt', 'w') as f:
+    with open(f'logs/peer_{peer!s}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as f:
         f.write('from telethon.tl.types import *\nfrom telethon.tl.patched import *\nimport datetime\n\n')
-        f.write(f'input = {peer}')
-        f.write(f'result = {entity!s}')
+        f.write(f'input = {peer}\nresult = {entity!s}')
     # end with
     return entity
 # end def
