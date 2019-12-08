@@ -92,7 +92,7 @@ from telethon.tl.types import MessageActionBotAllowed as TMessageActionBotAllowe
 from telethon.tl.types import MessageActionSecureValuesSentMe as TMessageActionSecureValuesSentMe  # passport_data
 from telethon.tl.types import SecureValue as TSecureValue
 from telethon.tl.types import SecureCredentialsEncrypted as TSecureCredentialsEncrypted
-from telethon.utils import pack_bot_file_id
+from telethon.utils import pack_bot_file_id, get_peer_id
 
 from api_number_utils import as_channel_id, as_user_id
 
@@ -127,13 +127,9 @@ def load_message(msg_id: int, chat_id: int) -> Message:
 # end def
 
 
-def load_chat(channel_id: int) -> Chat:
+def load_chat(*args) -> Chat:
     # TODO.
-    return Chat(  # maybe just call to_web_api()
-        id=channel_id,
-        type='todo',
-        title="todo",
-    )
+    return None
 
 
 
@@ -145,39 +141,56 @@ MASK_POSITIONS = {
 }
 
 
-async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=False, file_id: Union[str, None] = None):
+async def to_web_api(
+    o, client, user_as_chat=False, prefer_update=True, load_photos=False, file_id: Union[str, None] = None
+):
     if isinstance(o, TUpdateNewMessage):
         return Update(
             update_id=o.pts,
-            message=await to_web_api(o.message),
+            message=await to_web_api(o.message, client),
         )
     if isinstance(o, TUpdateEditMessage):
         return Update(
             update_id=o.pts,
-            edited_message=await to_web_api(o.message),
+            edited_message=await to_web_api(o.message, client),
         )
     if isinstance(o, TUpdateNewChannelMessage):
+        message: Message = await to_web_api(o.message, client)
+        if message.chat.type == 'channel':
+            return Update(
+                update_id=o.pts,
+                channel_post=message,
+            )
+        # end if
         return Update(
             update_id=o.pts,
-            channel_post=await to_web_api(o.message),
+            message=message,
         )
     if isinstance(o, TUpdateEditChannelMessage):
+        message: Message = await to_web_api(o.message, client)
+        if message.chat.type == 'channel':
+            return Update(
+                update_id=o.pts,
+                edited_channel_post=message,
+            )
+        # end if
         return Update(
             update_id=o.pts,
-            edited_channel_post=await to_web_api(o.message),
+            edited_message=message,
         )
     if isinstance(o, TUpdateBotInlineQuery):
         if prefer_update:
             return Update(
                 update_id=o.query_id,
-                inline_query=await to_web_api(o, prefer_update=False)
+                inline_query=await to_web_api(o, client, prefer_update=False)
             )
+        user = await client.get_entity(o.user_id)
         return InlineQuery(
             id=o.query_id,
-            from_peer=load_user(o.user_id),
+            from_peer=await to_web_api(user, client),
             query=o.query,
             offset=o.offset,
-            location=await to_web_api(o.geo),
+            location=await to_web_api(o.geo, client),
         )
     # if isinstance(object, ???):
     #     return Update(
@@ -188,12 +201,12 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if prefer_update:
             return Update(
                 update_id=0,
-                callback_query=await to_web_api(o, prefer_update=False),
+                callback_query=await to_web_api(o, client, prefer_update=False),
             )
         # end if
         return CallbackQuery(
             id=o.query_id,
-            from_peer=await to_web_api(o.peer),
+            from_peer=await to_web_api(o.peer, client),
             chat_instance=str(o.chat_instance),
             message=load_message(o.msg_id, o.chat_instance),
             # inline_message_id=object TODO
@@ -204,7 +217,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if prefer_update:
             return Update(
                 update_id=0,
-                shipping_query=await to_web_api(o, prefer_update=False),
+                shipping_query=await to_web_api(o, client, prefer_update=False),
             )
         return ShippingQuery(
             id=o.query_id,
@@ -216,7 +229,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if prefer_update:
             return Update(
                 update_id=0,
-                pre_checkout_query=await to_web_api(o, prefer_update=False),
+                pre_checkout_query=await to_web_api(o, client, prefer_update=False),
             )
         return PreCheckoutQuery(
             id=o.query_id,
@@ -225,7 +238,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             total_amount=o.total_amount,
             invoice_payload=o.payload,
             shipping_option_id=o.shipping_option_id,
-            order_info=await to_web_api(o.info),
+            order_info=await to_web_api(o.info, client),
         )
     if isinstance(o, TPhotoSizeEmpty):
         return None
@@ -277,11 +290,11 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
                 data['height'] = attr.h
                 # end if
             if isinstance(attr, TDocumentAttributeSticker):
-                sticker_set: Union[str, None] = await to_web_api(attr.stickerset)
+                sticker_set: Union[str, None] = await to_web_api(attr.stickerset, client)
                 data['emoji'] = attr.alt
                 data['set_name'] = sticker_set
                 data['mask'] = attr.mask
-                data['mask_position'] = await to_web_api(attr.mask_coords)
+                data['mask_position'] = await to_web_api(attr.mask_coords, client)
             # end if
             if isinstance(attr, TDocumentAttributeVideo):
                 data['width'] = attr.w
@@ -357,7 +370,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         # end for
         return Document(
             file_id=file_id,
-            thumb=await to_web_api(o.thumbs[0])
+            thumb=await to_web_api(o.thumbs[0], client)
         )
     if isinstance(o, TMaskCoords):
         return MaskPosition(
@@ -383,14 +396,14 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
     if isinstance(o, TUser):
         if user_as_chat:
             return Chat(
-                id=as_user_id(o.id),
+                id=get_peer_id(o),
                 type='private',
                 # title=None,
                 first_name=o.first_name,
                 last_name=o.last_name,
                 username=o.username,
                 # TODO: all_members_are_administrators=,
-                photo=await to_web_api(o.photo) if load_photos else None,
+                photo=await to_web_api(o.photo, client) if load_photos else None,
                 # description=None,
                 # invite_link=None,
                 # pinned_message=None,
@@ -410,7 +423,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if o.megagroup:  # or maybe o.broadcast?
             # https://t.me/BotDevelopment/109268
             return Chat(
-                id=as_channel_id(o.id),
+                id=get_peer_id(o),
                 type='supergroup',
                 title=o.title,
                 username=o.username,
@@ -425,8 +438,8 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
     if isinstance(o, TUserProfilePhoto):
         if user_as_chat:
             return ChatPhoto(
-                small_file_id=await to_web_api(o.photo_small),
-                big_file_id=await to_web_api(o.photo_big),
+                small_file_id=await to_web_api(o.photo_small, client),
+                big_file_id=await to_web_api(o.photo_big, client),
             )
         return UserProfilePhotos(
             total_count=2,
@@ -456,33 +469,33 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         # end if
         return Message(
             message_id=o.id,
-            date=await to_web_api(o.date),
-            chat=await to_web_api(o.chat, user_as_chat=True),
-            from_peer=await to_web_api(o.sender) if not o.is_channel else None,  # must be None for channels.
-            forward_from=await to_web_api(forward_from),
-            forward_from_chat=await to_web_api(forward_from_chat),
+            date=await to_web_api(o.date, client),
+            chat=await to_web_api(o.chat, client, user_as_chat=True),
+            from_peer=await to_web_api(o.sender, client) if not o.is_channel else None,  # must be None for channels.
+            forward_from=await to_web_api(forward_from, client),
+            forward_from_chat=await to_web_api(forward_from_chat, client),
             # TODO: forward_signature=,
-            forward_date=await to_web_api(o.forward.date) if o.fwd_from else None,
-            reply_to_message=await to_web_api(reply),
-            edit_date=await to_web_api(o.edit_date),
+            forward_date=await to_web_api(o.forward.date, client) if o.fwd_from else None,
+            reply_to_message=await to_web_api(reply, client),
+            edit_date=await to_web_api(o.edit_date, client),
             # TODO: media_group_id=,
             author_signature=o.fwd_from.post_author if o.fwd_from else None,
             text=None if o.media else o.text,
             caption=o.text if o.media else None,
-            entities=None if o.media else await to_web_api(o.entities),
-            caption_entities=await to_web_api(o.entities) if o.media else None,
-            document=None if any([o.photo, o.sticker, o.video, o.voice, o.video_note]) else await to_web_api(o.document),
+            entities=None if o.media else await to_web_api(o.entities, client),
+            caption_entities=await to_web_api(o.entities, client) if o.media else None,
+            document=None if any([o.photo, o.sticker, o.video, o.voice, o.video_note]) else await to_web_api(o.document, client),
             # animation=await to_web_api(o.animation), TODO
-            audio=await to_web_api(o.audio),
+            audio=await to_web_api(o.audio, client),
             # game=await to_web_api(o.game), TODO
-            photo=await to_web_api(o.photo),
-            sticker=await to_web_api(o.sticker),
-            video=None if o.video_note else await to_web_api(o.video),
-            voice=await to_web_api(o.voice),
-            video_note=await to_web_api(o.video_note),
-            contact=await to_web_api(o.contact),
-            location=await to_web_api(o.geo),
-            venue=await to_web_api(o.venue),
+            photo=await to_web_api(o.photo, client),
+            sticker=await to_web_api(o.sticker, client),
+            video=None if o.video_note else await to_web_api(o.video, client),
+            voice=await to_web_api(o.voice, client),
+            video_note=await to_web_api(o.video_note, client),
+            contact=await to_web_api(o.contact, client),
+            location=await to_web_api(o.geo, client),
+            venue=await to_web_api(o.venue, client),
             # new_chat_members=await to_web_api(o.new_chat_members), TODO
             # left_chat_member=await to_web_api(o.left_chat_member), TODO
             # new_chat_title=await to_web_api(o.), TODO
@@ -494,7 +507,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             # migrate_to_chat_id=, TODO
             # migrate_from_chat_id=, TODO
             # pinned_message=, TODO
-            invoice=await to_web_api(o.invoice),
+            invoice=await to_web_api(o.invoice, client),
             # successful_payment=o TODO
             # connected_website=o TODO
         )
@@ -502,17 +515,17 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if isinstance(o.action, TMessageActionChatAddUser):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
-                new_chat_members=[load_user(u) for u in o.users],
+                new_chat_members=[load_user(u) for u in o.action.users],
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionChatEditTitle):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 new_chat_title=o.action.title,
                 invoice=None,
@@ -520,17 +533,17 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if isinstance(o.action, TMessageActionChatEditPhoto):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
-                new_chat_photo=await to_web_api(o.action.photo),
+                new_chat_photo=await to_web_api(o.action.photo, client),
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionChatDeletePhoto):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 delete_chat_photo=True,
                 invoice=None,
@@ -538,8 +551,8 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if isinstance(o.action, TMessageActionChatDeleteUser):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 left_chat_member=load_user(o.action.user_id),
                 invoice=None,
@@ -547,18 +560,18 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if isinstance(o.action, TMessageActionChatJoinedByLink):
             return Message(  # TODO is swapping from_peer(inviter_id) and new_chat_members(from_id), is that correct?
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.action.inviter_id),
                 new_chat_members=[load_user(o.from_id)],
                 invoice=None,
             )
         if isinstance(o.action, (TMessageActionChannelCreate, TMessageActionChatCreate)):
             raise ValueError('Eeee? is this channel or supergroup?')
-            chat: Chat = await to_web_api(o.to_id)
+            chat: Chat = await to_web_api(o.to_id, client)
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
+                date=await to_web_api(o.date, client),
                 chat=chat,
                 from_peer=load_user(o.from_id),
                 group_chat_created=chat.type == 'group',  # either group, chat or supergroup
@@ -569,8 +582,8 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if isinstance(o.action, TMessageActionChatMigrateTo):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 migrate_to_chat_id=o.action.channel_id,
                 invoice=None,
@@ -578,8 +591,8 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if isinstance(o.action, TMessageActionChannelMigrateFrom):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 migrate_from_chat_id=o.action.chat_id,
                 invoice=None,
@@ -591,8 +604,8 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             # raise ValueError('Pins need to load the message')
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 pinned_message=load_message(o.to_id, o.from_id),
                 invoice=None,
@@ -600,26 +613,26 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if isinstance(o.action, TMessageActionPaymentSentMe):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 invoice=None,
-                successful_payment=await to_web_api(o.action),
+                successful_payment=await to_web_api(o.action, client),
             )
         if isinstance(o.action, TMessageActionCustomAction):
             raise ValueError(f'Unknown custom action {o.action.message!r} (o.action = TMessageActionCustomAction)')
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionBotAllowed):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 invoice=None,
                 connected_website=o.action.domain,
@@ -627,25 +640,25 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         if isinstance(o.action, TMessageActionSecureValuesSentMe):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 invoice=None,
-                passport_data=await to_web_api(o.action)
+                passport_data=await to_web_api(o.action, client)
             )
         if isinstance(o.action, TMessageActionChatAddUser):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionChatAddUser):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date),
-                chat=await to_web_api(o.to_id),
+                date=await to_web_api(o.date, client),
+                chat=await to_web_api(o.to_id, client),
                 from_peer=load_user(o.from_id),
                 invoice=None,
             )
@@ -657,21 +670,21 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             telegram_payment_charge_id=o.charge.id,
             provider_payment_charge_id=o.charge.provider_charge_id,
             shipping_option_id=o.shipping_option_id,
-            order_info=await to_web_api(o.info) if o.info else None,
+            order_info=await to_web_api(o.info, client) if o.info else None,
         ),
     if isinstance(o, TMessageActionSecureValuesSentMe):
         return PassportData(
-            data=await to_web_api(o.values),
-            credentials=await to_web_api(o.credentials),
+            data=await to_web_api(o.values, client),
+            credentials=await to_web_api(o.credentials, client),
         ),
     if isinstance(o, TSecureValue):
         raise ValueError('TSecureValue not implemented')
         return EncryptedPassportElement(
-            type=await to_web_api(o, o.type),
+            type=await to_web_api(o, client, o.type),
             # One of “personal_details”, “passport”, “driver_license”, “identity_card”, “internal_passport”, “address”, “utility_bill”, “bank_statement”, “rental_agreement”, “passport_registration”, “temporary_registration”, “phone_number”, “email”.
             # TypeSecureValueType = SecureValueTypePersonalDetails,SecureValueTypePassport,SecureValueTypeDriverLicense,SecureValueTypeIdentityCard,SecureValueTypeInternalPassport,SecureValueTypeAddress,SecureValueTypeUtilityBill,SecureValueTypeBankStatement,SecureValueTypeRentalAgreement,SecureValueTypePassportRegistration,SecureValueTypeTemporaryRegistration,SecureValueTypePhone,SecureValueTypeEmail
             hash=to_native(o.hash),
-            data=await to_web_api(o.data),  # TypeSecureData = SecureData
+            data=await to_web_api(o.data, client),  # TypeSecureData = SecureData
             phone_number=o.ph,
             email=None,
             files=None,
@@ -694,7 +707,8 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
             shipping_address=o.shipping_address,
         )
     if isinstance(o, TPeerChannel):
-        return load_chat(o.channel_id)
+        peer = await client.get_entity(o.to_id)
+        return await to_web_api(peer, client)
     if isinstance(o, TMessageEntityBlockquote):
         return MessageEntity(
             type='blockquote',  # Todo
@@ -809,7 +823,7 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         )
     if isinstance(o, TMessageMediaVenue):
         return Venue(
-            location=await to_web_api(o.geo),
+            location=await to_web_api(o.geo, client),
             title=o.title,
             address=o.address,
             foursquare_id=o.venue_id if o.venue_type == 'foursquare' else None,
@@ -833,15 +847,15 @@ async def to_web_api(o, user_as_chat=False, prefer_update=True, load_photos=Fals
         return None
     if isinstance(o, TPhoto):
         file_id = pack_bot_file_id(o)
-        return [x for x in await to_web_api(o.sizes, file_id=file_id) if x]  # filter out None (TPhotoSizeEmpty)
+        return [x for x in await to_web_api(o.sizes, client, file_id=file_id) if x]  # filter out None (TPhotoSizeEmpty)
     if isinstance(o, datetime):
         return int(o.timestamp())
     if isinstance(o, tuple):
-        return tuple(await to_web_api(list(o)))
+        return tuple(await to_web_api(list(o), client))
     if isinstance(o, list):
-        return [await to_web_api(x) for x in o]
+        return [await to_web_api(x, client) for x in o]
     if isinstance(o, dict):
-        return {k: await to_web_api(v) for k, v in o.items()}
+        return {k: await to_web_api(v, client) for k, v in o.items()}
     if isinstance(o, (bool, str, int, float)):
         return o
     if o is None:
