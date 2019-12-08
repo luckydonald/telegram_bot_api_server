@@ -104,19 +104,6 @@ if __name__ == '__main__':
 # end if
 
 
-def load_user(user_id: int) -> User:
-    # TODO.
-    return User(  # maybe just call to_web_api()
-        id=user_id,
-        is_bot=False,
-        first_name=f"user#{user_id}",
-        # last_name=None,
-        # username=None,
-        # language_code=None,
-    )
-# end def
-
-
 MASK_POSITIONS = {
     0: "forehead",
     1: "eyes",
@@ -203,9 +190,12 @@ async def to_web_api(
                 update_id=client.update_id,
                 shipping_query=await to_web_api(o, client, prefer_update=False),
             )
+        # end if
+        user = await client.get_entity(o.user_id)
+        user = await to_web_api(user)
         return ShippingQuery(
             id=o.query_id,
-            from_peer=load_user(o.user_id),
+            from_peer=user,
             invoice_payload=o.payload,
             shipping_address=o.shipping_address,
         )
@@ -215,9 +205,12 @@ async def to_web_api(
                 update_id=client.update_id,
                 pre_checkout_query=await to_web_api(o, client, prefer_update=False),
             )
+        # end if
+        user = await client.get_entity(o.user_id)
+        user = await to_web_api(user)
         return PreCheckoutQuery(
             id=o.query_id,
-            from_peer=load_user(o.user_id),
+            from_peer=user,
             currency=o.currency,
             total_amount=o.total_amount,
             invoice_payload=o.payload,
@@ -513,13 +506,20 @@ async def to_web_api(
             )
         else:  # must be TMessageService
             assert isinstance(o, TMessageService)
+            # end if
+            users = []
+            for user_id in o.action.users:
+                user = await client.get_entity(o.user_id)
+                user = await to_web_api(user_id)
+                users.append(user)
+            # end for
             if isinstance(o.action, TMessageActionChatAddUser):
                 return Message(
                     message_id=o.id,
                     date=date,
                     chat=chat,
                     from_peer=from_peer,
-                    new_chat_members=[load_user(u) for u in o.action.users],
+                    new_chat_members=users,
                     invoice=None,
                 )
             # end if
@@ -553,22 +553,27 @@ async def to_web_api(
                     invoice=None,
                 )
             if isinstance(o.action, TMessageActionChatDeleteUser):
+                user = await client.get_entity(o.action.user_id)
+                user = await to_web_api(user)
                 return Message(
                     message_id=o.id,
                     date=date,
                     chat=chat,
                     from_peer=from_peer,
-                    left_chat_member=load_user(o.action.user_id),
+                    left_chat_member=user,
                     invoice=None,
                 )
             # end if
             if isinstance(o.action, TMessageActionChatJoinedByLink):
-                return Message(  # TODO is swapping from_peer(inviter_id) and new_chat_members(from_id), is that correct?
+                user = await client.get_entity(o.from_id)
+                user = await to_web_api(user)
+                # TODO is swapping from_peer(inviter_id) and new_chat_members(from_id), is that correct?
+                return Message(
                     message_id=o.id,
                     date=date,
                     chat=chat,
                     from_peer=from_peer,
-                    new_chat_members=[load_user(o.from_id)],
+                    new_chat_members=[user],
                     invoice=None,
                 )
             # end if
@@ -779,11 +784,13 @@ async def to_web_api(
             length=o.length,
         )
     if isinstance(o, TMessageEntityMentionName):
+        user = await client.get_entity(o.user_id)
+        user = await to_web_api(user)
         return MessageEntity(
             type='text_mention',
             offset=o.offset,
             length=o.length,
-            user=load_user(user_id=o.user_id),  # TODO: load user
+            user=user,
         )
     if isinstance(o, TMessageEntityPhone):
         return MessageEntity(
