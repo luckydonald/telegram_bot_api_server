@@ -573,8 +573,6 @@ async def to_web_api(
             )
         # end if
         if isinstance(o.action, (TMessageActionChannelCreate, TMessageActionChatCreate)):
-            raise ValueError('Eeee? is this channel or supergroup?')
-            chat: Chat = await to_web_api(o.to_id, client)
             return Message(
                 message_id=o.id,
                 date=date,
