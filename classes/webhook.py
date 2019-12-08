@@ -120,9 +120,14 @@ class TelegramClientWebhook(TelegramClient):
         @self.on(events.Raw)
         async def got_some_update(event: events.NewMessage):
             """Process incomming Updates."""
-            logger.info(f'account {self.api_key!r} got message: {type(event)!r}')
+            logger.info(f'account {self.api_key!r} got message: {event!s}')
+            if isinstance(event, (UpdateChannelMessageViews, UpdateChannel)):
+                logger.info(f'Skipping Update type {type(event)}')
+                return
+            # end if
             from datetime import datetime
-            with open(f'logs/update_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.py', 'w') as f:
+            now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            with open(f'logs/update_{now}.py', 'w') as f:
                 f.write('from telethon.tl.types import *\nfrom telethon.tl.patched import *\nimport datetime\n\n')
                 f.write(str(event))
             # end with
@@ -131,16 +136,12 @@ class TelegramClientWebhook(TelegramClient):
                 *TypeUpdate.__args__,
                 parameter_name='event'
             )
-
-            if isinstance(event, (UpdateChannelMessageViews, UpdateChannel)):
-                logger.info(f'Skipping Update type {type(event)}')
-                return
             try:
                 update: Update = await to_web_api(event, client=self)  # provide the client so we can lookup chats and users.
             except TypeError as e:
                 logger.exception('Serializing element failed')
 
-                with open(f'logs/update_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as f:
+                with open(f'logs/update_{now    }.txt', 'w') as f:
                     f.write(str(e))
                 # end with
 
@@ -150,7 +151,7 @@ class TelegramClientWebhook(TelegramClient):
 
             from datetime import datetime
             import json
-            with open(f'logs/update_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.json', 'w') as f:
+            with open(f'logs/update_{now}.json', 'w') as f:
                 json.dump(update.to_array(), f)
             # end with
 
