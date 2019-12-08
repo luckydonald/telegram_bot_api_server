@@ -488,7 +488,7 @@ async def to_web_api(
             # TODO: media_group_id=,
             author_signature=o.fwd_from.post_author if o.fwd_from else None,
             text=None if o.media else o.raw_text,
-            caption=o.text if o.media else None,
+            caption=o.raw_text if o.media else None,
             entities=None if o.media else await to_web_api(o.entities, client),
             caption_entities=await to_web_api(o.entities, client) if o.media else None,
             document=None if any([o.photo, o.sticker, o.video, o.voice, o.video_note]) else await to_web_api(o.document, client),
