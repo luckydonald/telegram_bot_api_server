@@ -511,7 +511,7 @@ async def to_web_api(
             # end if
             users = []
             for user_id in o.action.users:
-                user = await get_entity(client, o.user_id)
+                user = await get_entity(client, user_id)
                 user = await to_web_api(user_id)
                 users.append(user)
             # end for
@@ -729,7 +729,7 @@ async def to_web_api(
             shipping_address=o.shipping_address,
         )
     if isinstance(o, TPeerChannel):
-        peer = await get_entity(client, o)
+        peer = await get_entity(client, o.channel_id)
         return await to_web_api(peer, client)
     if isinstance(o, TMessageEntityBlockquote):
         return MessageEntity(
