@@ -3,6 +3,7 @@
 import asyncio
 
 import typing
+from random import randint
 
 import aiohttp
 from luckydonaldUtils.exceptions import assert_type_or_raise
@@ -82,7 +83,19 @@ class TelegramClientWebhook(TelegramClient):
         )
         self.api_key = api_key
         self.webhook_url = webhook_url
-        self.update_id = 0
+        self.update_id = self.create_random_update_id()
+    # end def
+
+    def create_random_update_id(self):
+        """
+        Reset the update id.
+
+        Update identifiers start from a certain positive number and increase sequentially.
+        If there are no new updates for at least a week, then identifier of the next update
+        will be chosen randomly instead of sequentially.
+        :return:
+        """
+        return randint(0, 2147483647)
     # end def
 
     async def send_event(self, data: Update):
@@ -144,12 +157,11 @@ class TelegramClientWebhook(TelegramClient):
             await self.send_event(update)
             # await event.respond()
 
-            # TODO: Update identifiers start from a certain positive number and increase sequentially.
-            # TODO: If there are no new updates for at least a week, then identifier of the next update will be chosen randomly instead of sequentially.
             self.update_id += 1
-            if self.update_id > 999999999:
-                self.update_id = 0
+            if self.update_id > 2147483647:
+                self.update_id = self.create_random_update_id()
             # end if
             raise events.StopPropagation
         # end def
+    # end def
 # end class
