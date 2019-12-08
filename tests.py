@@ -280,7 +280,7 @@ class MyTestCase(asynctest.TestCase):
         )
     # end def
 
-    async def test_channel_message_2_forwareded(self):
+    async def test_channel_message_2_forward_from_channel(self):
         """
         Same as test_channel_message_2, but forwarded to another channel.
         :return:
@@ -402,6 +402,110 @@ class MyTestCase(asynctest.TestCase):
                         "width": 720
                     }
                 ]
+            },
+            "update_id": 445804458
+        }
+
+        from serializer import to_web_api
+        result = await to_web_api(event, client)
+        result = result.to_array()
+
+        # for i, result_photo in enumerate(expected["message"]["photo"]):
+        #     expected_photo = result["message"]["photo"][i]
+        #     self.assertEquals(len(expected_photo['file_id']), len(result_photo['file_id']), "length should be same")
+        #     # now delete the file id's as we don't like that to butcher up the comparision
+        #     del result_photo['file_id']
+        #     del expected_photo['file_id']
+        # # end if
+
+        self.assertEqual(
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            'real one vs generated one'
+        )
+    # end def
+
+    async def test_channel_forward_from_user(self):
+        client = FakeClient(
+            lookups={
+                10717954: User(id=10717954, is_self=False, contact=False, mutual_contact=False, deleted=False, bot=False, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, access_hash=-2993714178598625124, first_name='luckydonald', last_name=None, username='luckydonald', phone=None, photo=UserProfilePhoto(photo_id=46033262366284583, photo_small=FileLocationToBeDeprecated(volume_id=263834989, local_id=209571), photo_big=FileLocationToBeDeprecated(volume_id=263834989, local_id=209573), dc_id=2), status=UserStatusRecently(), bot_info_version=None, restriction_reason=[], bot_inline_placeholder=None, lang_code='en'),
+                -1001443587969: Channel(id=1443587969, title='Derp [test] rename', photo=ChatPhoto(photo_small=FileLocationToBeDeprecated(volume_id=226613135, local_id=158488), photo_big=FileLocationToBeDeprecated(volume_id=226613135, local_id=158490), dc_id=2), date=datetime.datetime(2019, 6, 16, 22, 38, 57, tzinfo=datetime.timezone.utc), version=0, creator=False, left=False, broadcast=False, verified=False, megagroup=True, restricted=False, signatures=False, min=False, scam=False, has_link=False, has_geo=False, slowmode_enabled=False, access_hash=-7101147752375680853, username=None, restriction_reason=[], admin_rights=None, banned_rights=None, default_banned_rights=ChatBannedRights(until_date=datetime.datetime(2038, 1, 19, 3, 14, 7, tzinfo=datetime.timezone.utc), view_messages=False, send_messages=False, send_media=False, send_stickers=False, send_gifs=False, send_games=False, send_inline=False, embed_links=False, send_polls=False, change_info=False, invite_users=False, pin_messages=False), participants_count=None),
+            },
+            update_id=445804458
+        )
+        event = UpdateNewChannelMessage(
+            message=Message(
+                id=207,
+                to_id=PeerChannel(channel_id=1443587969),
+                date=datetime.datetime(2019, 12, 8, 15, 53, 50, tzinfo=datetime.timezone.utc),
+                message='💚 Container forward_whitelist is now healthy',
+                out=False,
+                mentioned=False,
+                media_unread=False,
+                silent=False,
+                post=False,
+                from_scheduled=False,
+                legacy=False,
+                edit_hide=False,
+                from_id=10717954,
+                fwd_from=MessageFwdHeader(
+                    date=datetime.datetime(2019, 6, 15, 4, 53, 16, tzinfo=datetime.timezone.utc),
+                    from_id=133378542,
+                    from_name=None,
+                    channel_id=None,
+                    channel_post=None,
+                    post_author=None,
+                    saved_from_peer=None,
+                    saved_from_msg_id=None
+                ),
+                via_bot_id=None,
+                reply_to_msg_id=None,
+                media=None,
+                reply_markup=None,
+                entities=[
+                    MessageEntityCode(offset=13, length=17)
+                ],
+                views=None,
+                edit_date=None,
+                post_author=None,
+                grouped_id=None,
+                restriction_reason=[]
+            ),
+            pts=211,
+            pts_count=1
+        )
+
+        expected = {
+            "message": {
+                "chat": {
+                    "id": -1001443587969,
+                    "title": "Derp [test] rename",
+                    "type": "supergroup"
+                },
+                "date": 1575820430,
+                "entities": [
+                    {
+                        "length": 17,
+                        "offset": 13,
+                        "type": "code"
+                    }
+                ],
+                "forward_date": 1560574396,
+                "forward_from": {
+                    "first_name": "Test Bot i do tests with",
+                    "id": 133378542,
+                    "is_bot": true,
+                    "username": "test4458bot"
+                },
+                "from": {
+                    "first_name": "luckydonald",
+                    "id": 10717954,
+                    "is_bot": false,
+                    "language_code": "en",
+                    "username": "luckydonald"
+                },
+                "message_id": 207,
+                "text": "💚 Container forward_whitelist is now healthy"
             },
             "update_id": 445804458
         }
