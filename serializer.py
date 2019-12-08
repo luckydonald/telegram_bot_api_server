@@ -507,57 +507,63 @@ async def to_web_api(
             invoice=await to_web_api(o.invoice, client),
         )
     if isinstance(o, TMessageService):
+        chat: Chat = await to_web_api(o.chat, client, user_as_chat=True)
+        from_peer: Union[None, User] = None
+        if chat and chat.type != TYPE_CHANNEL:
+            from_peer = await to_web_api(await client.get_entity(o.from_id), client)
+        # end if
+        date = await to_web_api(o.date, client)
         if isinstance(o.action, TMessageActionChatAddUser):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 new_chat_members=[load_user(u) for u in o.action.users],
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionChatEditTitle):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 new_chat_title=o.action.title,
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionChatEditPhoto):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 new_chat_photo=await to_web_api(o.action.photo, client),
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionChatDeletePhoto):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 delete_chat_photo=True,
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionChatDeleteUser):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 left_chat_member=load_user(o.action.user_id),
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionChatJoinedByLink):
             return Message(  # TODO is swapping from_peer(inviter_id) and new_chat_members(from_id), is that correct?
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.action.inviter_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 new_chat_members=[load_user(o.from_id)],
                 invoice=None,
             )
@@ -566,9 +572,9 @@ async def to_web_api(
             chat: Chat = await to_web_api(o.to_id, client)
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
+                date=date,
                 chat=chat,
-                from_peer=load_user(o.from_id),
+                from_peer=from_peer,
                 group_chat_created=chat.type == 'group',  # either group, chat or supergroup
                 supergroup_chat_created=chat.type == 'supergroup',  # either group, chat or supergroup
                 channel_chat_created=chat.type == 'chat',  # either group, chat or supergroup
@@ -577,18 +583,18 @@ async def to_web_api(
         if isinstance(o.action, TMessageActionChatMigrateTo):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 migrate_to_chat_id=o.action.channel_id,
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionChannelMigrateFrom):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 migrate_from_chat_id=o.action.chat_id,
                 invoice=None,
             )
@@ -599,18 +605,18 @@ async def to_web_api(
             # raise ValueError('Pins need to load the message')
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 pinned_message=load_message(o.to_id, o.from_id),
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionPaymentSentMe):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 invoice=None,
                 successful_payment=await to_web_api(o.action, client),
             )
@@ -618,43 +624,43 @@ async def to_web_api(
             raise ValueError(f'Unknown custom action {o.action.message!r} (o.action = TMessageActionCustomAction)')
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionBotAllowed):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 invoice=None,
                 connected_website=o.action.domain,
             )
         if isinstance(o.action, TMessageActionSecureValuesSentMe):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 invoice=None,
                 passport_data=await to_web_api(o.action, client)
             )
         if isinstance(o.action, TMessageActionChatAddUser):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 invoice=None,
             )
         if isinstance(o.action, TMessageActionChatAddUser):
             return Message(
                 message_id=o.id,
-                date=await to_web_api(o.date, client),
-                chat=await to_web_api(o.to_id, client),
-                from_peer=load_user(o.from_id),
+                date=date,
+                chat=chat,
+                from_peer=from_peer,
                 invoice=None,
             )
     if isinstance(o, TMessageActionPaymentSentMe):
@@ -842,13 +848,17 @@ async def to_web_api(
         return None
     if isinstance(o, TPhoto):
         file_id = pack_bot_file_id(o)
-        return [x for x in await to_web_api(o.sizes, client, file_id=file_id) if x]  # filter out None (TPhotoSizeEmpty)
+        return [
+            await to_web_api(size, client, file_id=file_id)
+            for size in o.sizes
+            if not isinstance(size, TPhotoSizeEmpty)
+        ]
     if isinstance(o, datetime):
         return int(o.timestamp())
     if isinstance(o, tuple):
         return tuple(await to_web_api(list(o), client))
     if isinstance(o, list):
-        return [await to_web_api(x, client) for x in o]
+        return [await to_web_api(x, client, file_id=file_id) for x in o]
     if isinstance(o, dict):
         return {k: await to_web_api(v, client) for k, v in o.items()}
     if isinstance(o, (bool, str, int, float)):
