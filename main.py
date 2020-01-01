@@ -137,7 +137,7 @@ async def get_updates(token, request: Request):
     # end if
 
     # in any case we wanna return the updates
-    return r_success(updates[token].updates)
+    return r_success([x.to_array() for x in updates[token].updates])
 # end def
 
 
