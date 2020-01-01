@@ -4,7 +4,7 @@ from typing import Dict
 from aiohttp import web
 from aiocron import crontab
 from asyncio import get_event_loop, create_task
-from classes.webhook import TelegramClientWebhook
+from classes.webhook import TelegramClientWebhook, TelegramClientUpdates
 from somewhere import TG_API_ID, TG_API_HASH
 from aiohttp_utils import flaskify_arguments
 from aiohttp.web_request import Request
@@ -24,7 +24,12 @@ loop.set_debug(True)
 
 webhooks: Dict[str, TelegramClientWebhook]
 webhooks: Dict[str, TelegramClientWebhook] = {
-    # token: ('https://route/to/instance', bot),
+    # "token": TelegramClientWebhook('https://route/to/instance', ...),
+}
+
+updates: Dict[str, TelegramClientUpdates]
+updates: Dict[str, TelegramClientUpdates] = {
+    # "token": TelegramClientUpdates(...),
 }
 
 routes = web.RouteTableDef()
@@ -41,6 +46,7 @@ async def handle(request: Request):
 @routes.get('/bot{token}/setWebhook')
 @flaskify_arguments
 async def set_webhook(token, request: Request):
+    global updates
     global webhooks
     logger.debug(f'Setting webhook for {token}...')
     if 'url' not in request.query or not request.query['url']:
@@ -52,6 +58,14 @@ async def set_webhook(token, request: Request):
     if token in webhooks:
         webhooks[token].webhook_url = url
         return r_success(True, "Webhook was updated")
+    # end if
+    if token in updates:
+        logger.debug('Removing getUpdates hook')
+        bot = updates[token]
+        del updates[token]
+        bot.disconnect()
+        del bot
+        del updates[token]
     # end if
     try:
         logger.debug(f'Launching telegram client for {token}.')
@@ -91,6 +105,39 @@ async def delete_webhook(token, request: Request):
         return r_success(True, "Webhook was deleted")
     # end if
     return r_success(True, "Webhook was not set")
+# end def
+
+
+@routes.get('/bot{token}/getUpdates')
+@flaskify_arguments
+async def get_updates(token, request: Request):
+    global updates
+    logger.debug(f'Setting webhook for {token}...')
+
+    if token not in updates:
+        if token in webhooks:
+            return r_error(409, "Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first")
+        # end if
+        try:
+            logger.debug(f'Launching telegram client for {token}.')
+            bot = TelegramClientUpdates(
+                session='bot', api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token,
+            )
+            bot.parse_mode = 'html'  # <- Render things nicely
+            await bot.connect()
+            bot.register_update_listeners()
+            await bot.sign_in(bot_token=bot.api_key)
+            logger.debug(f'Done registering all the listeners for {token}.')
+        except Exception as e:
+            logger.warning('Registering bot failed', exc_info=True)
+            return r_error(500, description=str(e))
+        # end try
+        updates[token] = bot
+        logger.debug(f'Telegram client for {token} is registered.')
+    # end if
+
+    # in any case we wanna return the updates
+    return r_success(updates[token].updates)
 # end def
 
 
@@ -153,6 +200,6 @@ if __name__ == '__main__':
         except ImportError:
             pass
         # end try
-        web.run_app(app, port=8080, reuse_address=True, reuse_port=True)
+        web.run_app(app, port=8081, reuse_address=True, reuse_port=True)
     # end iff
 # end if
