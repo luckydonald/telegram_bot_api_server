@@ -113,7 +113,8 @@ MASK_POSITIONS = {
 
 
 async def to_web_api(
-    o, client: 'classes.webhook.TelegramClientWebhook', user_as_chat=False, prefer_update=True, load_photos=False, file_id: Union[str, None] = None
+    o, client: 'classes.webhook.TelegramClientWebhook', user_as_chat=False, prefer_update=True, load_photos=False,
+    file_id: Union[str, None] = None, include_reply: bool = True
 ):
     if isinstance(o, TUpdateNewMessage):
         return Update(
@@ -434,7 +435,8 @@ async def to_web_api(
             ],
         )
     if isinstance(o, (TMessage, TMessageService)):
-        chat: Chat = await to_web_api(await get_entity(client, o.chat_id), client, user_as_chat=True)
+        chat = await get_entity(client, o.chat_id)
+        chat: Chat = await to_web_api(chat, client, user_as_chat=True)
         from_peer: Union[None, User] = None
         if chat and chat.type != TYPE_CHANNEL:  # supposed to be None for 'channel's.
             from_peer = await get_entity(client, o.sender_id)
@@ -444,8 +446,9 @@ async def to_web_api(
 
         if isinstance(o, TMessage):
             reply = None
-            if o.is_reply:
-                reply = await o.get_reply_message()
+            if include_reply and o.is_reply:
+                reply = await get_reply_message(o)
+                reply = await to_web_api(reply, client, include_reply=False)  # don't have a reply in the reply.
             # end if
             forward_date = None
             forward_from = None
@@ -477,13 +480,14 @@ async def to_web_api(
                 message_id=o.id,
                 date=date,
                 chat=chat,
+                
                 from_peer=from_peer,
                 forward_from=forward_from,
                 forward_from_chat=forward_from_chat,
                 forward_from_message_id=forward_from_message_id,
                 forward_signature=forward_signature,
                 forward_date=forward_date,
-                reply_to_message=await to_web_api(reply, client),
+                reply_to_message=reply,
                 edit_date=await to_web_api(o.edit_date, client),
                 # TODO: media_group_id=,
                 author_signature=author_signature,
@@ -509,13 +513,13 @@ async def to_web_api(
         else:  # must be TMessageService
             assert isinstance(o, TMessageService)
             # end if
-            users = []
-            for user_id in o.action.users:
-                user = await get_entity(client, user_id)
-                user = await to_web_api(user_id)
-                users.append(user)
-            # end for
             if isinstance(o.action, TMessageActionChatAddUser):
+                users = []
+                for user_id in o.action.users:
+                    user = await get_entity(client, user_id)
+                    user = await to_web_api(user, client)
+                    users.append(user)
+                # end for
                 return Message(
                     message_id=o.id,
                     date=date,
@@ -899,4 +903,15 @@ async def get_entity(client, peer):
         f.write(f'input = {peer}\nresult = {entity!s}')
     # end with
     return entity
+# end def
+
+
+async def get_reply_message(e: TMessage):
+    """ wrapper for debug. """
+    msg = await e.get_reply_message()
+    with open(f'logs/msg_{e.chat_id!s}#{e.id}#{e.id}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as f:
+        f.write('from telethon.tl.types import *\nfrom telethon.tl.patched import *\nimport datetime\n\n')
+        f.write(f'{{\n  "{e.chat_id!s}#{e.id}": {msg!s}\n}}')
+    # end with
+    return msg
 # end def
