@@ -101,7 +101,7 @@ class TelegramClientUpdateCollector(TelegramClient):
         raise NotImplementedError('Implement me plz.')
     # end def
 
-    def register_webhook_methods(self):
+    def register_update_listeners(self):
         @self.on(events.NewMessage(pattern='/start'))
         async def start(event):
             """Send a message when the command /start is issued."""

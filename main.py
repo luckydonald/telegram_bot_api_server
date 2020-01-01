@@ -60,7 +60,7 @@ async def set_webhook(token, request: Request):
         )
         bot.parse_mode = 'html'  # <- Render things nicely
         await bot.connect()
-        bot.register_webhook_methods()
+        bot.register_update_listeners()
         await bot.sign_in(bot_token=bot.api_key)
         logger.debug(f'Telegram client for {token} is enqueued.')
 
