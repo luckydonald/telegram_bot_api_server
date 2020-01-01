@@ -70,7 +70,7 @@ async def set_webhook(token, request: Request):
     try:
         logger.debug(f'Launching telegram client for {token}.')
         bot = TelegramClientWebhook(
-            session='bot', api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token, webhook_url=url,
+            session=token, api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token, webhook_url=url,
         )
         bot.parse_mode = 'html'  # <- Render things nicely
         await bot.connect()
@@ -121,7 +121,7 @@ async def get_updates(token, request: Request):
         try:
             logger.debug(f'Launching telegram client for {token}.')
             bot = TelegramClientUpdates(
-                session='bot', api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token,
+                session=token, api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token,
             )
             bot.parse_mode = 'html'  # <- Render things nicely
             await bot.connect()
