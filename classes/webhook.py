@@ -4,6 +4,7 @@ import asyncio
 
 import typing
 from random import randint
+from typing import Type, Union, List
 
 import aiohttp
 from luckydonaldUtils.exceptions import assert_type_or_raise
@@ -35,15 +36,15 @@ class TelegramClientWebhook(TelegramClient):
 
     def __init__(
         self: 'TelegramClient',
-        session: typing.Union[str, Session],
+        session: Union[str, Session],
         api_id: int,
         api_hash: str,
         api_key: str,
         webhook_url: str,
         *,
-        connection: typing.Type[Connection] = ConnectionTcpFull,
+        connection: Type[Connection] = ConnectionTcpFull,
         use_ipv6: bool = False,
-        proxy: typing.Union[tuple, dict] = None,
+        proxy: Union[tuple, dict] = None,
         timeout: int = 10,
         request_retries: int = 5,
         connection_retries: int = 5,
@@ -57,7 +58,7 @@ class TelegramClientWebhook(TelegramClient):
         lang_code: str = 'en',
         system_lang_code: str = 'en',
         loop: asyncio.AbstractEventLoop = None,
-        base_logger: typing.Union[str, logging.Logger] = None
+        base_logger: Union[str, logging.Logger] = None
     ):
         super().__init__(
             session,
