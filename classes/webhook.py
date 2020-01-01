@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 
-import typing
+from abc import abstractmethod
 from random import randint
 from typing import Type, Union, List
 
@@ -25,13 +25,12 @@ if __name__ == '__main__':
 # end if
 
 
-class TelegramClientWebhook(TelegramClient):
+class TelegramClientUpdateCollector(TelegramClient):
     """
     A TelegramClient which remember it's API_KEY and WEBHOOK
     """
 
     api_key: str
-    webhook_url: str
     update_id: int
 
     def __init__(
@@ -40,7 +39,6 @@ class TelegramClientWebhook(TelegramClient):
         api_id: int,
         api_hash: str,
         api_key: str,
-        webhook_url: str,
         *,
         connection: Type[Connection] = ConnectionTcpFull,
         use_ipv6: bool = False,
@@ -83,7 +81,6 @@ class TelegramClientWebhook(TelegramClient):
             base_logger=base_logger
         )
         self.api_key = api_key
-        self.webhook_url = webhook_url
         self.update_id = self.create_random_update_id()
     # end def
 
@@ -99,15 +96,9 @@ class TelegramClientWebhook(TelegramClient):
         return randint(0, 2147483647)
     # end def
 
+    @abstractmethod
     async def send_event(self, data: Update):
-        json = data.to_array()
-        logger.debug(f"Sending event: {json!r}")
-        return None
-        async with aiohttp.ClientSession() as session:
-            async with session.post(self.webhook_url, json=json) as response:
-                logger.info("Response: " + repr(await response.text()))
-            # end with
-        # end with
+        raise NotImplementedError('Implement me plz.')
     # end def
 
     def register_webhook_methods(self):
@@ -166,4 +157,60 @@ class TelegramClientWebhook(TelegramClient):
             raise events.StopPropagation
         # end def
     # end def
+# end class
+
+
+class TelegramClientWebhook(TelegramClientUpdateCollector):
+    """
+    Directly sends incoming updates to a webhook.
+
+    Therefore it also keeps the URL of that around.
+    """
+    webhook_url: str
+
+    def __init__(
+        self: 'TelegramClient', session: Union[str, Session], api_id: int, api_hash: str, api_key: str,
+        webhook_url: str, *, connection: Type[Connection] = ConnectionTcpFull, use_ipv6: bool = False,
+        proxy: Union[tuple, dict] = None, timeout: int = 10, request_retries: int = 5,
+        connection_retries: int = 5, retry_delay: int = 1, auto_reconnect: bool = True,
+        sequential_updates: bool = False, flood_sleep_threshold: int = 60, device_model: str = None,
+        system_version: str = None, app_version: str = None, lang_code: str = 'en',
+        system_lang_code: str = 'en', loop: asyncio.AbstractEventLoop = None,
+        base_logger: Union[str, logging.Logger] = None,
+    ):
+        self.webhook_url = webhook_url
+        super().__init__(
+            session, api_id, api_hash, api_key, connection=connection, use_ipv6=use_ipv6,
+            proxy=proxy, timeout=timeout, request_retries=request_retries,
+            connection_retries=connection_retries, retry_delay=retry_delay, auto_reconnect=auto_reconnect,
+            sequential_updates=sequential_updates, flood_sleep_threshold=flood_sleep_threshold,
+            device_model=device_model, system_version=system_version, app_version=app_version,
+            lang_code=lang_code, system_lang_code=system_lang_code, loop=loop, base_logger=base_logger,
+        )
+    # end def
+
+    async def send_event(self, data: Update):
+        json = data.to_array()
+        logger.debug(f"Sending event: {json!r}")
+        return None
+        async with aiohttp.ClientSession() as session:
+            async with session.post(self.webhook_url, json=json) as response:
+                logger.info("Response: " + repr(await response.text()))
+            # end with
+        # end with
+    # end def
+# end class
+
+
+class TelegramClientUpdates(TelegramClientWebhook):
+    """
+    Keeps around the updates in memory.
+    """
+    updates: List[Update] = []
+
+    async def send_event(self, data: Update):
+        json = data.to_array()
+        logger.debug(f"Storing event: {json!r}")
+        self.updates.append(data)
+    # end ef
 # end class
