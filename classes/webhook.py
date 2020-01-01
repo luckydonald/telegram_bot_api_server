@@ -202,7 +202,7 @@ class TelegramClientWebhook(TelegramClientUpdateCollector):
 # end class
 
 
-class TelegramClientUpdates(TelegramClientWebhook):
+class TelegramClientUpdates(TelegramClientUpdateCollector):
     """
     Keeps around the updates in memory.
     """
