@@ -133,8 +133,7 @@ def _get_bot(token: str) -> TelegramClientUpdateCollector:
     if token in updates:
         return updates[token]
     # end if
-    if token in bots:
-
+# end def
 
 @routes.get('/bot{token}/getMe')
 async def get_me(request):
