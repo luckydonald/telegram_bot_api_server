@@ -3,6 +3,7 @@
 import asyncio
 
 from abc import abstractmethod
+from enum import Enum
 from random import randint
 from typing import Type, Union, List
 
@@ -25,21 +26,38 @@ if __name__ == '__main__':
 # end if
 
 
+class UpdateModes(Enum):
+    """ Possible modes of operation for a TelegramClientUpdateCollector. """
+    WEBHOOK = "webhook"  # does call an url with the updates received
+    POLLING = "polling"  # stores the updates received for later retrieval
+    SILENT = "silent"  # discards updates.
+# end class
+
+
 class TelegramClientUpdateCollector(TelegramClient):
     """
-    A TelegramClient which remember it's API_KEY and WEBHOOK
+    A TelegramClient which remember it's API_KEY and depending on `mode` it
+    - sends the updates to the stored `webhook_url`
+    - stores it in the `updates` list for retrial later
+    - does not listen for updates (sending only)
     """
 
     api_key: str
+    mode: UpdateModes
     update_id: int
+    webhook_url: Union[str, None]
+    updates: List[Update] = []
 
     def __init__(
-        self: 'TelegramClient',
+        self: 'TelegramClientUpdateCollector',
         session: Union[str, Session],
+        # our custom parameters
         api_id: int,
         api_hash: str,
         api_key: str,
-        *,
+        mode: UpdateModes,
+        webhook_url: Union[str, None] = None,
+        # now the Telethon parameters
         connection: Type[Connection] = ConnectionTcpFull,
         use_ipv6: bool = False,
         proxy: Union[tuple, dict] = None,
@@ -81,7 +99,9 @@ class TelegramClientUpdateCollector(TelegramClient):
             base_logger=base_logger
         )
         self.api_key = api_key
+        self.mode = mode
         self.update_id = self.create_random_update_id()
+        self.webhook_url = webhook_url
     # end def
 
     def create_random_update_id(self):
@@ -96,9 +116,26 @@ class TelegramClientUpdateCollector(TelegramClient):
         return randint(0, 2147483647)
     # end def
 
-    @abstractmethod
     async def send_event(self, data: Update):
-        raise NotImplementedError('Implement me plz.')
+        json = data.to_array()
+        logger.debug(f"Processing event: {json!r}")
+        if self.mode == UpdateModes.POLLING:
+            # Store the updates
+            logger.debug('storing event.')
+            self.updates.append(data)
+        elif self.mode == UpdateModes.WEBHOOK:
+            # Send the updates
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.webhook_url, json=json) as response:
+                    logger.info("Response: " + repr(await response.text()))
+                # end with
+            # end with
+        elif self.mode == UpdateModes.SILENT:
+            # Ignore the updates
+            logger.debug('silently ignoring update.')
+        else:
+            raise AssertionError(f'self.mode ({self.mode!r}) is unknown.')
+        # end if
     # end def
 
     def register_update_listeners(self):
@@ -157,60 +194,17 @@ class TelegramClientUpdateCollector(TelegramClient):
             raise events.StopPropagation
         # end def
     # end def
-# end class
 
-
-class TelegramClientWebhook(TelegramClientUpdateCollector):
-    """
-    Directly sends incoming updates to a webhook.
-
-    Therefore it also keeps the URL of that around.
-    """
-    webhook_url: str
-
-    def __init__(
-        self: 'TelegramClient', session: Union[str, Session], api_id: int, api_hash: str, api_key: str,
-        webhook_url: str, *, connection: Type[Connection] = ConnectionTcpFull, use_ipv6: bool = False,
-        proxy: Union[tuple, dict] = None, timeout: int = 10, request_retries: int = 5,
-        connection_retries: int = 5, retry_delay: int = 1, auto_reconnect: bool = True,
-        sequential_updates: bool = False, flood_sleep_threshold: int = 60, device_model: str = None,
-        system_version: str = None, app_version: str = None, lang_code: str = 'en',
-        system_lang_code: str = 'en', loop: asyncio.AbstractEventLoop = None,
-        base_logger: Union[str, logging.Logger] = None,
-    ):
-        self.webhook_url = webhook_url
-        super().__init__(
-            session, api_id, api_hash, api_key, connection=connection, use_ipv6=use_ipv6,
-            proxy=proxy, timeout=timeout, request_retries=request_retries,
-            connection_retries=connection_retries, retry_delay=retry_delay, auto_reconnect=auto_reconnect,
-            sequential_updates=sequential_updates, flood_sleep_threshold=flood_sleep_threshold,
-            device_model=device_model, system_version=system_version, app_version=app_version,
-            lang_code=lang_code, system_lang_code=system_lang_code, loop=loop, base_logger=base_logger,
-        )
+    def enable_webhook(self, url):
+        self.url = url
+        self.mode = UpdateModes.WEBHOOK
     # end def
 
-    async def send_event(self, data: Update):
-        json = data.to_array()
-        logger.debug(f"Sending event: {json!r}")
-        return None
-        async with aiohttp.ClientSession() as session:
-            async with session.post(self.webhook_url, json=json) as response:
-                logger.info("Response: " + repr(await response.text()))
-            # end with
-        # end with
+    def enable_polling(self):
+        self.updates = []
+        self.mode = UpdateModes.POLLING
     # end def
-# end class
 
-
-class TelegramClientUpdates(TelegramClientUpdateCollector):
-    """
-    Keeps around the updates in memory.
-    """
-    updates: List[Update] = []
-
-    async def send_event(self, data: Update):
-        json = data.to_array()
-        logger.debug(f"Storing event: {json!r}")
-        self.updates.append(data)
-    # end ef
+    def enable_silent(self):
+        self.mode = UpdateModes.SILENT
 # end class

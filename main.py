@@ -3,8 +3,7 @@
 from typing import Dict, Union
 from aiocron import crontab
 from asyncio import get_event_loop
-from telethon import TelegramClient
-from classes.webhook import TelegramClientWebhook, TelegramClientUpdates, TelegramClientUpdateCollector
+from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from fastapi import FastAPI, APIRouter
 from pydantic import AnyHttpUrl
 from somewhere import TG_API_ID, TG_API_HASH
@@ -23,9 +22,8 @@ if __name__ == '__main__':
 loop = get_event_loop()
 loop.set_debug(True)
 
-bots: Dict[str, Union[TelegramClientWebhook, TelegramClientWebhook, TelegramClient]]
-bots: Dict[str, Union[TelegramClientWebhook, TelegramClientWebhook, TelegramClient]] = {
-    # "token": TelegramClientWebhook('https://route/to/instance', ...),
+bots: Dict[str, TelegramClientUpdateCollector] = {
+    # "token": TelegramClientUpdateCollector('https://route/to/instance', ...),
 }
 
 app = FastAPI()
@@ -40,25 +38,23 @@ async def set_webhook(token, url: Union[AnyHttpUrl, None] = None):
         return await delete_webhook(token)
     # end if
     if token in bots:
-        bot = bots[token]
-        if isinstance(bot, TelegramClientWebhook):
+        bot: TelegramClientUpdateCollector = bots[token]
+        if bot.mode == UpdateModes.WEBHOOK:
             # easy case: we already have a webhook registered and only want to change the url.
             bots[token].webhook_url = url
             return r_success(True, "Webhook was updated")
         # end if -> else
-        logger.debug(f'Removing old bot instance: {bot}')
-        bot = bots[token]
-        del bots[token]
-        bot.disconnect()
-        del bot
-        del bots[token]
+        logger.debug(f'Changing old bot instance: {bot}')
+        bot.enable_webhook(url)
+        return r_success(True, "Webhook was not set before")
         # end if
     # end if
 
     try:
         logger.debug(f'Launching telegram webhook client for {token}.')
-        bot = TelegramClientWebhook(
-            session=token, api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token, webhook_url=url,
+        bot = TelegramClientUpdateCollector(
+            session=token, api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token,
+            webhook_url=url, mode=UpdateModes.WEBHOOK,
         )
         bot.parse_mode = 'html'  # <- Render things nicely
         logger.debug(f'Connecting in the bot {token}.')
@@ -97,17 +93,15 @@ async def get_updates(token):
     logger.debug(f'Setting webhook for {token}...')
 
     if token in bots:
-        bot = bots[token]
-        if isinstance(bot, TelegramClientWebhook):
+        bot: TelegramClientUpdateCollector = bots[token]
+        if bot.mode == UpdateModes.WEBHOOK:
             logger.debug("using bot already registered as webhook")
             return r_error(409, "Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first")
-        elif not isinstance(bot, TelegramClientUpdates):
+        elif bot.mode != UpdateModes.POLLING:
             # we have an instance not listening for any updates.
             # -> close and delete
-            logger.debug(f"using bot neither webhook nor get_updates, deleting bot {bot!r}.")
-            del bots[token]
-            bot.disconnect()
-            del bot
+            logger.debug(f"using bot neither webhook nor polling, but is in mode {bot.mode!r}. Now forcing polling mode.")
+            bot.enable_polling()
         else:
             logger.debug("bot listening for getUpdates already found.")
         # end if
@@ -116,8 +110,9 @@ async def get_updates(token):
     if token not in bots:
         try:
             logger.debug(f'Launching telegram client for {token}.')
-            bot = TelegramClientUpdates(
+            bot = TelegramClientUpdateCollector(
                 session=token, api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token,
+                mode=UpdateModes.POLLING,
             )
             bot.parse_mode = 'html'  # <- Render things nicely
             logger.debug(f'Connecting in the bot {token}.')
@@ -140,7 +135,7 @@ async def get_updates(token):
 # end def
 
 
-async def _get_bot(token: str) -> Union[TelegramClient, TelegramClientUpdates, TelegramClientWebhook]:
+async def _get_bot(token: str) -> Union[TelegramClientUpdateCollector]:
     global bots
     if token in bots:
         # easy mode: find existing
@@ -148,8 +143,9 @@ async def _get_bot(token: str) -> Union[TelegramClient, TelegramClientUpdates, T
     # end if
 
     logger.debug(f'could not find bot for token {token},\nLaunching telegram muted client.')
-    bot = TelegramClient(
-        session=token, api_id=TG_API_ID, api_hash=TG_API_HASH,
+    bot = TelegramClientUpdateCollector(
+        session=token, api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token,
+        mode=UpdateModes.SILENT,
     )
     bot.parse_mode = 'html'  # <- Render things nicely
     logger.debug(f'Connecting in the bot {token}.')
