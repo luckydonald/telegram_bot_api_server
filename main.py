@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from typing import Dict, Union
-from aiohttp import web
 from aiocron import crontab
 from asyncio import get_event_loop
 from classes.webhook import TelegramClientWebhook, TelegramClientUpdates, TelegramClientUpdateCollector
 from fastapi import FastAPI, APIRouter
 from pydantic import AnyHttpUrl
 from somewhere import TG_API_ID, TG_API_HASH
+from starlette.responses import JSONResponse
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types.receivable.peer import User
 
@@ -160,20 +160,21 @@ async def attime():
 
 
 def r_error(error_code=500, description=None):
-    return web.json_response({
+    return JSONResponse({
         "ok": False,
         "error_code": error_code,
         "description": description
-    }, status=error_code)
+    }, status_code=error_code)
 # end def
 
 
 def r_success(result, description=None, status_code=200):
-    return web.json_response({
+    return JSONResponse({
         "ok": True,
         "result": result,
         "description": description,
-    }, status=status_code)
+    }, status_code=status_code)
+# end def
 
 
 app.include_router(routes)
