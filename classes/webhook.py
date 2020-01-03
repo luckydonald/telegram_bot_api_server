@@ -57,6 +57,7 @@ class TelegramClientUpdateCollector(TelegramClient):
         api_key: str,
         mode: UpdateModes,
         webhook_url: Union[str, None] = None,
+        parse_mode: Union[str, None] = "html",  # <- Render things nicely
         # now the Telethon parameters
         connection: Type[Connection] = ConnectionTcpFull,
         use_ipv6: bool = False,
@@ -99,6 +100,7 @@ class TelegramClientUpdateCollector(TelegramClient):
             base_logger=base_logger
         )
         self.api_key = api_key
+        self.parse_mode = parse_mode
         self.mode = mode
         self.update_id = self.create_random_update_id()
         self.webhook_url = webhook_url
