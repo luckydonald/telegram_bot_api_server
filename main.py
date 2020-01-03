@@ -7,8 +7,13 @@ from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from fastapi import FastAPI, APIRouter
 from pydantic import AnyHttpUrl
 from somewhere import TG_API_ID, TG_API_HASH
+from telethon.utils import parse_phone
+from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
+from telethon.sessions import StringSession
 from starlette.responses import JSONResponse
+from starlette.exceptions import HTTPException
 from luckydonaldUtils.logger import logging
+from telethon.tl.functions.auth import SignInRequest
 from pytgbot.api_types.receivable.peer import User
 
 
@@ -84,6 +89,95 @@ async def delete_webhook(token):
         return r_success(True, "Webhook was deleted")
     # end if
     return r_success(True, "Webhook was not set")
+# end def
+
+
+@routes.get('/authorize')
+@routes.post('/authorize')
+async def authorize_phone(
+    phone: str,
+    password: Union[None, str] = None,
+    bot_token: Union[None, str] = None,
+    force_sms: bool = False,
+    code: Union[None, str] = None,
+    phone_code_hash: Union[None, str] = None,
+    session: Union[None, str] = None,
+):
+    logger.info(f"Args: phone={phone}, password={password}, bot_token={bot_token}, force_sms={force_sms}, code={code}.")
+    me = None
+    bot = TelegramClientUpdateCollector(
+        session=StringSession(session), api_id=TG_API_ID, api_hash=TG_API_HASH,
+        mode=UpdateModes.SILENT,
+    )
+    if not bot.is_connected():
+        await bot.connect()
+    # end if
+
+    if not bot_token:
+        # Turn the callable into a valid phone number (or bot token)
+        phone = parse_phone(phone)
+    else:
+        await bot.sign_in(bot_token=bot_token)
+        return bot
+    # end try
+
+    logger.info(f'Phone Number: {phone}')
+    if not code:
+        logger.info('Sending code request.')
+        sent_code = await bot.send_code_request(phone, force_sms=force_sms)
+        logger.info(f'sent_code: {sent_code}')
+        # sign_up = not sent_code.phone_registered
+        logger.warning(
+            "Needs code now!\n"
+            "Please provide via '$TELEGRAM_LOGGER_PHONE_LOGIN_CODE' environment variable.\n"
+            f"Also set '$TELEGRAM_LOGGER_PHONE_LOGIN_HASH={sent_code.phone_code_hash}'."
+        )
+        session_str = bot.session.save()
+        # noinspection PyTypeChecker
+        raise HTTPException(502, detail={
+            'message': 'LOGIN FAILED: Please provide your code sent to you',
+            'reason': 'code',
+            'data': {'phone_code_hash': sent_code.phone_code_hash, 'code': None, 'password': None, 'session': session_str}
+        })
+    else:
+        logger.info('Signing in.')
+        try:
+            # me = await self.sign_in(phone, code=code, phone_code_hash=phone_code_hash)
+            result = await bot(SignInRequest(phone, phone_code_hash, str(code)))
+            logger.warning(f"Sign in result: {result}")
+            me = bot._on_login(result.user)
+        except PhoneCodeExpiredError:
+            session_str = bot.session.save()
+            raise HTTPException(502, detail={
+                'message': 'LOGIN FAILED: Please provide your code sent to you',
+                'reason': 'code_expired',
+                'data': {'phone_code_hash': phone_code_hash, 'code': None, 'password': None, 'session': session_str}
+            })
+        except SessionPasswordNeededError:
+            if not password:
+                txt = "Two-step verification is enabled for this account. Please provide the 'TELEGRAM_LOGGER_PHONE_LOGIN_CODE' environment variable."
+                session_str = bot.session.save()
+                logger.error(txt)
+                raise HTTPException(502, detail={
+                    'message': 'LOGIN FAILED: Please provide your two factor login (2FA) password you personally set',
+                    'reason': 'two_factor_password_needed',
+                    'data': {'phone_code_hash': phone_code_hash, 'code': code, 'password': None, 'session': session_str}
+                })
+            # end if
+            me = await bot.sign_in(phone=phone, password=password, phone_code_hash=phone_code_hash)
+        except Exception as e:
+            logger.exception('sign in didn\'t work')
+            raise e
+        # end try
+        if not me:
+            me = await bot.get_me()
+        # end if
+        assert await bot.is_user_authorized(), "should be authorized now."
+        secret = bot.session.save()
+        user_token = f'{me.id!s}@{secret}'
+        # noinspection PyTypeChecker
+        raise HTTPException(200, detail={'message': 'success', 'user_token': user_token})
+    # end if
 # end def
 
 
