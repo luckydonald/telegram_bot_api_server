@@ -32,8 +32,8 @@ async def send_message(
     reply_markup: Union[str, None] = Query(None, description="Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user."),
 ):
     from main import _get_bot
-    bot = _get_bot(token)
-    msg = bot.send_message(
+    bot = await _get_bot(token)
+    msg = await bot.send_message(
         entity=chat_id,
         message=text,
         parse_mode=parse_mode,
@@ -64,6 +64,6 @@ async def send_message(
       }
     }
     """
-    data = to_web_api(msg, bot)
-    return r_success(data)
+    data = await to_web_api(msg, bot)
+    return r_success(data.to_array())
 # end def

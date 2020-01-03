@@ -140,7 +140,7 @@ async def get_updates(token):
 # end def
 
 
-def _get_bot(token: str) -> Union[TelegramClient, TelegramClientUpdates, TelegramClientWebhook]:
+async def _get_bot(token: str) -> Union[TelegramClient, TelegramClientUpdates, TelegramClientWebhook]:
     global bots
     if token in bots:
         # easy mode: find existing
