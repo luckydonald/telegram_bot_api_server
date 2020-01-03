@@ -4,7 +4,7 @@ from typing import Union, Any, List
 
 from fastapi.params import Path, Query
 from luckydonaldUtils.logger import logging
-from fastapi import APIRouter as Blueprint
+from fastapi import APIRouter as Blueprint, HTTPException
 
 __author__ = 'luckydonald'
 

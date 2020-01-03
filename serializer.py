@@ -440,7 +440,11 @@ async def to_web_api(
         chat: Chat = await to_web_api(chat, client, user_as_chat=True)
         from_peer: Union[None, User] = None
         if chat and chat.type != TYPE_CHANNEL:  # supposed to be None for 'channel's.
-            from_peer = await get_entity(client, o.sender_id)
+            if o.sender_id is not None:
+                from_peer = await get_entity(client, o.sender_id)
+            else:
+                from_peer = await get_entity(client, o.input_chat)
+            # end if
             from_peer = await to_web_api(from_peer, client)
         # end if
         date = await to_web_api(o.date, client)
@@ -898,6 +902,7 @@ async def to_web_api(
 
 async def get_entity(client, peer):
     """ wrapper for debug. """
+    logger.debug(f'Loading entity for peer {peer!r}')
     try:
         entity = await client.get_entity(peer)
     except ValueError as e:
