@@ -54,8 +54,8 @@ class TelegramClientUpdateCollector(TelegramClient):
         # our custom parameters
         api_id: int,
         api_hash: str,
-        api_key: str,
         mode: UpdateModes,
+        api_key: Union[str, None] = None,
         webhook_url: Union[str, None] = None,
         parse_mode: Union[str, None] = "html",  # <- Render things nicely
         # now the Telethon parameters
