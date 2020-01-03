@@ -206,8 +206,8 @@ def r_success(result, description=None, status_code=200):
 
 
 app.include_router(routes)
-# from views.api.v4_4.sendable import routes as sendable_routes
-# app.include_router(sendable_routes)
+from views.api.v4_4.sendable import routes as sendable_routes
+app.include_router(sendable_routes)
 
 
 if __name__ == "__main__":
