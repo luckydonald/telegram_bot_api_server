@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from typing import Dict
+from typing import Dict, Union
 from aiohttp import web
 from aiocron import crontab
-from asyncio import get_event_loop, create_task
-from classes.webhook import TelegramClientWebhook, TelegramClientUpdates
+from asyncio import get_event_loop
+from classes.webhook import TelegramClientWebhook, TelegramClientUpdates, TelegramClientUpdateCollector
+from fastapi import FastAPI, APIRouter
+from pydantic import AnyHttpUrl
 from somewhere import TG_API_ID, TG_API_HASH
-from aiohttp_utils import flaskify_arguments
-from aiohttp.web_request import Request
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types.receivable.peer import User
 
@@ -32,27 +32,18 @@ updates: Dict[str, TelegramClientUpdates] = {
     # "token": TelegramClientUpdates(...),
 }
 
-routes = web.RouteTableDef()
-
-
-async def handle(request: Request):
-    name = request.match_info.get('name', "World!")
-    text = "Hello, " + name
-    print('received request, replying with "{}".'.format(text))
-    return web.Response(text=text)
-# end def
+app = FastAPI()
+routes = APIRouter()  # like flask.Blueprint
 
 
 @routes.get('/bot{token}/setWebhook')
-@flaskify_arguments
-async def set_webhook(token, request: Request):
+async def set_webhook(token, url: Union[AnyHttpUrl, None] = None):
     global updates
     global webhooks
     logger.debug(f'Setting webhook for {token}...')
-    if 'url' not in request.query or not request.query['url']:
-        return await delete_webhook(token, request)
+    if not url:
+        return await delete_webhook(token)
     # end if
-    url: str = request.query['url']
     logger.debug(f'Setting webhook for {token} to {url!r}.')
 
     if token in webhooks:
@@ -91,13 +82,8 @@ async def set_webhook(token, request: Request):
 
 
 @routes.get('/bot{token}/deleteWebhook')
-@flaskify_arguments
-async def delete_webhook(token, request: Request):
+async def delete_webhook(token):
     global webhooks
-    if 'url' in request.query and request.query['url']:
-        return set_webhook(token, request)
-    # end if
-
     if token in webhooks:
         bot = webhooks[token]
         del webhooks[token]
@@ -109,8 +95,7 @@ async def delete_webhook(token, request: Request):
 
 
 @routes.get('/bot{token}/getUpdates')
-@flaskify_arguments
-async def get_updates(token, request: Request):
+async def get_updates(token):
     global updates
     logger.debug(f'Setting webhook for {token}...')
 
@@ -139,6 +124,16 @@ async def get_updates(token, request: Request):
     # in any case we wanna return the updates
     return r_success([x.to_array() for x in updates[token].updates])
 # end def
+
+
+def _get_bot(token: str) -> TelegramClientUpdateCollector:
+    if token in webhooks:
+        return webhooks[token]
+    # end if
+    if token in updates:
+        return updates[token]
+    # end if
+    if token in bots:
 
 
 @routes.get('/bot{token}/getMe')
@@ -182,24 +177,12 @@ def r_success(result, description=None, status_code=200):
     }, status=status_code)
 
 
-app = web.Application()
-app.router.add_routes(routes)
-app.router.add_get('/', handle)
-app.router.add_get('/{name:int}', handle)
+app.include_router(routes)
+# from views.api.v4_4.sendable import routes as sendable_routes
+# app.include_router(sendable_routes)
 
-if __name__ == '__main__':
-    try:
-        raise ImportError()
-        from aiohttp_devtools.runserver import run_app, runserver, INFER_HOST
-        run_app(*runserver(host=INFER_HOST, main_port=8080, debug_toolbar=True, verbose=True, livereload=True))
-    except ImportError:
-        try:
-            import aiohttp_debugtoolbar
-            # from aiohttp_debugtoolbar import toolbar_middleware_factory
-            aiohttp_debugtoolbar.setup(app)
-        except ImportError:
-            pass
-        # end try
-        web.run_app(app, port=8081, reuse_address=True, reuse_port=True)
-    # end iff
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)
 # end if

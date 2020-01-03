@@ -10,3 +10,7 @@ aiocron
 Telethon==1.10.8
 # pytgbot
 pytgbot==4.4.0
+
+starlette==0.12.9  # before 0.13
+fastapi
+uvicorn
