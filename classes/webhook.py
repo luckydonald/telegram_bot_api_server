@@ -104,7 +104,8 @@ class TelegramClientUpdateCollector(TelegramClient):
         self.webhook_url = webhook_url
     # end def
 
-    def create_random_update_id(self):
+    @staticmethod
+    def create_random_update_id():
         """
         Reset the update id.
 
@@ -142,8 +143,15 @@ class TelegramClientUpdateCollector(TelegramClient):
         @self.on(events.NewMessage(pattern='/start'))
         async def start(event):
             """Send a message when the command /start is issued."""
-            await event.respond('Hi!')
-            # raise events.StopPropagation
+            await event.respond('Hi from <u><b>tgbotapi_server</b></u>!')
+            # raise events.StopPropagation  # don't raise that as we wanna have others chime in as well
+        # end def
+
+        @self.on(events.NewMessage(pattern='/bestpony'))
+        async def start(event):
+            """Send a message when the command /start is issued."""
+            await event.respond('Best pony is <b>Littlepip</b>!')
+            # raise events.StopPropagation  # don't raise that as we wanna have others chime in as well
         # end def
 
         @self.on(events.Raw)
