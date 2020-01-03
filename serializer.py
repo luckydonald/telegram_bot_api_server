@@ -17,7 +17,8 @@ from pytgbot.api_types.receivable.payments import ShippingQuery, PreCheckoutQuer
 from pytgbot.api_types.receivable.peer import User, Chat
 from pytgbot.api_types.receivable.stickers import MaskPosition
 from pytgbot.api_types.receivable.updates import Message, Update, CallbackQuery
-from telethon.tl.types import User as TUser
+from telethon.tl.functions.users import GetFullUserRequest
+from telethon.tl.types import User as TUser, Dialog
 from telethon.tl.patched import Message as TMessage
 from telethon.tl.types import UserProfilePhoto as TUserProfilePhoto
 from telethon.tl.types import Document as TDocument
@@ -113,7 +114,7 @@ MASK_POSITIONS = {
 
 
 async def to_web_api(
-    o, client: 'classes.webhook.TelegramClientWebhook', user_as_chat=False, prefer_update=True, load_photos=False,
+    o, client: 'classes.webhook.TelegramClientUpdateCollector', user_as_chat=False, prefer_update=True, load_photos=False,
     file_id: Union[str, None] = None, include_reply: bool = True
 ):
     if isinstance(o, TUpdateNewMessage):
@@ -897,7 +898,37 @@ async def to_web_api(
 
 async def get_entity(client, peer):
     """ wrapper for debug. """
-    entity = await client.get_entity(peer)
+    try:
+        entity = await client.get_entity(peer)
+    except ValueError as e:
+        # so we are not a bot, and
+        dialog: Dialog
+        for dialog in await client.get_dialogs(ignore_migrated=True):
+            print(dialog)
+            if dialog.id == peer:
+                entity = dialog.input_entity
+                break
+            # elif dialog.peer and dialog.peer.chat_id and dialog.peer.chat_id.id == peer:
+            if hasattr(dialog.peer, 'chat_id'):
+                found_chat_id = dialog.peer.chat_id
+                # entity = dialog.input_entity
+            elif hasattr(dialog.peer, 'user_id'):
+                found_chat_id = dialog.peer.user_id
+                # entity = dialog.input_entity
+            elif hasattr(dialog.peer, 'channel_id'):
+                found_chat_id = dialog.peer.channel_id
+                # entity = dialog.input_entity
+            else:
+                raise ValueError('Not chat/user/channel id.')
+                # full = await client(GetFullUserRequest(entity))
+            # end if
+            if found_chat_id == peer:
+                entity = dialog.input_entity
+                break
+            # end if
+        else:
+            raise e
+        # end for
     with open(f'logs/peer_{peer!s}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as f:
         f.write('from telethon.tl.types import *\nfrom telethon.tl.patched import *\nimport datetime\n\n')
         f.write(f'input = {peer}\nresult = {entity!s}')

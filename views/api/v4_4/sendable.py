@@ -8,9 +8,7 @@ from fastapi import APIRouter as Blueprint
 
 __author__ = 'luckydonald'
 
-from pydantic import Field
-
-from serializer import to_web_api
+from serializer import to_web_api, get_entity
 
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
@@ -21,7 +19,7 @@ if __name__ == '__main__':
 routes = Blueprint()  # Basically a Blueprint
 
 
-@routes.api_route('/{token}/sendMessage', methods=["GET", "POST", "DELETE"])
+@routes.api_route('/{token}/sendMessage', methods=["GET", "POST"])
 async def send_message(
     token: str = Path(..., description="the bot's unique authentication token", min_length=1),
     chat_id: Union[int, str] = Query(..., description="Unique identifier for the target chat or username of the target channel (in the format @channelusername)", regex=r"@[a-zA-Z][a-zA-Z0-9_]{2,}"),
@@ -34,8 +32,16 @@ async def send_message(
 ):
     from main import _get_bot
     bot = await _get_bot(token)
+    try:
+        entity = await get_entity(bot, chat_id)
+        # end try
+    except ValueError:
+        raise HTTPException(404, detail="chat not found?")
+    # end try
+
+    await bot.get_dialogs()
     msg = await bot.send_message(
-        entity=chat_id,
+        entity=entity,
         message=text,
         parse_mode=parse_mode,
         link_preview=not disable_web_page_preview,
@@ -44,27 +50,6 @@ async def send_message(
         buttons=reply_markup,
     )
     from main import r_success
-    """
-    {
-      "ok": true,
-      "result": {
-        "message_id": 217,
-        "from": {
-          "id": 133378542,
-          "is_bot": true,
-          "first_name": "Test Bot i do tests with",
-          "username": "test4458bot"
-        },
-        "chat": {
-          "id": -1001443587969,
-          "title": "Derp [test] rename",
-          "type": "supergroup"
-        },
-        "date": 1578018257,
-        "text": "test"
-      }
-    }
-    """
     data = await to_web_api(msg, bot)
     return r_success(data.to_array())
 # end def
