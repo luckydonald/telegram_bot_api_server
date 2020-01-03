@@ -27,7 +27,7 @@ if __name__ == '__main__':
 loop = get_event_loop()
 loop.set_debug(True)
 
-bots: Dict[str, TelegramClientUpdateCollector] = {
+bots: Dict[int, TelegramClientUpdateCollector] = {
     # "token": TelegramClientUpdateCollector('https://route/to/instance', ...),
 }
 
@@ -35,57 +35,49 @@ app = FastAPI()
 routes = APIRouter()  # like flask.Blueprint
 
 
-@routes.get('/bot{token}/setWebhook')
+@routes.get('/{token}/setWebhook')
 async def set_webhook(token, url: Union[AnyHttpUrl, None] = None):
     global bots
     logger.debug(f'Setting webhook for {token} to {url!r}.')
     if not url:
         return await delete_webhook(token)
     # end if
-    if token in bots:
-        bot: TelegramClientUpdateCollector = bots[token]
+    is_api, user_id, secret = split_token(token)
+    if user_id in bots:
+        bot: TelegramClientUpdateCollector = bots[user_id]
         if bot.mode == UpdateModes.WEBHOOK:
             # easy case: we already have a webhook registered and only want to change the url.
-            bots[token].webhook_url = url
+            bots[user_id].webhook_url = url
             return r_success(True, "Webhook was updated")
         # end if -> else
         logger.debug(f'Changing old bot instance: {bot}')
         bot.enable_webhook(url)
         return r_success(True, "Webhook was not set before")
-        # end if
     # end if
 
     try:
-        logger.debug(f'Launching telegram webhook client for {token}.')
-        bot = TelegramClientUpdateCollector(
-            session=token, api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token,
-            webhook_url=url, mode=UpdateModes.WEBHOOK,
-        )
-        bot.parse_mode = 'html'  # <- Render things nicely
-        logger.debug(f'Connecting in the bot {token}.')
-        await bot.connect()
-        logger.debug(f'Registering all the listeners for {token}.')
+        logger.debug(f'Launching telegram webhook client for {user_id}.')
+        bot = await _get_bot(token)
+        logger.debug(f'Registering all the listeners for {user_id}.')
         bot.register_update_listeners()
-        logger.debug(f'Signing in the bot {token}.')
-        await bot.sign_in(bot_token=bot.api_key)
-        logger.debug(f'Telegram client for {token} is signed in and ready to use.')
+        logger.debug(f'Telegram client for {user_id} is now ready to use.')
     except Exception as e:
         logger.warning('Registering bot failed', exc_info=True)
         return r_error(500, description=str(e))
     # end try
-    bots[token] = bot
-    logger.debug(f'Added {token} to the list: {bot!r}.')
+    bots[user_id] = bot
+    logger.debug(f'Added {user_id} to the list: {bot!r}.')
     return r_success(True, "Webhook was set")
 # end def
 
 
-@routes.get('/bot{token}/deleteWebhook')
+@routes.get('/{token}/deleteWebhook')
 async def delete_webhook(token):
     global bots
-    if token in bots:
-        bot = bots[token]
-        del bots[token]  # delete first to have it removed from the loop
-        bot.disconnect()
+    is_api, user_id, secret = split_token(token)
+    if user_id in bots:
+        bot = bots[user_id]
+        bot.mode = UpdateModes.POLLING
         return r_success(True, "Webhook was deleted")
     # end if
     return r_success(True, "Webhook was not set")
@@ -104,7 +96,6 @@ async def authorize_phone(
     session: Union[None, str] = None,
 ):
     logger.info(f"Args: phone={phone}, password={password}, bot_token={bot_token}, force_sms={force_sms}, code={code}.")
-    me = None
     bot = TelegramClientUpdateCollector(
         session=StringSession(session), api_id=TG_API_ID, api_hash=TG_API_HASH,
         mode=UpdateModes.SILENT,
@@ -181,13 +172,14 @@ async def authorize_phone(
 # end def
 
 
-@routes.get('/bot{token}/getUpdates')
+@routes.get('/{token}/getUpdates')
 async def get_updates(token):
     global bots
-    logger.debug(f'Setting webhook for {token}...')
+    is_api, user_id, secret = split_token(token)
+    logger.debug(f'Setting webhook for {user_id}...')
 
-    if token in bots:
-        bot: TelegramClientUpdateCollector = bots[token]
+    if user_id in bots:
+        bot: TelegramClientUpdateCollector = bots[user_id]
         if bot.mode == UpdateModes.WEBHOOK:
             logger.debug("using bot already registered as webhook")
             return r_error(409, "Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first")
@@ -201,55 +193,78 @@ async def get_updates(token):
         # end if
     # end if
 
-    if token not in bots:
+    if user_id not in bots:
         try:
-            logger.debug(f'Launching telegram client for {token}.')
-            bot = TelegramClientUpdateCollector(
-                session=token, api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token,
-                mode=UpdateModes.POLLING,
-            )
-            bot.parse_mode = 'html'  # <- Render things nicely
-            logger.debug(f'Connecting in the bot {token}.')
-            await bot.connect()
-            logger.debug(f'Registering all the listeners for {token}.')
+            logger.debug(f'Launching telegram client for {user_id}.')
+            bot = await _get_bot(token)
+            logger.debug(f'Registering all the listeners for {user_id}.')
             bot.register_update_listeners()
-            logger.debug(f'Signing in the bot {token}.')
-            await bot.sign_in(bot_token=bot.api_key)
-            logger.debug(f'Telegram client for {token} is signed in and ready to use.')
+            bot.enable_polling()
+            logger.debug(f'Telegram client for {user_id} is signed in and ready to use.')
         except Exception as e:
             logger.warning('Registering bot failed', exc_info=True)
             return r_error(500, description=str(e))
         # end try
-        bots[token] = bot
-        logger.debug(f'Telegram client for {token} is registered.')
+        bots[user_id] = bot
+        logger.debug(f'Telegram client for {user_id} is registered.')
     # end if
 
     # in any case we wanna return the updates
-    return r_success([x.to_array() for x in bots[token].updates])
+    return r_success([x.to_array() for x in bots[user_id].updates])
 # end def
 
 
 async def _get_bot(token: str) -> Union[TelegramClientUpdateCollector]:
+    """
+    Loads a bot by token or by phone account (in various register stages).
+    - API token: `bot123456:ABC-DEF1234ghIkl-zyx007Wvsu4458w69`
+    - User account: `49123123@asdasdajkhasd` (phone number + login hash)
+
+
+    """
     global bots
-    if token in bots:
+    is_api, user_id, secret = await split_token(token)
+    user_id = int(user_id)
+
+    if user_id in bots:
         # easy mode: find existing
-        return bots[token]
+        return bots[user_id]
     # end if
 
-    logger.debug(f'could not find bot for token {token},\nLaunching telegram muted client.')
+    logger.debug(f'could not find instance for user_id {user_id},\nlaunching telegram muted client.')
     bot = TelegramClientUpdateCollector(
-        session=token, api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token,
-        mode=UpdateModes.SILENT,
+        session=StringSession(None if is_api else secret), api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token if is_api else None,
+        mode=UpdateModes.SILENT
     )
-    bot.parse_mode = 'html'  # <- Render things nicely
     logger.debug(f'Connecting in the bot {token}.')
     await bot.connect()
     logger.debug(f'Signing in the bot {token}.')
-    await bot.sign_in(bot_token=token)
-    logger.debug(f'Telegram client for {token} is signed in and ready to use.')
-    assert token not in bots
-    bots[token] = bot
+    if is_api:
+        await bot.sign_in(bot_token=bot.api_key)
+    else:
+        if not await bot.is_user_authorized():
+            raise HTTPException(502, "account not authorized correctly. Please use the /authorize endpoint again.")
+        # end if
+    logger.debug(f'Telegram client for {user_id} is signed in and ready to use.')
+    assert user_id not in bots
+    bots[user_id] = bot
     return bot
+# end def
+
+
+async def split_token(token):
+    if token.startswith('bot') and ":" in token:
+        user_id, _ = token[3:].split(":", maxsplit=1)  # [:3] to remove "bot" prefix
+        secret = None
+        is_api = True
+    elif token.startswith('user') and "@" in token:
+        user_id, secret = token[4:].split("@", maxsplit=1)  # [:4] to remove "user" prefix
+        is_api = False
+    else:
+        raise ValueError('Your token seems wrong')
+    # end if
+    user_id = int(user_id)
+    return is_api, user_id, secret
 # end def
 
 
