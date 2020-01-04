@@ -35,11 +35,12 @@ All other [regular Bot API Methods](core.telegram.org/bots/api) will be supporte
 Check the [normal Documentation](core.telegram.org/bots/api) for those.
 
 ### Already Supported Methods
-- [x] [setWebhook]https://core.telegram.org/bots/api#setwebhook
-- [x] [deleteWebhook]https://core.telegram.org/bots/api#deletewebhook
-- [x] [getUpdates]https://core.telegram.org/bots/api#getupdates
-- [x] [getUpdates]https://core.telegram.org/bots/api#getupdates
-- [x] [sendMessage]https://core.telegram.org/bots/api#sendmessage
+- [x] [setWebhook](https://core.telegram.org/bots/api#setwebhook)
+- [x] [deleteWebhook](https://core.telegram.org/bots/api#deletewebhook)
+- [x] [getUpdates](https://core.telegram.org/bots/api#getupdates)
+- [ ] [getMe](https://core.telegram.org/bots/api#getme)
+- [x] [getUpdates](https://core.telegram.org/bots/api#getupdates)
+- [x] [sendMessage](https://core.telegram.org/bots/api#sendmessage)
     - `reply_markup` not yet working
-- [ ] [sendChatAction]https://core.telegram.org/bots/api#sendchataction
+- [ ] [sendChatAction](https://core.telegram.org/bots/api#sendchataction)
 
