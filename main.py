@@ -4,18 +4,20 @@ from enum import Enum
 from typing import Dict, Union, Any
 from aiocron import crontab
 from asyncio import get_event_loop
-from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from fastapi import FastAPI, APIRouter
 from pydantic import AnyHttpUrl, BaseModel
 from somewhere import TG_API_ID, TG_API_HASH
+from fastapi.params import Path
 from telethon.utils import parse_phone
+from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
+from telethon.tl.types import User
 from telethon.sessions import StringSession
 from starlette.responses import JSONResponse
 from starlette.exceptions import HTTPException
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.auth import SignInRequest
-from pytgbot.api_types.receivable.peer import User
+#from pytgbot.api_types.receivable.peer import User
 
 
 __author__ = 'luckydonald'
