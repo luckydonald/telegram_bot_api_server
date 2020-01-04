@@ -34,9 +34,11 @@ bots: Dict[int, TelegramClientUpdateCollector] = {
 app = FastAPI()
 routes = APIRouter()  # like flask.Blueprint
 
+TOKEN_VALIDATION = Path(..., description="the bot's unique authentication token", min_length=1, regex=r"(bot\d+:[a-z0-9A-z-]|user\d+@[a-z0-9A-z_-])")
+
 
 @routes.get('/{token}/setWebhook')
-async def set_webhook(token, url: Union[AnyHttpUrl, None] = None):
+async def set_webhook(token: str = TOKEN_VALIDATION, url: Union[AnyHttpUrl, None] = None):
     global bots
     logger.debug(f'Setting webhook for {token} to {url!r}.')
     if not url:
@@ -72,7 +74,7 @@ async def set_webhook(token, url: Union[AnyHttpUrl, None] = None):
 
 
 @routes.get('/{token}/deleteWebhook')
-async def delete_webhook(token):
+async def delete_webhook(token: str = TOKEN_VALIDATION):
     global bots
     is_api, user_id, secret = split_token(token)
     if user_id in bots:

@@ -8,6 +8,7 @@ from fastapi import APIRouter as Blueprint, HTTPException
 
 __author__ = 'luckydonald'
 
+from main import TOKEN_VALIDATION
 from serializer import to_web_api, get_entity
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ routes = Blueprint()  # Basically a Blueprint
 
 @routes.api_route('/{token}/sendMessage', methods=["GET", "POST"])
 async def send_message(
-    token: str = Path(..., description="the bot's unique authentication token", min_length=1),
+    token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description="Unique identifier for the target chat or username of the target channel (in the format @channelusername)", regex=r"@[a-zA-Z][a-zA-Z0-9_]{2,}"),
     text: str = Query(..., description="Text of the message to be sent"),
     parse_mode: Union[str, None] = Query(None, description="Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message."),
