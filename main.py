@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from typing import Dict, Union
+from enum import Enum
+from typing import Dict, Union, Any
 from aiocron import crontab
 from asyncio import get_event_loop
 from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from fastapi import FastAPI, APIRouter
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, BaseModel
 from somewhere import TG_API_ID, TG_API_HASH
 from telethon.utils import parse_phone
 from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
@@ -86,8 +87,33 @@ async def delete_webhook(token: str = TOKEN_VALIDATION):
 # end def
 
 
-@routes.get('/authorize')
-@routes.post('/authorize')
+class PhoneAuthorisationData(BaseModel):
+    token: Union[None, str]
+    phone_code_hash: Union[None, str]
+    code: Union[None, str]
+    password: Union[None, str]
+    session: Union[None, str]
+# end def
+
+
+class PhoneAuthorisationReasons(Enum):
+    SUCCESS_BOT = 'success_bot'
+    SUCCESS_PHONE = 'success_phone'
+    CODE_NEEDED = 'code_needed'
+    CODE_EXPIRED = 'code_expired'
+    TWO_FACTOR_PASSWORD_NEEDED = 'two_factor_password_needed'
+# end class
+
+
+class PhoneAuthorisation(BaseModel):
+    message: str
+    reason: PhoneAuthorisationReasons
+    data: PhoneAuthorisationData
+# end def
+
+
+@routes.get('/authorizePhone', response_model=PhoneAuthorisation)
+@routes.post('/authorizePhone', response_model=PhoneAuthorisation)
 async def authorize_phone(
     phone: str,
     password: Union[None, str] = None,
@@ -110,9 +136,26 @@ async def authorize_phone(
         # Turn the callable into a valid phone number (or bot token)
         phone = parse_phone(phone)
     else:
-        await bot.sign_in(bot_token=bot_token)
-        return bot
-    # end try
+        me = await bot.sign_in(bot_token=bot_token)
+        if not isinstance(me, User):
+            me = await bot.get_me()
+        # end if
+        user_id = me.user_id if hasattr(me, 'user_id') else me.id
+        assert user_id
+        bots[user_id] = bot
+        return r_success(
+            result=PhoneAuthorisation(
+                message='SUCCESS: registered bot',
+                reason=PhoneAuthorisationReasons.SUCCESS_BOT,
+                data=PhoneAuthorisationData(
+                    token='bot'+bot_token,
+                    # session=bot.session.save(),
+                )
+            ),
+            description="OK: Logged in. Use the token to connect to this service.",
+            status_code=200,
+        )
+    # end if
 
     logger.info(f'Phone Number: {phone}')
     if not code:
@@ -126,12 +169,18 @@ async def authorize_phone(
             f"Also set '$TELEGRAM_LOGGER_PHONE_LOGIN_HASH={sent_code.phone_code_hash}'."
         )
         session_str = bot.session.save()
-        # noinspection PyTypeChecker
-        raise HTTPException(502, detail={
-            'message': 'LOGIN FAILED: Please provide your code sent to you',
-            'reason': 'code',
-            'data': {'phone_code_hash': sent_code.phone_code_hash, 'code': None, 'password': None, 'session': session_str}
-        })
+        return r_error(
+            result=PhoneAuthorisation(
+                message='LOGIN FAILED: Please provide the code sent to you',
+                reason=PhoneAuthorisationReasons.CODE_NEEDED,
+                data=PhoneAuthorisationData(
+                    phone_code_hash=sent_code.phone_code_hash,
+                    session=session_str,
+                ),
+            ),
+            error_code=401,
+            description="UNAUTHORIZED: Login failed, please provide the code sent to you",
+        )
     else:
         logger.info('Signing in.')
         try:
@@ -141,35 +190,77 @@ async def authorize_phone(
             me = bot._on_login(result.user)
         except PhoneCodeExpiredError:
             session_str = bot.session.save()
-            raise HTTPException(502, detail={
-                'message': 'LOGIN FAILED: Please provide your code sent to you',
-                'reason': 'code_expired',
-                'data': {'phone_code_hash': phone_code_hash, 'code': None, 'password': None, 'session': session_str}
-            })
+            # TODO: Status 502
+            return r_error(
+                result=PhoneAuthorisation(
+                    message='LOGIN FAILED: Code expired. Please provide the new code sent to you',
+                    reason=PhoneAuthorisationReasons.CODE_EXPIRED,
+                    data=PhoneAuthorisationData(
+                        phone_code_hash=phone_code_hash,
+                        session=session_str,
+                    )
+                ),
+                error_code=401,
+                description='UNAUTHORIZED: Login failed, code expired. Please provide the new code sent to you',
+            )
         except SessionPasswordNeededError:
             if not password:
                 txt = "Two-step verification is enabled for this account. Please provide the 'TELEGRAM_LOGGER_PHONE_LOGIN_CODE' environment variable."
                 session_str = bot.session.save()
                 logger.error(txt)
-                raise HTTPException(502, detail={
-                    'message': 'LOGIN FAILED: Please provide your two factor login (2FA) password you personally set',
-                    'reason': 'two_factor_password_needed',
-                    'data': {'phone_code_hash': phone_code_hash, 'code': code, 'password': None, 'session': session_str}
-                })
+                # TODO: Status 502
+                return r_error(
+                    result=PhoneAuthorisation(
+                        message='LOGIN FAILED: Please provide your personal two factor login (2FA) password you set in your account',
+                        reason=PhoneAuthorisationReasons.TWO_FACTOR_PASSWORD_NEEDED,
+                        data=PhoneAuthorisationData(
+                            phone_code_hash=phone_code_hash,
+                            code=code,
+                            session=session_str,
+                        )
+                    ),
+                    error_code=401,
+                    description='UNAUTHORIZED: Login failed, please provide your personal two factor login (2FA) password you set in your account',
+                )
+
             # end if
             me = await bot.sign_in(phone=phone, password=password, phone_code_hash=phone_code_hash)
         except Exception as e:
             logger.exception('sign in didn\'t work')
             raise e
         # end try
-        if not me:
+        assert await bot.is_user_authorized(), "should be authorized now."
+        if not isinstance(me, User):
             me = await bot.get_me()
         # end if
-        assert await bot.is_user_authorized(), "should be authorized now."
+        if hasattr(me, 'id'):
+            chat_id = me.id
+        elif hasattr(me, 'chat_id'):
+             chat_id = me.chat_id
+        elif hasattr(me, 'channel_id'):
+            chat_id = me.channel_id
+        elif hasattr(me, 'user_id'):
+            chat_id = me.user_id
+        else:
+            logger.warn(f'me has no id like attribute:\n{me!r}\n{me!s}')
+            raise ValueError('me is wrong?')
+        # end if
         secret = bot.session.save()
-        user_token = f'{me.id!s}@{secret}'
+        user_token = f'user{chat_id!s}@{secret}'
         # noinspection PyTypeChecker
         raise HTTPException(200, detail={'message': 'success', 'user_token': user_token})
+        return r_error(
+            result=PhoneAuthorisation(
+                message='We did it mate!',
+                reason=PhoneAuthorisationReasons.SUCCESS_PHONE,
+                data=PhoneAuthorisationData(
+                    token=user_token,
+                ),
+            ),
+            error_code=401,
+            description="OK: Logged in. Use the token to connect to this service.",
+        )
+
     # end if
 # end def
 
