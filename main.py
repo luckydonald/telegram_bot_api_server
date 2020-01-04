@@ -294,16 +294,17 @@ async def attime():
 # end def
 
 
-def r_error(error_code=500, description=None):
+def r_error(error_code=500, description: Union[str, None] = None, result: Any = None) -> JSONResponse:
     return JSONResponse({
         "ok": False,
         "error_code": error_code,
-        "description": description
+        "description": description,
+        "result": result,
     }, status_code=error_code)
 # end def
 
 
-def r_success(result, description=None, status_code=200):
+def r_success(result: Any, description: Union[str, None] = None, status_code: int = 200) -> JSONResponse:
     return JSONResponse({
         "ok": True,
         "result": result,
