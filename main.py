@@ -6,8 +6,8 @@ from aiocron import crontab
 from asyncio import get_event_loop
 from fastapi import FastAPI, APIRouter
 from pydantic import AnyHttpUrl, BaseModel
+from constants import TOKEN_VALIDATION
 from somewhere import TG_API_ID, TG_API_HASH
-from fastapi.params import Path
 from telethon.utils import parse_phone
 from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
@@ -36,8 +36,6 @@ bots: Dict[int, TelegramClientUpdateCollector] = {
 
 app = FastAPI()
 routes = APIRouter()  # like flask.Blueprint
-
-TOKEN_VALIDATION = Path(..., description="the bot's unique authentication token", min_length=1, regex=r"(bot\d+:[a-z0-9A-z-]|user\d+@[a-z0-9A-z_-])")
 
 
 @routes.get('/{token}/setWebhook')

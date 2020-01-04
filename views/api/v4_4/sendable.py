@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from typing import Union, Any, List
-
-from fastapi.params import Path, Query
-from luckydonaldUtils.logger import logging
+from typing import Union
 from fastapi import APIRouter as Blueprint, HTTPException
+from constants import TOKEN_VALIDATION
+from serializer import to_web_api, get_entity
+from fastapi.params import Query
+from luckydonaldUtils.logger import logging
 
 __author__ = 'luckydonald'
 
-from main import TOKEN_VALIDATION
-from serializer import to_web_api, get_entity
 
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
