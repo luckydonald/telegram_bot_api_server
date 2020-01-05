@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from tools import r_success
 from typing import Union
 from fastapi import APIRouter as Blueprint, HTTPException
 from constants import TOKEN_VALIDATION
@@ -49,7 +50,6 @@ async def send_message(
         reply_to=reply_to_message_id,
         buttons=reply_markup,
     )
-    from main import r_success
     data = await to_web_api(msg, bot)
     return r_success(data.to_array())
 # end def

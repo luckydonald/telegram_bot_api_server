@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from enum import Enum
-from typing import Dict, Union, Any
+from tools import r_error, r_success
+from typing import Dict, Union
 from aiocron import crontab
 from asyncio import get_event_loop
 from fastapi import FastAPI, APIRouter
@@ -382,25 +383,6 @@ async def not_found(request):
 @crontab('* * * * * */10', start=True)
 async def attime():
     logger.debug(f'current listeners: {bots!r}')
-# end def
-
-
-def r_error(error_code=500, description: Union[str, None] = None, result: Any = None) -> JSONResponse:
-    return JSONResponse({
-        "ok": False,
-        "error_code": error_code,
-        "description": description,
-        "result": result,
-    }, status_code=error_code)
-# end def
-
-
-def r_success(result: Any, description: Union[str, None] = None, status_code: int = 200) -> JSONResponse:
-    return JSONResponse({
-        "ok": True,
-        "result": result,
-        "description": description,
-    }, status_code=status_code)
 # end def
 
 
