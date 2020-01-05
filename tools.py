@@ -35,7 +35,7 @@ def r_error(error_code=500, description: Union[str, None] = None, result: Any = 
 # end def
 
 
-def r_success(result: Any, description: Union[str, None] = None, status_code: int = 200) -> JSONableResponse:
+def r_success(result: Any = True, description: Union[str, None] = None, status_code: int = 200) -> JSONableResponse:
     return JSONableResponse({
         "ok": True,
         "result": result,
