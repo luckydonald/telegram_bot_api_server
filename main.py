@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from enum import Enum
-from tools import r_error, r_success
+from tools import r_error, r_success, JSONableResponse
 from typing import Dict, Union
 from aiocron import crontab
 from asyncio import get_event_loop
@@ -396,7 +396,7 @@ async def attime():
 @app.exception_handler(RequestValidationError)
 async def request_validation_exception_handler(
     request: Request, exc: RequestValidationError
-) -> JSONResponse:
+) -> JSONableResponse:
     return r_error(
         error_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         description="UNPROCESSABLE ENTITY: Input validation failed",
