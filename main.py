@@ -7,14 +7,18 @@ from aiocron import crontab
 from asyncio import get_event_loop
 from fastapi import FastAPI, APIRouter
 from pydantic import AnyHttpUrl, BaseModel
+from starlette import status
 from constants import TOKEN_VALIDATION
 from somewhere import TG_API_ID, TG_API_HASH
 from serializer import to_web_api
 from telethon.utils import parse_phone
 from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
+from fastapi.encoders import jsonable_encoder
 from telethon.tl.types import User
 from telethon.sessions import StringSession
+from starlette.requests import Request
+from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
 from starlette.exceptions import HTTPException
 from luckydonaldUtils.logger import logging
@@ -383,6 +387,23 @@ async def not_found(request):
 async def attime():
     logger.debug(f'current listeners: {bots!r}')
 # end def
+
+
+# ERROR HANDLING
+
+
+# noinspection PyUnusedLocal
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    return r_error(
+        error_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        description="UNPROCESSABLE ENTITY: Input validation failed",
+        result=jsonable_encoder(exc.errors())
+    )
+# end def
+
 
 
 app.include_router(routes)
