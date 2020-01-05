@@ -9,6 +9,7 @@ from fastapi import FastAPI, APIRouter
 from pydantic import AnyHttpUrl, BaseModel
 from constants import TOKEN_VALIDATION
 from somewhere import TG_API_ID, TG_API_HASH
+from serializer import to_web_api
 from telethon.utils import parse_phone
 from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
@@ -18,7 +19,7 @@ from starlette.responses import JSONResponse
 from starlette.exceptions import HTTPException
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.auth import SignInRequest
-#from pytgbot.api_types.receivable.peer import User
+from pytgbot.api_types.receivable.peer import User as TGUser
 
 
 __author__ = 'luckydonald'
@@ -362,15 +363,13 @@ async def split_token(token):
 # end def
 
 
-@routes.get('/bot{token}/getMe')
-async def get_me(request):
-    result = User(
-        id=133378542,
-        is_bot=True,
-        first_name="Test Bot i do tests with",
-        username="test4458bot",
-    ).to_array()
-    return r_success(result, None)
+@routes.get('/{token}/getMe', tags="bot")
+async def get_me(token: str = TOKEN_VALIDATION):
+    bot = await _get_bot(token)
+    me: User = await bot.get_me()
+    me: TGUser = await to_web_api(me, client=bot)
+    me: dict = me.to_array()
+    return r_success(me, None)
 # end def
 
 

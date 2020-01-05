@@ -38,7 +38,7 @@ Check the [normal Documentation](core.telegram.org/bots/api) for those.
 - [x] [setWebhook](https://core.telegram.org/bots/api#setwebhook)
 - [x] [deleteWebhook](https://core.telegram.org/bots/api#deletewebhook)
 - [x] [getUpdates](https://core.telegram.org/bots/api#getupdates)
-- [ ] [getMe](https://core.telegram.org/bots/api#getme)
+- [x] [getMe](https://core.telegram.org/bots/api#getme)
 - [x] [getUpdates](https://core.telegram.org/bots/api#getupdates)
 - [x] [sendMessage](https://core.telegram.org/bots/api#sendmessage)
     - `reply_markup` not yet working
