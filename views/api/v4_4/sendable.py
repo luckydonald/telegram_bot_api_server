@@ -19,7 +19,7 @@ if __name__ == '__main__':
 routes = Blueprint()  # Basically a Blueprint
 
 
-@routes.api_route('/{token}/sendMessage', methods=["GET", "POST"])
+@routes.api_route('/{token}/sendMessage', methods=["GET", "POST"], tags=["send"])
 async def send_message(
     token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description="Unique identifier for the target chat or username of the target channel (in the format @channelusername)", regex=r"@[a-zA-Z][a-zA-Z0-9_]{2,}"),

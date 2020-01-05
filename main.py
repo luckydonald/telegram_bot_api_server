@@ -38,7 +38,7 @@ app = FastAPI()
 routes = APIRouter()  # like flask.Blueprint
 
 
-@routes.get('/{token}/setWebhook')
+@routes.get('/{token}/setWebhook', tags=["webhook", "updates"])
 async def set_webhook(token: str = TOKEN_VALIDATION, url: Union[AnyHttpUrl, None] = None):
     global bots
     logger.debug(f'Setting webhook for {token} to {url!r}.')
@@ -74,7 +74,7 @@ async def set_webhook(token: str = TOKEN_VALIDATION, url: Union[AnyHttpUrl, None
 # end def
 
 
-@routes.get('/{token}/deleteWebhook')
+@routes.get('/{token}/deleteWebhook', tags=["webhook", "updates"])
 async def delete_webhook(token: str = TOKEN_VALIDATION):
     global bots
     is_api, user_id, secret = split_token(token)
@@ -112,8 +112,8 @@ class PhoneAuthorisation(BaseModel):
 # end def
 
 
-@routes.get('/authorizePhone', response_model=PhoneAuthorisation)
-@routes.post('/authorizePhone', response_model=PhoneAuthorisation)
+@routes.get('/authorizePhone', response_model=PhoneAuthorisation, tags=["authorisation"])
+@routes.post('/authorizePhone', response_model=PhoneAuthorisation, tags=["authorisation"])
 async def authorize_phone(
     phone: str,
     password: Union[None, str] = None,
@@ -265,7 +265,7 @@ async def authorize_phone(
 # end def
 
 
-@routes.get('/{token}/getUpdates')
+@routes.get('/{token}/getUpdates', tags=["updates"])
 async def get_updates(token):
     global bots
     is_api, user_id, secret = split_token(token)
