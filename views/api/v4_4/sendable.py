@@ -7,7 +7,10 @@ from fastapi import APIRouter as Blueprint, HTTPException
 from constants import TOKEN_VALIDATION
 from serializer import to_web_api, get_entity
 from fastapi.params import Query
+from telethon.tl.types import TypeSendMessageAction
+from telethon.client.chats import _ChatAction
 from luckydonaldUtils.logger import logging
+from telethon.tl.functions.messages import SetTypingRequest
 
 __author__ = 'luckydonald'
 
@@ -107,11 +110,17 @@ async def send_chat_action(
     except ValueError:
         raise HTTPException(404, detail="chat not found?")
     # end try
-    from telethon.client.chats import ChatMethods
+    client = bot
 
     action: str = actions_api_to_telethon_mapping[action]
-    await bot.action(entity, action=action)
+    # noinspection PyProtectedMember
+    action: TypeSendMessageAction = _ChatAction._str_mapping[action.lower()]
+    await client(
+        request=SetTypingRequest(
+            peer=entity,
+            action=action,
+        )
+    )
 
-    from tools import r_success
     return r_success()
 # end def

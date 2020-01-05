@@ -41,6 +41,6 @@ Check the [normal Documentation](core.telegram.org/bots/api) for those.
 - [x] [getMe](https://core.telegram.org/bots/api#getme)
 - [x] [getUpdates](https://core.telegram.org/bots/api#getupdates)
 - [x] [sendMessage](https://core.telegram.org/bots/api#sendmessage)
-    - `reply_markup` not yet working
-- [ ] [sendChatAction](https://core.telegram.org/bots/api#sendchataction)
+    - [ ] `reply_markup` not yet working
+- [x] [sendChatAction](https://core.telegram.org/bots/api#sendchataction)
 
