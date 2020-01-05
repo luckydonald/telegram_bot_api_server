@@ -367,7 +367,7 @@ async def split_token(token):
 # end def
 
 
-@routes.get('/{token}/getMe', tags="bot")
+@routes.get('/{token}/getMe', tags=["bot"])
 async def get_me(token: str = TOKEN_VALIDATION):
     bot = await _get_bot(token)
     me: User = await bot.get_me()
