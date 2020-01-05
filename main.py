@@ -19,7 +19,6 @@ from telethon.tl.types import User
 from telethon.sessions import StringSession
 from starlette.requests import Request
 from fastapi.exceptions import RequestValidationError
-from starlette.responses import JSONResponse
 from starlette.exceptions import HTTPException
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.auth import SignInRequest
@@ -45,7 +44,7 @@ routes = APIRouter()  # like flask.Blueprint
 
 
 @routes.get('/{token}/setWebhook', tags=["webhook", "updates"])
-async def set_webhook(token: str = TOKEN_VALIDATION, url: Union[AnyHttpUrl, None] = None):
+async def set_webhook(token: str = TOKEN_VALIDATION, url: Union[AnyHttpUrl, None] = None) -> JSONableResponse:
     global bots
     logger.debug(f'Setting webhook for {token} to {url!r}.')
     if not url:
@@ -317,9 +316,7 @@ async def _get_bot(token: str) -> Union[TelegramClientUpdateCollector]:
     """
     Loads a bot by token or by phone account (in various register stages).
     - API token: `bot123456:ABC-DEF1234ghIkl-zyx007Wvsu4458w69`
-    - User account: `49123123@asdasdajkhasd` (phone number + login hash)
-
-
+    - User account: `user123456@asdasdajkhasd` (phone number + login hash)
     """
     global bots
     is_api, user_id, secret = await split_token(token)
