@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from enum import Enum
-from tools import r_success
+from tools.responses import r_success
 from typing import Union
 from fastapi import APIRouter as Blueprint, HTTPException
 from constants import TOKEN_VALIDATION

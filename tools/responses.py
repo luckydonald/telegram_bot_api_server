@@ -42,3 +42,6 @@ def r_success(result: Any = True, description: Union[str, None] = None, status_c
         "description": description,
     }, status_code=status_code)
 # end def
+
+
+#class RException(Htto)
