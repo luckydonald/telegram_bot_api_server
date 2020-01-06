@@ -1,14 +1,37 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import struct
 from math import floor, log10
 from typing import Union, Tuple
+# noinspection PyProtectedMember
+from telethon.utils import _rle_encode, _encode_telegram_base64
+from luckydonaldUtils.logger import logging
+
+__author__ = 'luckydonald'
+
+
+logger = logging.getLogger(__name__)
+if __name__ == '__main__':
+    logging.add_colored_handler(level=logging.DEBUG)
+# end if
+
+
+def calculate_file_unique_id(id: int):
+    return _encode_telegram_base64(
+        _rle_encode(
+            struct.pack(
+                '<q',
+                id
+            )
+        )
+    )
+# end def
+
 
 TYPE_SECRET = "secret"
-
 TYPE_PRIVATE = "private"
-
 TYPE_CHANNEL = "channel"
-
 TYPE_SUPERGROUP = "supergroup"
-
 TYPE_GROUP = "group"
 
 

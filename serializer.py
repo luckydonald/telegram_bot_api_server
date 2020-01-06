@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from builtins import object
 from datetime import datetime
 from typing import Union
 
@@ -95,7 +94,7 @@ from telethon.tl.types import SecureValue as TSecureValue
 from telethon.tl.types import SecureCredentialsEncrypted as TSecureCredentialsEncrypted
 from telethon.utils import pack_bot_file_id, get_peer_id
 
-from api_number_utils import TYPE_CHANNEL, as_channel_id
+from tools.api import TYPE_CHANNEL, as_channel_id
 
 __author__ = 'luckydonald'
 
