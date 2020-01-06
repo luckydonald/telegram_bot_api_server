@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import asyncio
+import uvloop
 from enum import Enum
-from tools.responses import r_error, r_success, JSONableResponse
 from typing import Dict, Union
 from aiocron import crontab
 from asyncio import get_event_loop
@@ -12,6 +13,7 @@ from constants import TOKEN_VALIDATION
 from somewhere import TG_API_ID, TG_API_HASH
 from serializer import to_web_api
 from telethon.utils import parse_phone
+from tools.responses import r_error, r_success, JSONableResponse
 from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
 from fastapi.encoders import jsonable_encoder
@@ -26,6 +28,8 @@ from pytgbot.api_types.receivable.peer import User as TGUser
 
 
 __author__ = 'luckydonald'
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
