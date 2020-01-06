@@ -406,6 +406,17 @@ async def request_validation_exception_handler(
 # end def
 
 
+# noinspection PyUnusedLocal
+@app.exception_handler(HTTPException)
+async def request_validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONableResponse:
+    return r_error(
+        error_code=status.HTTP_404_NOT_FOUND,
+        description="Not Found",
+    )
+# end def
+
 
 app.include_router(routes)
 from views.api.v4_5.sendable import routes as sendable_routes
