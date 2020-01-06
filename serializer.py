@@ -113,13 +113,21 @@ MASK_POSITIONS = {
 
 # TODO: Document, PassportFile, File
 async def to_web_api(
-    o, client: 'classes.webhook.TelegramClientUpdateCollector', user_as_chat=False, prefer_update=True, load_photos=False,
-    file_id: Union[str, None] = None, file_unique_id: Union[str, None] = None, include_reply: bool = True,
+    o, client: 'classes.webhook.TelegramClientUpdateCollector',
+    user_as_chat=False, prefer_update=True, load_photos=False, include_reply: bool = True,
+    file_id: Union[str, None] = None, file_unique_id: Union[str, None] = None,
 ):
     """
     Converts Telethon objects to Bot API ones.
+
     :param o: The object to transform to an API representation.
     :param client: The Telethon bot.
+    :param user_as_chat: Whether you want a user chat represented as `Chat` or as `User`.
+    :param prefer_update: Whether you want a bot's inline query represented as `Update` or as `InlineQuery`.
+    :param load_photos: Whether you want a `Chat` object to have the `photo` attribute filled.
+    :param include_reply: Whether you want a `Message` object to have the `reply` attribute filled.
+    :param file_id: For returning a `PhotoSize` the the `file_id` and `file_unique_id` are needed.
+    :param file_unique_id: For returning a `PhotoSize` the the `file_id` and `file_unique_id` are needed.
     """
     if isinstance(o, TUpdateNewMessage):
         return Update(
