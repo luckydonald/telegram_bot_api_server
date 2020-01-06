@@ -14,6 +14,9 @@ if __name__ == '__main__':
 
 
 def flaskify_arguments(function):
+    """
+    Takes the path arguments from the `request` parameter, and apply them as `**kwargs`.
+    """
     # preparation: inspect the function to check if we should supply a `request=...` parameter.
     sig = inspect.signature(function)
     apply_request_param = False
