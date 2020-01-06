@@ -1,5 +1,6 @@
 import json
-import unittest, asynctest
+import unittest
+import asynctest
 
 from telethon.tl.types import *
 from telethon.tl.patched import *

@@ -9,11 +9,8 @@ from asyncio import get_event_loop
 from fastapi import FastAPI, APIRouter
 from pydantic import AnyHttpUrl, BaseModel
 from starlette import status
-from constants import TOKEN_VALIDATION
-from somewhere import TG_API_ID, TG_API_HASH
 from serializer import to_web_api
 from telethon.utils import parse_phone
-from tools.responses import r_error, r_success, JSONableResponse
 from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
 from fastapi.encoders import jsonable_encoder
@@ -25,6 +22,11 @@ from starlette.exceptions import HTTPException
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.auth import SignInRequest
 from pytgbot.api_types.receivable.peer import User as TGUser
+
+from .tools.responses import r_error, r_success, JSONableResponse
+from .constants import TOKEN_VALIDATION
+
+from somewhere import TG_API_ID, TG_API_HASH
 
 
 __author__ = 'luckydonald'
