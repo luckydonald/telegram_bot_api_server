@@ -145,7 +145,7 @@ class TelegramClientUpdateCollector(TelegramClient):
         @self.on(events.NewMessage(pattern='/start'))
         async def start(event):
             """Send a message when the command /start is issued."""
-            await event.respond('Hi from <u><b>tgbotapi_server</b></u>!')
+            await event.respond('Hi from the <u><b>telegram_bot_api_server</b></u>!')
             # raise events.StopPropagation  # don't raise that as we wanna have others chime in as well
         # end def
 
