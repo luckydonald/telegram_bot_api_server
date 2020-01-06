@@ -16,7 +16,6 @@ from pytgbot.api_types.receivable.payments import ShippingQuery, PreCheckoutQuer
 from pytgbot.api_types.receivable.peer import User, Chat
 from pytgbot.api_types.receivable.stickers import MaskPosition
 from pytgbot.api_types.receivable.updates import Message, Update, CallbackQuery
-from telethon.tl.functions.users import GetFullUserRequest
 from telethon.tl.types import User as TUser, Dialog
 from telethon.tl.patched import Message as TMessage
 from telethon.tl.types import UserProfilePhoto as TUserProfilePhoto
@@ -94,7 +93,7 @@ from telethon.tl.types import SecureValue as TSecureValue
 from telethon.tl.types import SecureCredentialsEncrypted as TSecureCredentialsEncrypted
 from telethon.utils import pack_bot_file_id, get_peer_id
 
-from tools.api import TYPE_CHANNEL, as_channel_id
+from tools.api import TYPE_CHANNEL, as_channel_id, calculate_file_unique_id
 
 __author__ = 'luckydonald'
 
@@ -112,10 +111,16 @@ MASK_POSITIONS = {
 }
 
 
+# TODO: Document, PassportFile, File
 async def to_web_api(
     o, client: 'classes.webhook.TelegramClientUpdateCollector', user_as_chat=False, prefer_update=True, load_photos=False,
-    file_id: Union[str, None] = None, include_reply: bool = True
+    file_id: Union[str, None] = None, file_unique_id: Union[str, None] = None, include_reply: bool = True,
 ):
+    """
+    Converts Telethon objects to Bot API ones.
+    :param o: The object to transform to an API representation.
+    :param client: The Telethon bot.
+    """
     if isinstance(o, TUpdateNewMessage):
         return Update(
             update_id=client.update_id,
@@ -222,24 +227,30 @@ async def to_web_api(
         return None
     if isinstance(o, TPhotoSize):
         assert_type_or_raise(file_id, str, parameter_name='file_id')
+        assert_type_or_raise(file_unique_id, str, parameter_name='file_unique_id')
         return PhotoSize(
             file_id=file_id,
+            file_unique_id=file_unique_id,
             width=o.w,
             height=o.h,
             file_size=o.size,
         )
     if isinstance(o, TPhotoCachedSize):
         assert_type_or_raise(file_id, str, parameter_name='file_id')
+        assert_type_or_raise(file_unique_id, str, parameter_name='file_unique_id')
         return PhotoSize(
             file_id=file_id,
+            file_unique_id=file_unique_id,
             width=o.w,
             height=o.h,
             file_size=len(o.bytes),
         )
     if isinstance(o, TPhotoStrippedSize):
         assert_type_or_raise(file_id, str, parameter_name='file_id')
+        assert_type_or_raise(file_unique_id, str, parameter_name='file_unique_id')
         return PhotoSize(
             file_id=file_id,
+            file_unique_id=file_unique_id,
             width=0,  # TODO
             height=0,  # TODO
             file_size=len(o.bytes),
@@ -247,6 +258,7 @@ async def to_web_api(
     if isinstance(o, TDocument):
         data = {
             'file_id': pack_bot_file_id(o),
+            'calculate_file_unique_id': calculate_file_unique_id(o.id),
             'thumb': None,
         }
         # thumb: TTypePhotoSize = o.thumbs[0]
@@ -279,11 +291,15 @@ async def to_web_api(
                 data['height'] = attr.h
                 data['duration'] = attr.duration
             # end if
+            data['thumb'] = None  # TODO get this information from somewhere.
+            data['mime_type'] = None  # TODO get this information from somewhere.
+            data['file_size'] = None  # TODO get this information from somewhere.
         # end for
         for attr in o.attributes:
             if isinstance(attr, TDocumentAttributeSticker):
                 return Sticker(
                     file_id=data['file_id'],
+                    file_unique_id=data['file_unique_id'],
                     width=data['width'],
                     height=data['height'],
                     is_animated=data.get('is_animated', False),
@@ -297,6 +313,7 @@ async def to_web_api(
             if isinstance(attr, TDocumentAttributeAnimated):
                 return Animation(
                     file_id=data['file_id'],
+                    file_unique_id=data['file_unique_id'],
                     width=data['width'],
                     height=data['height'],
                     duration=data['duration'],
@@ -309,6 +326,7 @@ async def to_web_api(
                 if attr.voice:
                     return Voice(
                         file_id=data['file_id'],
+                        file_unique_id=data['file_unique_id'],
                         duration=data['duration'],
                         mime_type=data.get('mime_type'),
                         file_size=data.get('file_size'),
@@ -316,6 +334,7 @@ async def to_web_api(
                 # end if
                 return Audio(
                     file_id=data['file_id'],
+                    file_unique_id=data['file_unique_id'],
                     duration=data['duration'],
                     performer=data.get('performer'),
                     title=data.get('title'),
@@ -327,6 +346,7 @@ async def to_web_api(
                 if attr.round_message:
                     return VideoNote(
                         file_id=data['file_id'],
+                        file_unique_id=data['file_unique_id'],
                         length=data['length'],
                         duration=data['duration'],
                         thumb=data.get('thumb'),
@@ -335,6 +355,7 @@ async def to_web_api(
                 # end if
                 return Video(
                     file_id=data['file_id'],
+                    file_unique_id=data['file_unique_id'],
                     width=data['width'],
                     height=data['height'],
                     duration=data['duration'],
@@ -347,8 +368,12 @@ async def to_web_api(
                 raise ValueError(f'Unexpected {type(attr)}')
         # end for
         return Document(
-            file_id=file_id,
-            thumb=await to_web_api(o.thumbs[0], client)
+            file_id=data['file_id'],
+            file_unique_id=data['file_unique_id'],
+            thumb=await to_web_api(o.thumbs[0], client),
+            file_name=data.get('file_name'),
+            mime_type=data.get('mime_type'),
+            file_size=data.get('file_size'),
         )
     if isinstance(o, TMaskCoords):
         return MaskPosition(
@@ -416,19 +441,23 @@ async def to_web_api(
     if isinstance(o, TUserProfilePhoto):
         if user_as_chat:
             return ChatPhoto(
-                small_file_id=await to_web_api(o.photo_small, client),
-                big_file_id=await to_web_api(o.photo_big, client),
+                small_file_id=pack_bot_file_id(o.photo_small),
+                small_file_unique_id=calculate_file_unique_id(o.photo_big.local_id),
+                big_file_id=pack_bot_file_id(o.photo_big),
+                big_file_unique_id=calculate_file_unique_id(o.photo_small.local_id),
             )
         return UserProfilePhotos(
             total_count=2,
             photos=[
                 PhotoSize(
                     file_id=pack_bot_file_id(o.photo_big),
+                    file_unique_id=calculate_file_unique_id(o.photo_big.local_id),
                     width=0,  # TODO somehow look up more data.
                     height=0  # TODO somehow look up more data.
                 ),
                 PhotoSize(
                     file_id=pack_bot_file_id(o.photo_small),
+                    file_unique_id=calculate_file_unique_id(o.photo_small.local_id),
                     width=0,  # TODO somehow look up more data.
                     height=0  # TODO somehow look up more data.
                 ),
@@ -484,7 +513,7 @@ async def to_web_api(
                 message_id=o.id,
                 date=date,
                 chat=chat,
-                
+
                 from_peer=from_peer,
                 forward_from=forward_from,
                 forward_from_chat=forward_from_chat,
@@ -879,17 +908,18 @@ async def to_web_api(
         return None
     if isinstance(o, TPhoto):
         file_id = pack_bot_file_id(o)
+        file_unique_id = calculate_file_unique_id(o.id)
         return [
-            await to_web_api(size, client, file_id=file_id)
+            await to_web_api(size, client, file_id=file_id, file_unique_id=file_unique_id)
             for size in o.sizes
             if not isinstance(size, (TPhotoSizeEmpty, TPhotoStrippedSize))
         ]
     if isinstance(o, datetime):
         return int(o.timestamp())
     if isinstance(o, tuple):
-        return tuple(await to_web_api(list(o), client))
+        return tuple(await to_web_api(list(o), client, file_id=file_id, file_unique_id=file_unique_id))
     if isinstance(o, list):
-        return [await to_web_api(x, client, file_id=file_id) for x in o]
+        return [await to_web_api(x, client, file_id=file_id, file_unique_id=file_unique_id) for x in o]
     if isinstance(o, dict):
         return {k: await to_web_api(v, client) for k, v in o.items()}
     if isinstance(o, (bool, str, int, float)):
