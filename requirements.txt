@@ -1,3 +1,4 @@
+pydantic
 aiohttp_debugtoolbar
 luckydonald-utils
 aiohttp[speedups]
