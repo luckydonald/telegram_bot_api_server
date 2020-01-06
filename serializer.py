@@ -405,9 +405,10 @@ async def to_web_api(
             shipping_address=o.shipping_address,
         )
     if isinstance(o, TUser):
+        chat_id = get_peer_id(o)
         if user_as_chat:
             return Chat(
-                id=get_peer_id(o),
+                id=chat_id,
                 type='private',
                 # title=None,
                 first_name=o.first_name,
@@ -422,7 +423,7 @@ async def to_web_api(
                 # can_set_sticker_set=None,
             )
         return User(
-            id=o.id,
+            id=chat_id,
             is_bot=o.bot,
             first_name=o.first_name,
             last_name=o.last_name,
