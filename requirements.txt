@@ -9,7 +9,7 @@ aiocron
 # telethon
 Telethon==1.10.10
 # pytgbot
-pytgbot==4.5.0
+pytgbot==4.5.1
 
 starlette==0.12.9  # before 0.13
 fastapi
