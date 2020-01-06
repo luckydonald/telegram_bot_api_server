@@ -16,7 +16,8 @@ if __name__ == '__main__':
 # end if
 
 
-def calculate_file_unique_id(id: int):
+# noinspection PyShadowingBuiltins
+def calculate_file_unique_id(id: int) -> str:
     return _encode_telegram_base64(
         _rle_encode(
             struct.pack(
