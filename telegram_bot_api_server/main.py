@@ -421,11 +421,11 @@ async def request_validation_exception_handler(
 
 
 app.include_router(routes)
-from views.api.v4_5.sendable import routes as sendable_routes
+from .views.api.v4_5.sendable import routes as sendable_routes
 app.include_router(sendable_routes)
 
 
-if __name__ == "__main__":
+def main():
     import uvicorn
     uvicorn.run(
         app, host="0.0.0.0", port=8080,
@@ -465,4 +465,8 @@ if __name__ == "__main__":
             },
         },
     )
-# end if
+# end def
+
+if __name__ == "__main__":
+    main()
+# end def
