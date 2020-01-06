@@ -30,8 +30,8 @@ Field | Type | Description
 ----- | ---- | -----------
 TODO | TODO | TODO
 
-## Normal Methods
-All other [regular Bot API Methods](core.telegram.org/bots/api) will be supported.
+## Regular Methods
+All other known [Bot API Methods](core.telegram.org/bots/api) will be supported.
 Check the [normal Documentation](core.telegram.org/bots/api) for those.
 
 ### Already Supported Methods
@@ -41,6 +41,7 @@ Check the [normal Documentation](core.telegram.org/bots/api) for those.
 - [x] [getMe](https://core.telegram.org/bots/api#getme)
 - [x] [getUpdates](https://core.telegram.org/bots/api#getupdates)
 - [x] [sendMessage](https://core.telegram.org/bots/api#sendmessage)
-    - [ ] `reply_markup` not yet working
+    - [ ] `reply_markup` not yet working and ignored.
 - [x] [sendChatAction](https://core.telegram.org/bots/api#sendchataction)
+
 
