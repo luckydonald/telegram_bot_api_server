@@ -10,5 +10,7 @@ ENV PORT 80
 ENV BIND 0.0.0.0:80
 ENV LOG_LEVEL debug
 
-COPY ./telegram_bot_api_server /app
+COPY ./telegram_bot_api_server /app/telegram_bot_api_server
+COPY ./requirements.txt /app/requirements.txt
+COPY ./requirements.freeze.txt /app/requirements.freeze.txt
 RUN pip install -r requirements.txt
