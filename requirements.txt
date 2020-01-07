@@ -1,9 +1,9 @@
-pydantic
 aiohttp_debugtoolbar
 luckydonald-utils
 aiohttp[speedups]
 aiohttp-devtools
 asynctest
+pydantic
 aiocron
 uvloop
 
