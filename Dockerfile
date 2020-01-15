@@ -10,6 +10,8 @@ ENV PORT 80
 ENV BIND 0.0.0.0:80
 ENV LOG_LEVEL debug
 
+RUN rm --recursive --force /app/ ; mkdir --parents /app/
+COPY ./main.py /app/main.py
 COPY ./telegram_bot_api_server /app/telegram_bot_api_server
 COPY ./requirements.txt /app/requirements.txt
 COPY ./requirements.freeze.txt /app/requirements.freeze.txt
