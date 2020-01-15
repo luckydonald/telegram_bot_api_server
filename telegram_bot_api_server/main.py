@@ -336,7 +336,10 @@ async def _get_bot(token: str) -> Union[TelegramClientUpdateCollector]:
 
     logger.debug(f'could not find instance for user_id {user_id},\nlaunching telegram muted client.')
     bot = TelegramClientUpdateCollector(
-        session=StringSession(None if is_api else secret), api_id=TG_API_ID, api_hash=TG_API_HASH, api_key=token if is_api else None,
+        session=StringSession(None if is_api else secret),  # set a session if not bot
+        api_id=TG_API_ID,
+        api_hash=TG_API_HASH,
+        api_key=secret if is_api else None,  # use the api_key if is bot
         mode=UpdateModes.SILENT
     )
     logger.debug(f'Connecting in the bot {token}.')
