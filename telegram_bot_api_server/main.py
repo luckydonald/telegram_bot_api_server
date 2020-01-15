@@ -326,6 +326,7 @@ async def _get_bot(token: str) -> Union[TelegramClientUpdateCollector]:
     """
     global bots
     is_api, user_id, secret = await split_token(token)
+    logger.debug(f"loading {'api' if is_api else 'user'} bot with id {user_id!r} and the token {secret!r}...")
     user_id = int(user_id)
 
     if user_id in bots:
@@ -356,8 +357,9 @@ async def _get_bot(token: str) -> Union[TelegramClientUpdateCollector]:
 
 async def split_token(token):
     if token.startswith('bot') and ":" in token:
-        user_id, _ = token[3:].split(":", maxsplit=1)  # [:3] to remove "bot" prefix
-        secret = None
+        token = token[3:]  # [3:] to remove "bot" prefix
+        user_id, _ = token.split(":", maxsplit=1)
+        secret = token
         is_api = True
     elif token.startswith('user') and "@" in token:
         user_id, secret = token[4:].split("@", maxsplit=1)  # [:4] to remove "user" prefix
