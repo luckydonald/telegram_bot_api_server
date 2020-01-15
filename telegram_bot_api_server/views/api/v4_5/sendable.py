@@ -36,7 +36,7 @@ async def send_message(
     reply_to_message_id: Union[int, None] = Query(None, description="If the message is a reply, ID of the original message"),
     reply_markup: Union[str, None] = Query(None, description="Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user."),
 ):
-    from main import _get_bot
+    from ....main import _get_bot
     bot = await _get_bot(token)
     try:
         entity = await get_entity(bot, chat_id)
