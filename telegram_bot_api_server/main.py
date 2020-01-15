@@ -279,7 +279,7 @@ async def authorize_phone(
 @routes.get('/{token}/getUpdates', tags=["updates"])
 async def get_updates(token):
     global bots
-    is_api, user_id, secret = split_token(token)
+    is_api, user_id, secret = await split_token(token)
     logger.debug(f'Setting webhook for {user_id}...')
 
     if user_id in bots:
