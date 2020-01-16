@@ -94,6 +94,7 @@ from telethon.tl.types import SecureCredentialsEncrypted as TSecureCredentialsEn
 from telethon.tl.types import UpdateChatUserTyping as TUpdateChatUserTyping
 from telethon.tl.types import UpdateUserStatus as TUpdateUserStatus
 from telethon.tl.types import UpdateDeleteChannelMessages as TUpdateDeleteChannelMessages
+from telethon.tl.types import UpdateWebPage as TUpdateWebPage
 
 from telethon.utils import pack_bot_file_id, get_peer_id
 
@@ -243,6 +244,9 @@ async def to_web_api(
         return None
     if isinstance(o, TUpdateDeleteChannelMessages):
         logger.debug(f"Ignoring deleted message(s) in channel {o.channel_id}.")
+        return None
+    if isinstance(o, TUpdateWebPage):
+        logger.debug(f"Ignoring webpage update message(s) in channel {o.webpage}.")
         return None
     if isinstance(o, TPhotoSizeEmpty):
         return None
