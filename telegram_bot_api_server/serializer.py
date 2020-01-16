@@ -93,6 +93,7 @@ from telethon.tl.types import SecureValue as TSecureValue
 from telethon.tl.types import SecureCredentialsEncrypted as TSecureCredentialsEncrypted
 from telethon.tl.types import UpdateChatUserTyping as TUpdateChatUserTyping
 from telethon.tl.types import UpdateUserStatus as TUpdateUserStatus
+from telethon.tl.types import UpdateDeleteChannelMessages as TUpdateDeleteChannelMessages
 
 from telethon.utils import pack_bot_file_id, get_peer_id
 
@@ -239,6 +240,9 @@ async def to_web_api(
         return None
     if isinstance(o, TUpdateUserStatus):
         logger.debug(f"Ignoring status {o.status} of user {o.user_id}.")
+        return None
+    if isinstance(o, TUpdateDeleteChannelMessages):
+        logger.debug(f"Ignoring deleted message(s) in channel {o.channel_id}.")
         return None
     if isinstance(o, TPhotoSizeEmpty):
         return None
