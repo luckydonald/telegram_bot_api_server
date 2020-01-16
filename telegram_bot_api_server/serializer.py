@@ -236,18 +236,6 @@ async def to_web_api(
             shipping_option_id=o.shipping_option_id,
             order_info=await to_web_api(o.info, client),
         )
-    if isinstance(o, TUpdateChatUserTyping):
-        logger.debug(f"Ignoring action {o.action} of user {o.user_id} in chat {o.chat_id}.")
-        return None
-    if isinstance(o, TUpdateUserStatus):
-        logger.debug(f"Ignoring status {o.status} of user {o.user_id}.")
-        return None
-    if isinstance(o, TUpdateDeleteChannelMessages):
-        logger.debug(f"Ignoring deleted message(s) in channel {o.channel_id}.")
-        return None
-    if isinstance(o, TUpdateWebPage):
-        logger.debug(f"Ignoring webpage update message(s) in channel {o.webpage}.")
-        return None
     if isinstance(o, TPhotoSizeEmpty):
         return None
     if isinstance(o, TPhotoSize):
@@ -951,6 +939,18 @@ async def to_web_api(
     if isinstance(o, (bool, str, int, float)):
         return o
     if o is None:
+        return None
+    if isinstance(o, TUpdateChatUserTyping):
+        logger.debug(f"Ignoring action {o.action} of user {o.user_id} in chat {o.chat_id}.")
+        return None
+    if isinstance(o, TUpdateUserStatus):
+        logger.debug(f"Ignoring status {o.status} of user {o.user_id}.")
+        return None
+    if isinstance(o, TUpdateDeleteChannelMessages):
+        logger.debug(f"Ignoring deleted message(s) in channel {o.channel_id}.")
+        return None
+    if isinstance(o, TUpdateWebPage):
+        logger.debug(f"Ignoring webpage update message(s) in channel {o.webpage}.")
         return None
     raise TypeError(f'Type not handled: {type(o)} with value {o!r}: {o!s}')
 
