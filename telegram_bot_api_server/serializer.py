@@ -953,11 +953,11 @@ async def to_web_api(
 
 async def get_entity(client, peer):
     """ wrapper for debug. """
-    logger.debug(f'Loading entity for peer {peer!r}')
+    logger.debug(f'Loading entity for peer {peer!s}')
     try:
         entity = await client.get_entity(peer)
     except ValueError as e:
-        # so we are not a bot, and
+        # so we are not a bot, and need to get it manually.
         dialog: Dialog
         for dialog in await client.get_dialogs(ignore_migrated=True):
             print(dialog)
@@ -965,7 +965,12 @@ async def get_entity(client, peer):
                 entity = dialog.input_entity
                 break
             # elif dialog.peer and dialog.peer.chat_id and dialog.peer.chat_id.id == peer:
-            if hasattr(dialog.peer, 'chat_id'):
+            if hasattr(dialog, 'id'):
+                found_chat_id = dialog.id
+                # entity = dialog.input_entity
+            elif not hasattr(dialog, 'peer'):
+                continue
+            elif hasattr(dialog.peer, 'chat_id'):
                 found_chat_id = dialog.peer.chat_id
                 # entity = dialog.input_entity
             elif hasattr(dialog.peer, 'user_id'):
