@@ -275,7 +275,7 @@ async def to_web_api(
     if isinstance(o, TDocument):
         data = {
             'file_id': pack_bot_file_id(o),
-            'calculate_file_unique_id': calculate_file_unique_id(o.id),
+            'file_unique_id': calculate_file_unique_id(o.id),
             'thumb': None,
         }
         # thumb: TTypePhotoSize = o.thumbs[0]
