@@ -846,7 +846,7 @@ async def to_web_api(
         )
     if isinstance(o, TMessageEntityMentionName):
         user = await get_entity(client, o.user_id)
-        user = await to_web_api(user)
+        user = await to_web_api(user, client)
         return MessageEntity(
             type='text_mention',
             offset=o.offset,
