@@ -314,7 +314,7 @@ async def get_updates(token):
     # end if
 
     # in any case we wanna return the updates
-    return r_success([x.to_array() for x in bots[user_id].updates])
+    return r_success([x.to_array() for x in bots[user_id].updates if x is not None])
 # end def
 
 
