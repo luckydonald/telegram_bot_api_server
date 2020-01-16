@@ -10,6 +10,7 @@ from typing import Type, Union, List
 import aiohttp
 from luckydonaldUtils.exceptions import assert_type_or_raise
 from luckydonaldUtils.logger import logging
+from pytgbot.api_types import TgBotApiObject
 from pytgbot.api_types.receivable.updates import Update, Message
 from telethon import TelegramClient, events
 from telethon.network import ConnectionTcpFull, Connection
@@ -120,7 +121,7 @@ class TelegramClientUpdateCollector(TelegramClient):
     # end def
 
     async def send_event(self, data: Update):
-        json = data.to_array()
+        json = data.to_array() if isinstance(data, TgBotApiObject) else data
         logger.debug(f"Processing event: {json!r}")
         if self.mode == UpdateModes.POLLING:
             # Store the updates
@@ -191,7 +192,7 @@ class TelegramClientUpdateCollector(TelegramClient):
             from datetime import datetime
             import json
             with open(f'logs/update_{now}.json', 'w') as f:
-                json.dump(update.to_array(), f)
+                json.dump(update.to_array() if isinstance(update, TgBotApiObject) else update, f)
             # end with
 
             await self.send_event(update)
