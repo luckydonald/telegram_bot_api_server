@@ -3,11 +3,12 @@
 import asyncio
 import uvloop
 from enum import Enum
-from typing import Dict, Union
+from typing import Dict, Union, List, Optional
 from aiocron import crontab
 from asyncio import get_event_loop
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Query
 from pydantic import AnyHttpUrl, BaseModel
+from pytgbot.api_types.sendable.files import InputFile
 from starlette import status
 from telethon.utils import parse_phone
 from classes.webhook import TelegramClientUpdateCollector, UpdateModes
@@ -49,8 +50,24 @@ app = FastAPI()
 routes = APIRouter()  # like flask.Blueprint
 
 
-@routes.get('/{token}/setWebhook', tags=["webhook", "updates"])
-async def set_webhook(token: str = TOKEN_VALIDATION, url: Union[AnyHttpUrl, None] = None) -> JSONableResponse:
+@routes.api_route('/{token}/setWebhook', methods=['GET', 'POST'], tags=['official', 'webhook', 'updates'])
+async def set_webhook(
+    token: str = TOKEN_VALIDATION,
+    url: str = Query(..., description='HTTPS url to send updates to. Use an empty string to remove webhook integration'),
+    certificate: Optional[InputFile] = Query(None, description='Upload your public key certificate so that the root certificate in use can be checked. See our self-signed guide for details.'),
+    max_connections: Optional[int] = Query(None, description='Maximum allowed number of simultaneous HTTPS connections to the webhook for update delivery, 1-100. Defaults to 40. Use lower values to limit the load on your bot‘s server, and higher values to increase your bot’s throughput.'),
+    allowed_updates: Optional[List[str]] = Query(None, description='List the types of updates you want your bot to receive. For example, specify ["message", "edited_channel_post", "callback_query"] to only receive updates of these types. See Update for a complete list of available update types. Specify an empty list to receive all updates regardless of type (default). If not specified, the previous setting will be used.Please note that this parameter doesn\'t affect updates created before the call to the setWebhook, so unwanted updates may be received for a short period of time.'),
+) -> JSONableResponse:
+    """
+    Use this method to specify a url and receive incoming updates via an outgoing webhook. Whenever there is an update for the bot, we will send an HTTPS POST request to the specified url, containing a JSON-serialized Update. In case of an unsuccessful request, we will give up after a reasonable amount of attempts. Returns True on success.
+    If you'd like to make sure that the Webhook request comes from Telegram, we recommend using a secret path in the URL, e.g. https://www.example.com/<token>. Since nobody else knows your bot‘s token, you can be pretty sure it’s us.
+
+    Notes1. You will not be able to receive updates using getUpdates for as long as an outgoing webhook is set up.2. To use a self-signed certificate, you need to upload your public key certificate using certificate parameter. Please upload as InputFile, sending a String will not work.3. Ports currently supported for Webhooks: 443, 80, 88, 8443.
+    NEW! If you're having any trouble setting up webhooks, please check out this amazing guide to Webhooks.
+
+
+    https://core.telegram.org/bots/api#setwebhook
+    """
     global bots
     logger.debug(f'Setting webhook for {token} to {url!r}.')
     if not url:
@@ -85,8 +102,15 @@ async def set_webhook(token: str = TOKEN_VALIDATION, url: Union[AnyHttpUrl, None
 # end def
 
 
-@routes.get('/{token}/deleteWebhook', tags=["webhook", "updates"])
-async def delete_webhook(token: str = TOKEN_VALIDATION):
+@routes.api_route('/{token}/deleteWebhook', methods=['GET', 'POST'], tags=['official', 'webhook', 'updates'])
+async def delete_webhook(
+    token: str = TOKEN_VALIDATION,
+) -> JSONableResponse:
+    """
+    Use this method to remove webhook integration if you decide to switch back to getUpdates. Returns True on success. Requires no parameters.
+
+    https://core.telegram.org/bots/api#deletewebhook
+    """
     global bots
     is_api, user_id, secret = split_token(token)
     if user_id in bots:
@@ -123,8 +147,8 @@ class PhoneAuthorisation(BaseModel):
 # end def
 
 
-@routes.get('/authorizePhone', response_model=PhoneAuthorisation, tags=["authorisation"])
-@routes.post('/authorizePhone', response_model=PhoneAuthorisation, tags=["authorisation"])
+@routes.get('/authorizePhone', response_model=PhoneAuthorisation, tags=["authorisation", "addition"])
+@routes.post('/authorizePhone', response_model=PhoneAuthorisation, tags=["authorisation", "addition"])
 async def authorize_phone(
     phone: str,
     password: Union[None, str] = None,
@@ -271,13 +295,26 @@ async def authorize_phone(
             error_code=401,
             description="OK: Logged in. Use the token to connect to this service.",
         )
-
     # end if
 # end def
 
 
-@routes.get('/{token}/getUpdates', tags=["updates"])
-async def get_updates(token):
+@routes.api_route('/{token}/getUpdates', methods=['GET', 'POST'], tags=['official', 'updates'])
+async def get_updates(
+    token: str = TOKEN_VALIDATION,
+    offset: Optional[int] = Query(None, description='Identifier of the first update to be returned. Must be greater by one than the highest among the identifiers of previously received updates. By default, updates starting with the earliest unconfirmed update are returned. An update is considered confirmed as soon as getUpdates is called with an offset higher than its update_id. The negative offset can be specified to retrieve updates starting from -offset update from the end of the updates queue. All previous updates will forgotten.'),
+    limit: Optional[int] = Query(None, description='Limits the number of updates to be retrieved. Values between 1—100 are accepted. Defaults to 100.'),
+    timeout: Optional[int] = Query(None, description='Timeout in seconds for long polling. Defaults to 0, i.e. usual short polling. Should be positive, short polling should be used for testing purposes only.'),
+    allowed_updates: Optional[List[str]] = Query(None, description='List the types of updates you want your bot to receive. For example, specify ["message", "edited_channel_post", "callback_query"] to only receive updates of these types. See Update for a complete list of available update types. Specify an empty list to receive all updates regardless of type (default). If not specified, the previous setting will be used.Please note that this parameter doesn\'t affect updates created before the call to the getUpdates, so unwanted updates may be received for a short period of time.'),
+) -> JSONableResponse:
+    """
+    Use this method to receive incoming updates using long polling (wiki). An Array of Update objects is returned.
+
+    Notes1. This method will not work if an outgoing webhook is set up.2. In order to avoid getting duplicate updates, recalculate offset after each server response.
+
+
+    https://core.telegram.org/bots/api#getupdates
+    """
     global bots
     is_api, user_id, secret = await split_token(token)
     logger.debug(f'Setting webhook for {user_id}...')
@@ -372,16 +409,6 @@ async def split_token(token):
     # end if
     user_id = int(user_id)
     return is_api, user_id, secret
-# end def
-
-
-@routes.get('/{token}/getMe', tags=["bot"])
-async def get_me(token: str = TOKEN_VALIDATION):
-    bot = await _get_bot(token)
-    me: User = await bot.get_me()
-    me: TGUser = await to_web_api(me, client=bot)
-    me: dict = me.to_array()
-    return r_success(me, None)
 # end def
 
 
