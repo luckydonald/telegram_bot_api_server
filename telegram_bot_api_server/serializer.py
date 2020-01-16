@@ -944,7 +944,7 @@ async def to_web_api(
         return o
     if o is None:
         return None
-    raise TypeError(f'Type not handled: {type(o)} with value {o!r}')
+    raise TypeError(f'Type not handled: {type(o)} with value {o!r}: {o!s}')
 
 
 async def get_entity(client, peer):
