@@ -9,7 +9,6 @@ from asyncio import get_event_loop
 from fastapi import FastAPI, APIRouter
 from pydantic import AnyHttpUrl, BaseModel
 from starlette import status
-from serializer import to_web_api
 from telethon.utils import parse_phone
 from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
@@ -25,6 +24,7 @@ from pytgbot.api_types.receivable.peer import User as TGUser
 
 from .tools.responses import r_error, r_success, JSONableResponse
 from .constants import TOKEN_VALIDATION
+from .serializer import to_web_api
 
 from somewhere import TG_API_ID, TG_API_HASH
 
