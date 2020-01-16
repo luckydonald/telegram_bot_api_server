@@ -91,6 +91,9 @@ from telethon.tl.types import MessageActionBotAllowed as TMessageActionBotAllowe
 from telethon.tl.types import MessageActionSecureValuesSentMe as TMessageActionSecureValuesSentMe  # passport_data
 from telethon.tl.types import SecureValue as TSecureValue
 from telethon.tl.types import SecureCredentialsEncrypted as TSecureCredentialsEncrypted
+from telethon.tl.types import UpdateChatUserTyping as TUpdateChatUserTyping
+from telethon.tl.types import UpdateUserStatus as TUpdateUserStatus
+
 from telethon.utils import pack_bot_file_id, get_peer_id
 
 from tools.api import TYPE_CHANNEL, as_channel_id, calculate_file_unique_id
@@ -231,6 +234,12 @@ async def to_web_api(
             shipping_option_id=o.shipping_option_id,
             order_info=await to_web_api(o.info, client),
         )
+    if isinstance(o, TUpdateChatUserTyping):
+        logger.debug(f"Ignoring action {o.action} of user {o.user_id} in chat {o.chat_id}.")
+        return None
+    if isinstance(o, TUpdateUserStatus):
+        logger.debug(f"Ignoring status {o.status} of user {o.user_id}.")
+        return None
     if isinstance(o, TPhotoSizeEmpty):
         return None
     if isinstance(o, TPhotoSize):
