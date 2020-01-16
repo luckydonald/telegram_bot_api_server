@@ -14,7 +14,7 @@ from pytgbot.api_types.receivable.media import Contact, Venue, Video, Document, 
 from pytgbot.api_types.receivable.passport import PassportData, EncryptedCredentials, EncryptedPassportElement
 from pytgbot.api_types.receivable.payments import ShippingQuery, PreCheckoutQuery, OrderInfo, Invoice, SuccessfulPayment
 from pytgbot.api_types.receivable.peer import User, Chat
-from pytgbot.api_types.receivable.stickers import MaskPosition
+from pytgbot.api_types.receivable.stickers import MaskPosition, StickerSet
 from pytgbot.api_types.receivable.updates import Message, Update, CallbackQuery
 from telethon.tl.types import User as TUser, Dialog
 from telethon.tl.patched import Message as TMessage
@@ -95,6 +95,9 @@ from telethon.tl.types import UpdateChatUserTyping as TUpdateChatUserTyping
 from telethon.tl.types import UpdateUserStatus as TUpdateUserStatus
 from telethon.tl.types import UpdateDeleteChannelMessages as TUpdateDeleteChannelMessages
 from telethon.tl.types import UpdateWebPage as TUpdateWebPage
+from telethon.tl.functions.messages import GetStickerSetRequest as TGetStickerSetRequest
+from telethon.tl.types.messages import StickerSet as TStickerSet1
+from telethon.tl.types import StickerSet as TStickerSet2
 
 from telethon.utils import pack_bot_file_id, get_peer_id
 
@@ -291,11 +294,14 @@ async def to_web_api(
             if isinstance(attr, TDocumentAttributeImageSize):
                 data['width'] = attr.w
                 data['height'] = attr.h
-                # end if
+            # end if
             if isinstance(attr, TDocumentAttributeSticker):
-                sticker_set: Union[str, None] = await to_web_api(attr.stickerset, client)
+                stickerset_stickers: TStickerSet1 = await client(TGetStickerSetRequest(stickerset=attr.stickerset))
+                stickerset_stickers_set: TStickerSet2 = stickerset_stickers.set
+                set_name: Union[str, None] = stickerset_stickers_set.short_name
+                # set_name: Union[str, None] = await to_web_api(attr.stickerset, client)
                 data['emoji'] = attr.alt
-                data['set_name'] = sticker_set
+                data['set_name'] = set_name
                 data['mask'] = attr.mask
                 data['mask_position'] = await to_web_api(attr.mask_coords, client)
             # end if
