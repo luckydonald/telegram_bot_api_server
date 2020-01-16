@@ -144,7 +144,7 @@ class TelegramClientUpdateCollector(TelegramClient):
 
     def register_update_listeners(self):
         @self.on(events.NewMessage(pattern='/bestpony'))
-        async def start(event):
+        async def bestpony(event):
             """Send a message when the command /start is issued."""
             await event.respond('Best pony is <b>Littlepip</b>!')
             # raise events.StopPropagation  # don't raise that as we wanna have others chime in as well
