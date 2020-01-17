@@ -918,8 +918,17 @@ async def to_web_api(
             total_amount=o.total_amount,
         )
     if isinstance(o, TInputStickerSetID):
-        return None
-        pass
+        stickers: TStickerSet1 = await client(TGetStickerSetRequest(stickerset=o))
+        return await to_web_api(stickers)
+    if isinstance(o, TStickerSet1):
+        pack: TStickerSet2 = o.set
+        return StickerSet(
+            name=pack.short_name,
+            title=pack.title,
+            is_animated=pack.animated,
+            contains_masks=pack.masks,
+            stickers=await to_web_api(o.documents, client),
+        )
     if isinstance(o, TInputStickerSetEmpty):
         return ''
     if isinstance(o, TInputStickerSetShortName):

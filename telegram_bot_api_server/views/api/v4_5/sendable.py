@@ -5,12 +5,12 @@ from typing import Union
 from fastapi import APIRouter as Blueprint, HTTPException
 from serializer import to_web_api, get_entity
 from fastapi.params import Query
-from telethon.tl.types import TypeSendMessageAction
+from telethon.tl.types import TypeSendMessageAction, InputStickerSetShortName
 from telethon.client.chats import _ChatAction
 from luckydonaldUtils.logger import logging
-from telethon.tl.functions.messages import SetTypingRequest
+from telethon.tl.functions.messages import SetTypingRequest, GetStickerSetRequest
 
-from ....tools.responses import r_success
+from ....tools.responses import r_success, JSONableResponse
 from ....constants import TOKEN_VALIDATION
 
 __author__ = 'luckydonald'
@@ -124,4 +124,23 @@ async def send_chat_action(
     )
 
     return r_success()
+# end def
+
+
+@routes.api_route('/{token}/getStickerSet', methods=['GET', 'POST'], tags=['official', 'sticker'])
+async def get_sticker_set(
+    token: str = TOKEN_VALIDATION,
+    name: str = Query(..., description='Name of the sticker set'),
+) -> JSONableResponse:
+    """
+    Use this method to get a sticker set. On success, a StickerSet object is returned.
+
+    https://core.telegram.org/bots/api#getstickerset
+    """
+    from ....main import _get_bot
+    bot = await _get_bot(token)
+
+    result = await bot(GetStickerSetRequest(stickerset=InputStickerSetShortName(name)))
+    data = await to_web_api(result, bot)
+    return r_success(data.to_array())
 # end def

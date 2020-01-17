@@ -1755,28 +1755,6 @@ async def send_sticker(
 # end def
 
 
-@routes.api_route('/{token}/getStickerSet', methods=['GET', 'POST'], tags=['official'])
-async def get_sticker_set(
-    token: str = TOKEN_VALIDATION,
-    name: str = Query(..., description='Name of the sticker set'),
-) -> JSONableResponse:
-    """
-    Use this method to get a sticker set. On success, a StickerSet object is returned.
-
-    https://core.telegram.org/bots/api#getstickerset
-    """
-    from ....main import _get_bot
-    bot = await _get_bot(token)
-
-
-    result = await bot.get_sticker_set(
-        name=name,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
-
-
 @routes.api_route('/{token}/uploadStickerFile', methods=['GET', 'POST'], tags=['official'])
 async def upload_sticker_file(
     token: str = TOKEN_VALIDATION,
