@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from enum import Enum
-from typing import Union
+from typing import Union, Optional
 from fastapi import APIRouter as Blueprint, HTTPException
 from serializer import to_web_api, get_entity
 from fastapi.params import Query
+from telethon.errors import BotMethodInvalidError
 from telethon.tl.types import TypeSendMessageAction, InputStickerSetShortName
 from telethon.client.chats import _ChatAction
 from luckydonaldUtils.logger import logging
@@ -25,27 +26,36 @@ if __name__ == '__main__':
 routes = Blueprint()  # Basically a Blueprint
 
 
-@routes.api_route('/{token}/sendMessage', methods=["GET", "POST"], tags=["send"])
+@routes.api_route('/{token}/sendMessage', methods=['GET', 'POST'], tags=['official', 'send'])
 async def send_message(
     token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description="Unique identifier for the target chat or username of the target channel (in the format @channelusername)", regex=r"@[a-zA-Z][a-zA-Z0-9_]{2,}"),
-    text: str = Query(..., description="Text of the message to be sent"),
-    parse_mode: Union[str, None] = Query(None, description="Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message."),
-    disable_web_page_preview: bool = Query(False, description="Disables link previews for links in this message"),
-    disable_notification: bool = Query(False, description="Sends the message silently. Users will receive a notification with no sound."),
-    reply_to_message_id: Union[int, None] = Query(None, description="If the message is a reply, ID of the original message"),
-    reply_markup: Union[str, None] = Query(None, description="Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user."),
-):
+    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+    text: str = Query(..., description='Text of the message to be sent'),
+    parse_mode: Optional[str] = Query(None, description="Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message."),
+    disable_web_page_preview: Optional[bool] = Query(None, description='Disables link previews for links in this message'),
+    disable_notification: Optional[bool] = Query(None, description='Sends the message silently. Users will receive a notification with no sound.'),
+    reply_to_message_id: Optional[int] = Query(None, description='If the message is a reply, ID of the original message'),
+    # reply_markup: Optional[Union[InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, ForceReply]] = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
+    reply_markup: Optional[str] = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
+) -> JSONableResponse:
+    """
+    Use this method to send text messages. On success, the sent Message is returned.
+
+    https://core.telegram.org/bots/api#sendmessage
+    """
     from ....main import _get_bot
     bot = await _get_bot(token)
+
     try:
         entity = await get_entity(bot, chat_id)
-        # end try
+        await bot.get_dialogs()
+    except BotMethodInvalidError:
+        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+        entity = chat_id
     except ValueError:
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    await bot.get_dialogs()
     msg = await bot.send_message(
         entity=entity,
         message=text,

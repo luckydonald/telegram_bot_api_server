@@ -41,45 +41,6 @@ if __name__ == '__main__':
 routes = APIRouter()  # Basically a Blueprint
 
 
-@routes.api_route('/{token}/sendMessage', methods=['GET', 'POST'], tags=['official'])
-async def send_message(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
-    text: str = Query(..., description='Text of the message to be sent'),
-    parse_mode: Optional[str] = Query(None, description="Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message."),
-    disable_web_page_preview: Optional[bool] = Query(None, description='Disables link previews for links in this message'),
-    disable_notification: Optional[bool] = Query(None, description='Sends the message silently. Users will receive a notification with no sound.'),
-    reply_to_message_id: Optional[int] = Query(None, description='If the message is a reply, ID of the original message'),
-    reply_markup: Optional[Union[InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, ForceReply]] = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
-) -> JSONableResponse:
-    """
-    Use this method to send text messages. On success, the sent Message is returned.
-
-    https://core.telegram.org/bots/api#sendmessage
-    """
-    from ....main import _get_bot
-    bot = await _get_bot(token)
-
-    try:
-        entity = await get_entity(bot, chat_id)
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
-
-    result = await bot.send_message(
-        entity=entity,
-        text=text,
-        parse_mode=parse_mode,
-        disable_web_page_preview=disable_web_page_preview,
-        disable_notification=disable_notification,
-        reply_to_message_id=reply_to_message_id,
-        reply_markup=reply_markup,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
-
-
 @routes.api_route('/{token}/forwardMessage', methods=['GET', 'POST'], tags=['official'])
 async def forward_message(
     token: str = TOKEN_VALIDATION,
