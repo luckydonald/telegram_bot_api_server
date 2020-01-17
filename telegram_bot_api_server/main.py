@@ -136,7 +136,7 @@ async def get_webhook_info(
     bot = await _get_bot(token)
 
     data = WebhookInfo(
-        url=bot.url,
+        url=bot.webhook_url if bot.webhook_url else "",
         has_custom_certificate=False,
         pending_update_count=len(bot.updates),
         last_error_date=None,

@@ -200,15 +200,19 @@ class TelegramClientUpdateCollector(TelegramClient):
     # end def
 
     def enable_webhook(self, url):
-        self.url = url
+        self.updates = []
+        self.webhook_url = url
         self.mode = UpdateModes.WEBHOOK
     # end def
 
     def enable_polling(self):
         self.updates = []
+        self.webhook_url = None
         self.mode = UpdateModes.POLLING
     # end def
 
     def enable_silent(self):
+        self.updates = []
+        self.webhook_url = None
         self.mode = UpdateModes.SILENT
 # end class
