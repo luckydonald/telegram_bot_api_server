@@ -3,11 +3,12 @@
 import asyncio
 import uvloop
 from enum import Enum
-from typing import Dict, Union, List, Optional
+from typing import Dict, Union, List, Optional, Any
 from aiocron import crontab
 from asyncio import get_event_loop
 from fastapi import FastAPI, APIRouter, Query
 from pydantic import AnyHttpUrl, BaseModel
+from pytgbot.api_types.receivable import WebhookInfo
 from pytgbot.api_types.sendable.files import InputFile
 from starlette import status
 from telethon.utils import parse_phone
@@ -54,7 +55,8 @@ routes = APIRouter()  # like flask.Blueprint
 async def set_webhook(
     token: str = TOKEN_VALIDATION,
     url: str = Query(..., description='HTTPS url to send updates to. Use an empty string to remove webhook integration'),
-    certificate: Optional[InputFile] = Query(None, description='Upload your public key certificate so that the root certificate in use can be checked. See our self-signed guide for details.'),
+    # certificate: Optional[InputFile] = Query(None, description='Upload your public key certificate so that the root certificate in use can be checked. See our self-signed guide for details.'),
+    certificate: Optional[Any] = Query(None, description='Upload your public key certificate so that the root certificate in use can be checked. See our self-signed guide for details.'),
     max_connections: Optional[int] = Query(None, description='Maximum allowed number of simultaneous HTTPS connections to the webhook for update delivery, 1-100. Defaults to 40. Use lower values to limit the load on your bot‘s server, and higher values to increase your bot’s throughput.'),
     allowed_updates: Optional[List[str]] = Query(None, description='List the types of updates you want your bot to receive. For example, specify ["message", "edited_channel_post", "callback_query"] to only receive updates of these types. See Update for a complete list of available update types. Specify an empty list to receive all updates regardless of type (default). If not specified, the previous setting will be used.Please note that this parameter doesn\'t affect updates created before the call to the setWebhook, so unwanted updates may be received for a short period of time.'),
 ) -> JSONableResponse:
@@ -119,6 +121,30 @@ async def delete_webhook(
         return r_success(True, "Webhook was deleted")
     # end if
     return r_success(True, "Webhook was not set")
+# end def
+
+
+@routes.api_route('/{token}/getWebhookInfo', methods=['GET', 'POST'], tags=['official'])
+async def get_webhook_info(
+    token: str = TOKEN_VALIDATION,
+) -> JSONableResponse:
+    """
+    Use this method to get current webhook status. Requires no parameters. On success, returns a WebhookInfo object. If the bot is using getUpdates, will return an object with the url field empty.
+
+    https://core.telegram.org/bots/api#getwebhookinfo
+    """
+    bot = await _get_bot(token)
+
+    data = WebhookInfo(
+        url=bot.url,
+        has_custom_certificate=False,
+        pending_update_count=len(bot.updates),
+        last_error_date=None,
+        last_error_message=None,
+        max_connections=None,
+        allowed_updates=None,
+    )
+    return r_success(data.to_array())
 # end def
 
 
