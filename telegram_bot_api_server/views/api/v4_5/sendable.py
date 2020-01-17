@@ -6,7 +6,7 @@ from fastapi import APIRouter as Blueprint, HTTPException
 from serializer import to_web_api, get_entity
 from fastapi.params import Query
 from telethon.errors import BotMethodInvalidError
-from telethon.tl.types import TypeSendMessageAction, InputStickerSetShortName
+from telethon.tl.types import TypeSendMessageAction, InputStickerSetShortName, InputMessageID
 from telethon.client.chats import _ChatAction
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.messages import SetTypingRequest, GetStickerSetRequest
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 routes = Blueprint()  # Basically a Blueprint
 
 
-@routes.api_route('/{token}/sendMessage', methods=['GET', 'POST'], tags=['official', 'send'])
+@routes.api_route('/{token}/sendMessage', methods=['GET', 'POST'], tags=['official', 'send', 'message'])
 async def send_message(
     token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
@@ -68,6 +68,40 @@ async def send_message(
     data = await to_web_api(msg, bot)
     return r_success(data.to_array())
 # end def
+
+
+@routes.api_route('/{token}/forwardMessage', methods=['GET', 'POST'], tags=['official', 'message', 'send'])
+async def forward_message(
+    token: str = TOKEN_VALIDATION,
+    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+    from_chat_id: Union[int, str] = Query(..., description='Unique identifier for the chat where the original message was sent (or channel username in the format @channelusername)'),
+    message_id: int = Query(..., description='Message identifier in the chat specified in from_chat_id'),
+    disable_notification: Optional[bool] = Query(None, description='Sends the message silently. Users will receive a notification with no sound.'),
+) -> JSONableResponse:
+    """
+    Use this method to forward messages of any kind. On success, the sent Message is returned.
+
+    https://core.telegram.org/bots/api#forwardmessage
+    """
+    from ....main import _get_bot
+    bot = await _get_bot(token)
+
+    try:
+        entity = await get_entity(bot, chat_id)
+    except ValueError:
+        raise HTTPException(404, detail="chat not found?")
+    # end try
+
+    result = await bot.forward_messages(
+        entity=entity,
+        messages=[InputMessageID(id=message_id)],
+        from_peer=from_chat_id,
+        silent=disable_notification,
+    )
+    data = await to_web_api(result, bot)
+    return r_success(data.to_array())
+# end def
+
 
 
 class ChatAction(Enum):
