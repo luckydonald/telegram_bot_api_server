@@ -12,7 +12,7 @@ from pytgbot.api_types.receivable import WebhookInfo
 from starlette import status
 from telethon.utils import parse_phone
 from classes.webhook import TelegramClientUpdateCollector, UpdateModes
-from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
+from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError, RPCError
 from fastapi.encoders import jsonable_encoder
 from telethon.tl.types import User
 from telethon.sessions import StringSession
@@ -459,6 +459,22 @@ async def request_validation_exception_handler(
         error_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         description="UNPROCESSABLE ENTITY: Input validation failed",
         result=jsonable_encoder(exc.errors())
+    )
+# end def
+
+
+# noinspection PyUnusedLocal
+@app.exception_handler(RPCError)
+async def request_validation_exception_handler(
+    request: Request, exc: RPCError
+) -> JSONableResponse:
+    msg, causer = str(exc).rstrip(')').split(' (caused by ', maxsplit=1)
+    return r_error(
+        error_code=exc.code if exc.code else status.HTTP_500_INTERNAL_SERVER_ERROR,
+        description=exc.message + ': ' + msg,
+        result={
+            'caused_by': causer,
+        },
     )
 # end def
 
