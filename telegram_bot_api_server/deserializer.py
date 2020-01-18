@@ -48,5 +48,7 @@ async def to_telethon(o, client):
             raise NotImplementedError('later, alligator')
         if o.pay:
             raise NotImplementedError('later, alligator')
-    raise TypeError('Nope.')
+    if o is None:
+        return None
+    raise TypeError(f'Type not handled: {type(o)} with value {o!r}: {o!s}')
 # end def

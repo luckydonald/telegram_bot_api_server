@@ -4,6 +4,7 @@ from typing import Union, Optional
 from fastapi import Query, APIRouter, HTTPException
 from pydantic import Json
 from luckydonaldUtils.logger import logging
+from telethon.errors import BotMethodInvalidError
 
 from telethon.tl.types import (
     InputMediaGeoPoint as TInputMediaGeoPoint,
@@ -13,6 +14,7 @@ from telethon.tl.types import (
 
 __author__ = 'luckydonald'
 
+from .....tools.fastapi_issue_884_workaround import parse_obj_as
 from .....tools.responses import JSONableResponse, r_success
 from .....constants import TOKEN_VALIDATION
 from .....serializer import to_web_api, get_entity
@@ -27,13 +29,13 @@ if __name__ == '__main__':
 routes = APIRouter()  # Basically a Blueprint
 
 
-@routes.api_route('/{token}/sendLocation', methods=['GET', 'POST'], tags=['official'])
+@routes.api_route('/{token}/sendLocation', methods=['GET', 'POST'], tags=['official', 'send', 'location'])
 async def send_location(
     token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
-    latitude: float = Query(..., description='Latitude of the location'),
-    longitude: float = Query(..., description='Longitude of the location'),
-    live_period: Optional[int] = Query(None, description='Period in seconds for which the location will be updated (see Live Locations, should be between 60 and 86400.'),
+    latitude: float = Query(..., description='Latitude of the location', gt=-90, lt=90),
+    longitude: float = Query(..., description='Longitude of the location', gt=-180, lt=180),
+    live_period: Optional[int] = Query(None, description='Period in seconds for which the location will be updated (see Live Locations, should be between 60 and 86400.', gt=0, le=300),
     disable_notification: Optional[bool] = Query(None, description='Sends the message silently. Users will receive a notification with no sound.'),
     reply_to_message_id: Optional[int] = Query(None, description='If the message is a reply, ID of the original message'),
     reply_markup: Json = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
@@ -43,9 +45,6 @@ async def send_location(
 
     https://core.telegram.org/bots/api#sendlocation
     """
-    from .....main import _get_bot
-    bot = await _get_bot(token)
-
     # dict -> models
     reply_markup: Optional[Union[
         InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel, ForceReplyModel]] = parse_obj_as(
@@ -53,15 +52,23 @@ async def send_location(
         obj=reply_markup,
     )
 
+    # get client
+    from .....main import _get_bot
+    bot = await _get_bot(token)
+
     # models -> bot
     buttons = await to_telethon(reply_markup, bot)
 
     try:
         entity = await get_entity(bot, chat_id)
+    except BotMethodInvalidError:
+        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+        entity = chat_id
     except ValueError:
         raise HTTPException(404, detail="chat not found?")
     # end try
 
+    # https://t.me/TelethonChat/33530
     if live_period:
         # end live location
         file = TInputMediaGeoLive(
@@ -81,7 +88,7 @@ async def send_location(
         )
     # end if
     # noinspection PyTypeChecker
-    result = bot.send_file(
+    result = await bot.send_file(
         entity=entity,
         file=file,
         silent=disable_notification,
