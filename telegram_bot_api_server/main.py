@@ -476,9 +476,9 @@ async def request_validation_exception_handler(
 
 
 app.include_router(routes)
-from views.api.v4_5.sendable.__init__ import routes as sendable_routes
+from .views.api.v4_5.sendable import routes as sendable_routes
 app.include_router(sendable_routes)
-from views.api.v4_5.sendable.location import routes as location_routes
+from .views.api.v4_5.sendable.location import routes as location_routes
 app.include_router(location_routes)
 
 
