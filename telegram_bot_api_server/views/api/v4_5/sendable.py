@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from enum import Enum
-from typing import Union, Optional
+from typing import Union, Optional, List
 from fastapi import APIRouter as Blueprint, HTTPException
 from serializer import to_web_api, get_entity
 from fastapi.params import Query
@@ -12,7 +12,9 @@ from luckydonaldUtils.logger import logging
 from telethon.tl.functions.messages import SetTypingRequest, GetStickerSetRequest
 
 from ....tools.responses import r_success, JSONableResponse
+from ....tools.fastapi import Json
 from ....constants import TOKEN_VALIDATION
+from .models import ForceReplyModel, InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel
 
 __author__ = 'luckydonald'
 
@@ -35,7 +37,7 @@ async def send_message(
     disable_web_page_preview: Optional[bool] = Query(None, description='Disables link previews for links in this message'),
     disable_notification: Optional[bool] = Query(None, description='Sends the message silently. Users will receive a notification with no sound.'),
     reply_to_message_id: Optional[int] = Query(None, description='If the message is a reply, ID of the original message'),
-    reply_markup: Optional[Union[InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel, ForceReplyModel]] = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
+    reply_markup: Optional[Union[Json['InlineKeyboardMarkupModel'], Json['ReplyKeyboardMarkupModel'], Json['ReplyKeyboardRemoveModel'], Json['ForceReplyModel']]] = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
 ) -> JSONableResponse:
     """
     Use this method to send text messages. On success, the sent Message is returned.
