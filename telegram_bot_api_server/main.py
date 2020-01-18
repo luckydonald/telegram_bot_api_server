@@ -7,9 +7,8 @@ from typing import Dict, Union, List, Optional, Any
 from aiocron import crontab
 from asyncio import get_event_loop
 from fastapi import FastAPI, APIRouter, Query
-from pydantic import AnyHttpUrl, BaseModel
+from pydantic import BaseModel
 from pytgbot.api_types.receivable import WebhookInfo
-from pytgbot.api_types.sendable.files import InputFile
 from starlette import status
 from telethon.utils import parse_phone
 from classes.webhook import TelegramClientUpdateCollector, UpdateModes
@@ -22,11 +21,9 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.auth import SignInRequest
-from pytgbot.api_types.receivable.peer import User as TGUser
 
 from .tools.responses import r_error, r_success, JSONableResponse
 from .constants import TOKEN_VALIDATION
-from .serializer import to_web_api
 
 from somewhere import TG_API_ID, TG_API_HASH
 
@@ -481,6 +478,8 @@ async def request_validation_exception_handler(
 app.include_router(routes)
 from views.api.v4_5.sendable.__init__ import routes as sendable_routes
 app.include_router(sendable_routes)
+from views.api.v4_5.sendable.location import routes as location_routes
+app.include_router(location_routes)
 
 
 def main():
