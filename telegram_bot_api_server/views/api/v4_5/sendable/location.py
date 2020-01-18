@@ -10,6 +10,8 @@ __author__ = 'luckydonald'
 from .....tools.responses import JSONableResponse, r_success
 from .....constants import TOKEN_VALIDATION
 from .....serializer import to_web_api, get_entity
+from .....deserializer import to_telethon
+from ..generated.models import *
 
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
@@ -38,20 +40,52 @@ async def send_location(
     from .....main import _get_bot
     bot = await _get_bot(token)
 
+    # dict -> models
+    reply_markup: Optional[Union[
+        InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel, ForceReplyModel]] = parse_obj_as(
+        Optional[Union[InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel, ForceReplyModel]],
+        obj=reply_markup,
+    )
+
+    # models -> bot
+    buttons = await to_telethon(reply_markup, bot)
+
     try:
         entity = await get_entity(bot, chat_id)
     except ValueError:
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    result = await bot.send_location(
+    from telethon.tl.types import (
+        InputMediaGeoPoint as TInputMediaGeoPoint,
+        InputGeoPoint as TInputGeoPoint,
+        InputMediaGeoLive as TInputMediaGeoLive,
+    )
+    if live_period:
+        # # send live location
+        file = TInputMediaGeoLive(
+            geo_point=TInputGeoPoint(
+                lat=latitude,
+                long=longitude,
+            ),
+            period=live_period,
+        )
+    else:
+        # # send normal location
+        file=TInputMediaGeoPoint(
+            geo_point=TInputGeoPoint(
+                lat=latitude,
+                long=longitude,
+            )
+        )
+    # end if
+    # noinspection PyTypeChecker
+    result = bot.send_file(
         entity=entity,
-        latitude=latitude,
-        longitude=longitude,
-        live_period=live_period,
-        disable_notification=disable_notification,
-        reply_to_message_id=reply_to_message_id,
-        reply_markup=reply_markup,
+        file=file,
+        silent=disable_notification,
+        reply_to=reply_to_message_id,
+        buttons=buttons,
     )
     data = await to_web_api(result, bot)
     return r_success(data.to_array())
