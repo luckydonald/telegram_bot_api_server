@@ -188,3 +188,34 @@ async def get_sticker_set(
     data = await to_web_api(result, bot)
     return r_success(data.to_array())
 # end def
+
+
+from pydantic import BaseModel
+
+class TestModel(BaseModel):
+    name: str
+    description: str
+    price: float
+    tax: float
+# end class
+
+
+@routes.api_route('/test', methods=['GET', 'POST'], tags=['debug', 'will_be_removed'])
+async def get_sticker_set(
+    foo: str,
+    moop: Json[List['TestModel']] = Query(..., description='Name of the sticker set'),
+    # reply_markup: Optional[Union[Json['InlineKeyboardMarkupModel'], Json['ReplyKeyboardMarkupModel'], Json['ReplyKeyboardRemoveModel'], Json['ForceReplyModel']]] = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
+) -> JSONableResponse:
+    """
+    Use this method to get a sticker set. On success, a StickerSet object is returned.
+
+    https://core.telegram.org/bots/api#getstickerset
+    """
+    # model loading and verification
+
+    moop: List[TestModel] = Json.parse_obj_as(
+        type_=List[TestModel],
+        obj=moop,
+    )
+    return {'data': moop}
+# end def
