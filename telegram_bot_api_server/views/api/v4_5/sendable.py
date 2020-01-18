@@ -12,7 +12,7 @@ from luckydonaldUtils.logger import logging
 from telethon.tl.functions.messages import SetTypingRequest, GetStickerSetRequest
 
 from ....tools.responses import r_success, JSONableResponse
-from ....tools.fastapi import Json
+from ....tools.fastapi_issue_884_workaround import Json
 from ....constants import TOKEN_VALIDATION
 from .models import ForceReplyModel, InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel
 
@@ -44,6 +44,12 @@ async def send_message(
 
     https://core.telegram.org/bots/api#sendmessage
     """
+    # model loading and verification
+    reply_markup: Optional[Union['InlineKeyboardMarkupModel', 'ReplyKeyboardMarkupModel', 'ReplyKeyboardRemoveModel', 'ForceReplyModel']] = Json.parse_obj_as(
+        type_=Optional[Union['InlineKeyboardMarkupModel', 'ReplyKeyboardMarkupModel', 'ReplyKeyboardRemoveModel', 'ForceReplyModel']],
+        obj=reply_markup,
+    )
+
     from ....main import _get_bot
     bot = await _get_bot(token)
 

@@ -6,6 +6,36 @@ from typing import Any, Union, List, Optional
 
 __author__ = 'luckydonald'
 
+__all__ = [
+    'UpdateModel', 'WebhookInfoModel', 'UserModel', 'ChatModel', 'MessageModel', 'MessageEntityModel', 'PhotoSizeModel', 'AudioModel', 'DocumentModel', 'VideoModel', 'AnimationModel', 'VoiceModel', 'VideoNoteModel', 'ContactModel', 'LocationModel', 'VenueModel', 'PollOptionModel', 'PollModel', 'UserProfilePhotosModel', 'FileModel', 'ReplyKeyboardMarkupModel', 'KeyboardButtonModel', 'ReplyKeyboardRemoveModel', 'InlineKeyboardMarkupModel', 'InlineKeyboardButtonModel', 'LoginUrlModel', 'CallbackQueryModel', 'ForceReplyModel', 'ChatPhotoModel', 'ChatMemberModel', 'ChatPermissionsModel', 'ResponseParametersModel', 'InputMediaPhotoModel', 'InputMediaVideoModel', 'InputMediaAnimationModel', 'InputMediaAudioModel', 'InputMediaDocumentModel', 'StickerModel', 'StickerSetModel', 'MaskPositionModel', 'InlineQueryModel', 'InlineQueryResultArticleModel', 'InlineQueryResultPhotoModel', 'InlineQueryResultGifModel', 'InlineQueryResultMpeg4GifModel', 'InlineQueryResultVideoModel', 'InlineQueryResultAudioModel', 'InlineQueryResultVoiceModel', 'InlineQueryResultDocumentModel', 'InlineQueryResultLocationModel', 'InlineQueryResultVenueModel', 'InlineQueryResultContactModel', 'InlineQueryResultGameModel', 'InlineQueryResultCachedPhotoModel', 'InlineQueryResultCachedGifModel', 'InlineQueryResultCachedMpeg4GifModel', 'InlineQueryResultCachedStickerModel', 'InlineQueryResultCachedDocumentModel', 'InlineQueryResultCachedVideoModel', 'InlineQueryResultCachedVoiceModel', 'InlineQueryResultCachedAudioModel', 'InputTextMessageContentModel', 'InputLocationMessageContentModel', 'InputVenueMessageContentModel', 'InputContactMessageContentModel', 'ChosenInlineResultModel', 'LabeledPriceModel', 'InvoiceModel', 'ShippingAddressModel', 'OrderInfoModel', 'ShippingOptionModel', 'SuccessfulPaymentModel', 'ShippingQueryModel', 'PreCheckoutQueryModel', 'PassportDataModel', 'PassportFileModel', 'EncryptedPassportElementModel', 'EncryptedCredentialsModel', 'PassportElementErrorDataFieldModel', 'PassportElementErrorFrontSideModel', 'PassportElementErrorReverseSideModel', 'PassportElementErrorSelfieModel', 'PassportElementErrorFileModel', 'PassportElementErrorFilesModel', 'PassportElementErrorTranslationFileModel', 'PassportElementErrorTranslationFilesModel', 'PassportElementErrorUnspecifiedModel', 'GameModel', 'GameHighScoreModel',
+]
+
+FAST_API_ISSUE_884_IS_FIXED = False
+
+
+if FAST_API_ISSUE_884_IS_FIXED:
+    from pydantic import Json
+
+    def parse_obj_as(_, obj, *__, **___):
+        """
+        we don't need any additional parsing as fastapi now does that correctly
+        """
+        return obj
+    # end def
+else:
+    class __JsonWrapper:
+        from pydantic import Json
+
+        def __getitem__(self, item):
+            """ Basically throw away `[Type]` when used like `Json[Type]` """
+            return self.Json
+        # end def
+    # end def
+    Json = __JsonWrapper()  # so Json[Type] does call Json.__getitem__(self, item=Type)
+
+    from pydantic import parse_obj_as
+# end if
+
 
 
 
@@ -559,7 +589,7 @@ class InputMediaVideoModel(BaseModel):  # InputMediaWithThumb
     """
     type: str
     media: str
-    thumb: Union[Optional['InputFileModel'], Optional[str]]
+    thumb: Optional[Union['InputFileModel', str]]
     caption: Optional[str]
     parse_mode: Optional[str]
     width: Optional[int]
@@ -577,7 +607,7 @@ class InputMediaAnimationModel(BaseModel):  # InputMediaWithThumb
     """
     type: str
     media: str
-    thumb: Union[Optional['InputFileModel'], Optional[str]]
+    thumb: Optional[Union['InputFileModel', str]]
     caption: Optional[str]
     parse_mode: Optional[str]
     width: Optional[int]
@@ -594,7 +624,7 @@ class InputMediaAudioModel(BaseModel):  # InputMediaWithThumb
     """
     type: str
     media: str
-    thumb: Union[Optional['InputFileModel'], Optional[str]]
+    thumb: Optional[Union['InputFileModel', str]]
     caption: Optional[str]
     parse_mode: Optional[str]
     duration: Optional[int]
@@ -611,7 +641,7 @@ class InputMediaDocumentModel(BaseModel):  # InputMediaWithThumb
     """
     type: str
     media: str
-    thumb: Union[Optional['InputFileModel'], Optional[str]]
+    thumb: Optional[Union['InputFileModel', str]]
     caption: Optional[str]
     parse_mode: Optional[str]
 # end class InputMediaDocument
