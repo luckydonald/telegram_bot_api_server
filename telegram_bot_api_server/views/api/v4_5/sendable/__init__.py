@@ -11,10 +11,10 @@ from telethon.client.chats import _ChatAction
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.messages import SetTypingRequest, GetStickerSetRequest
 
-from ....tools.responses import r_success, JSONableResponse
-from ....tools.fastapi_issue_884_workaround import Json
-from ....constants import TOKEN_VALIDATION
-from .models import ForceReplyModel, InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel
+from .....tools.responses import r_success, JSONableResponse
+from .....tools.fastapi_issue_884_workaround import Json
+from .....constants import TOKEN_VALIDATION
+from ..generated.models import ForceReplyModel, InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel
 
 __author__ = 'luckydonald'
 
@@ -50,7 +50,7 @@ async def send_message(
         obj=reply_markup,
     )
 
-    from ....main import _get_bot
+    from .....main import _get_bot
     bot = await _get_bot(token)
 
     try:
@@ -90,7 +90,7 @@ async def forward_message(
 
     https://core.telegram.org/bots/api#forwardmessage
     """
-    from ....main import _get_bot
+    from .....main import _get_bot
     bot = await _get_bot(token)
 
     try:
@@ -153,7 +153,7 @@ async def send_chat_action(
     chat_id: Union[int, str] = Query(..., description="Unique identifier for the target chat or username of the target channel (in the format @channelusername)", regex=r"@[a-zA-Z][a-zA-Z0-9_]{2,}"),
     action: ChatAction = Query(..., description='Type of action to broadcast. Choose one, depending on what the user is about to receive: "typing" for text messages, "upload_photo" for photos, "record_video" or "upload_video" for "videos", "record_audio" or "upload_audio" for audio files, "upload_document" for general files, "find_location" for location data, "record_video_note" or "upload_video_note" for video notes. Additionally added by this API implementation are "play_game", "choose_contact" and "cancel".'),
 ):
-    from ....main import _get_bot
+    from .....main import _get_bot
     bot = await _get_bot(token)
     try:
         entity = await get_entity(bot, chat_id)
@@ -187,7 +187,7 @@ async def get_sticker_set(
 
     https://core.telegram.org/bots/api#getstickerset
     """
-    from ....main import _get_bot
+    from .....main import _get_bot
     bot = await _get_bot(token)
 
     result = await bot(GetStickerSetRequest(stickerset=InputStickerSetShortName(name)))
