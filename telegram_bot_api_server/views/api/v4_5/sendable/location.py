@@ -5,6 +5,12 @@ from fastapi import Query, APIRouter, HTTPException
 from pydantic import Json
 from luckydonaldUtils.logger import logging
 
+from telethon.tl.types import (
+    InputMediaGeoPoint as TInputMediaGeoPoint,
+    InputGeoPoint as TInputGeoPoint,
+    InputMediaGeoLive as TInputMediaGeoLive,
+)
+
 __author__ = 'luckydonald'
 
 from .....tools.responses import JSONableResponse, r_success
@@ -56,13 +62,8 @@ async def send_location(
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    from telethon.tl.types import (
-        InputMediaGeoPoint as TInputMediaGeoPoint,
-        InputGeoPoint as TInputGeoPoint,
-        InputMediaGeoLive as TInputMediaGeoLive,
-    )
     if live_period:
-        # # send live location
+        # end live location
         file = TInputMediaGeoLive(
             geo_point=TInputGeoPoint(
                 lat=latitude,
@@ -71,8 +72,8 @@ async def send_location(
             period=live_period,
         )
     else:
-        # # send normal location
-        file=TInputMediaGeoPoint(
+        # send normal location
+        file = TInputMediaGeoPoint(
             geo_point=TInputGeoPoint(
                 lat=latitude,
                 long=longitude,
