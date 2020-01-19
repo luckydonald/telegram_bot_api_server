@@ -41,10 +41,9 @@ Check the [normal Documentation](core.telegram.org/bots/api) for those.
 - [x] [getMe](https://core.telegram.org/bots/api#getme)
 - [x] [getUpdates](https://core.telegram.org/bots/api#getupdates)
 - [x] [sendMessage](https://core.telegram.org/bots/api#sendmessage)
-    - [ ] `reply_markup` not yet working and ignored.
 - [x] [sendChatAction](https://core.telegram.org/bots/api#sendchataction)
 - [x] [sendLocation](https://core.telegram.org/bots/api#sendlocation)
 - [x] [editMessageLiveLocation](https://core.telegram.org/bots/api#editmessagelivelocation)
 - [x] [stopMessageLiveLocation](https://core.telegram.org/bots/api#stopmessagelivelocation)
-- [ ] [sendVenue](https://core.telegram.org/bots/api#sendvenue)
+- [x] [sendVenue](https://core.telegram.org/bots/api#sendvenue)
 
