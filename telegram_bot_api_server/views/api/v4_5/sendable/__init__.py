@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Union, Optional, List
 from fastapi import APIRouter as Blueprint, HTTPException
-from serializer import to_web_api, get_entity
+
 from fastapi.params import Query
 from telethon.errors import BotMethodInvalidError
 from telethon.tl.types import TypeSendMessageAction, InputStickerSetShortName, InputMessageID
@@ -14,6 +14,8 @@ from telethon.tl.functions.messages import SetTypingRequest, GetStickerSetReques
 from .....tools.fastapi_issue_884_workaround import Json, parse_obj_as
 from .....tools.responses import r_success, JSONableResponse
 from .....constants import TOKEN_VALIDATION
+from .....deserializer import to_telethon
+from .....serializer import to_web_api, get_entity
 from ..generated.models import ForceReplyModel, InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel
 
 __author__ = 'luckydonald'
@@ -45,10 +47,11 @@ async def send_message(
     https://core.telegram.org/bots/api#sendmessage
     """
     # model loading and verification
-    reply_markup: Optional[Union['InlineKeyboardMarkupModel', 'ReplyKeyboardMarkupModel', 'ReplyKeyboardRemoveModel', 'ForceReplyModel']] = parse_obj_as(
-        type_=Optional[Union['InlineKeyboardMarkupModel', 'ReplyKeyboardMarkupModel', 'ReplyKeyboardRemoveModel', 'ForceReplyModel']],
+    reply_markup: Optional[Union[InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel, ForceReplyModel]] = parse_obj_as(
+        type_=Optional[Union[InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel, ForceReplyModel]],
         obj=reply_markup,
     )
+    buttons = await to_telethon(reply_markup, None)
 
     from .....main import _get_bot
     bot = await _get_bot(token)
@@ -70,7 +73,7 @@ async def send_message(
         link_preview=not disable_web_page_preview,
         silent=disable_notification,
         reply_to=reply_to_message_id,
-        buttons=reply_markup,
+        buttons=buttons,
     )
     data = await to_web_api(msg, bot)
     return r_success(data.to_array())
