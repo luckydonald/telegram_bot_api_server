@@ -98,3 +98,112 @@ async def send_location(
     data = await to_web_api(result, bot)
     return r_success(data.to_array())
 # end def
+
+
+@routes.api_route('/{token}/editMessageLiveLocation', methods=['GET', 'POST'], tags=['official', 'edit', 'location'])
+async def edit_message_live_location(
+    token: str = TOKEN_VALIDATION,
+    latitude: float = Query(..., description='Latitude of new location', gt=-90, lt=90),
+    longitude: float = Query(..., description='Longitude of new location', gt=-180, lt=180),
+    chat_id: Optional[Union[int, str]] = Query(None, description='Required if inline_message_id is not specified. Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+    message_id: Optional[int] = Query(None, description='Required if inline_message_id is not specified. Identifier of the message to edit'),
+    inline_message_id: Optional[str] = Query(None, description='Required if chat_id and message_id are not specified. Identifier of the inline message'),
+    reply_markup: Optional[Json[InlineKeyboardMarkupModel]] = Query(None, description='A JSON-serialized object for a new inline keyboard.'),
+) -> JSONableResponse:
+    """
+    Use this method to edit live location messages. A location can be edited until its live_period expires or editing is explicitly disabled by a call to stopMessageLiveLocation. On success, if the edited message was sent by the bot, the edited Message is returned, otherwise True is returned.
+
+    https://core.telegram.org/bots/api#editmessagelivelocation
+    """
+    if inline_message_id:
+        raise NotImplementedError('later, probably.')
+    # end if
+
+    reply_markup: Optional[InlineKeyboardMarkupModel] = parse_obj_as(
+        Optional[InlineKeyboardMarkupModel],
+        obj=reply_markup,
+    )
+    # models -> bot
+    buttons = await to_telethon(reply_markup, None)
+
+    from .....main import _get_bot
+    bot = await _get_bot(token)
+
+    try:
+        entity = await get_entity(bot, chat_id)
+    except BotMethodInvalidError:
+        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+        entity = chat_id
+    except ValueError:
+        raise HTTPException(404, detail="chat not found?")
+    # end try
+
+    # https://t.me/TelethonChat/33562
+
+    # noinspection PyTypeChecker
+    result = await bot.edit_message(
+        file=TInputMediaGeoLive(
+            geo_point=TInputGeoPoint(
+                lat=latitude,
+                long=longitude,
+            ),
+        ),
+        entity=entity,
+        message=message_id,
+        buttons=buttons,
+    )
+    data = await to_web_api(result, bot)
+    return r_success(data.to_array())
+# end def
+
+
+@routes.api_route('/{token}/stopMessageLiveLocation', methods=['GET', 'POST'], tags=['official', 'edit', 'location'])
+async def stop_message_live_location(
+    token: str = TOKEN_VALIDATION,
+    chat_id: Optional[Union[int, str]] = Query(None, description='Required if inline_message_id is not specified. Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+    message_id: Optional[int] = Query(None, description='Required if inline_message_id is not specified. Identifier of the message with live location to stop'),
+    inline_message_id: Optional[str] = Query(None, description='Required if chat_id and message_id are not specified. Identifier of the inline message'),
+    reply_markup: Optional[Json['InlineKeyboardMarkupModel']] = Query(None, description='A JSON-serialized object for a new inline keyboard.'),
+) -> JSONableResponse:
+    """
+    Use this method to stop updating a live location message before live_period expires. On success, if the message was sent by the bot, the sent Message is returned, otherwise True is returned.
+
+    https://core.telegram.org/bots/api#stopmessagelivelocation
+    """
+    if inline_message_id:
+        raise NotImplementedError('later, probably.')
+    # end if
+
+    reply_markup: Optional[InlineKeyboardMarkupModel] = parse_obj_as(
+        Optional[InlineKeyboardMarkupModel],
+        obj=reply_markup,
+    )
+    # models -> bot
+    buttons = await to_telethon(reply_markup, None)
+
+    from .....main import _get_bot
+    bot = await _get_bot(token)
+
+    try:
+        entity = await get_entity(bot, chat_id)
+    except BotMethodInvalidError:
+        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+        entity = chat_id
+    except ValueError:
+        raise HTTPException(404, detail="chat not found?")
+    # end try
+
+    # noinspection PyTypeChecker
+    result = await bot.edit_message(
+        file=TInputMediaGeoLive(
+            geo_point=TInputGeoPointEmpty(),
+            stopped=True,
+            period=0,
+        ),
+        entity=entity,
+        message=message_id,
+        buttons=buttons,
+    )
+    data = await to_web_api(result, bot)
+    return r_success(data.to_array())
+# end def
