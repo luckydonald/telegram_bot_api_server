@@ -492,10 +492,14 @@ async def request_validation_exception_handler(
 
 
 app.include_router(routes)
-from .views.api.v4_5.sendable import routes as sendable_routes
-app.include_router(sendable_routes)
-from .views.api.v4_5.sendable.location import routes as location_routes
+from .api.v4_5.functions.message import routes as message_routes
+app.include_router(message_routes)
+from .api.v4_5.functions.location import routes as location_routes
 app.include_router(location_routes)
+from .api.v4_5.functions.status import routes as status_routes
+app.include_router(status_routes)
+from .api.v4_5.functions.sticker import routes as sticker_routes
+app.include_router(sticker_routes)
 
 
 def main():

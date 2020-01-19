@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from luckydonaldUtils.logger import logging
-from .views.api.v4_5.generated.models import *
 from telethon.tl.custom import Button
+
+from .api.v4_5.generated.models import *
 
 __author__ = 'luckydonald'
 

@@ -27,8 +27,8 @@ from fastapi import APIRouter, HTTPException
 from typing import Union, List, Optional
 from enum import Enum
 
-from .....tools.responses import r_success, JSONableResponse
-from .....constants import TOKEN_VALIDATION
+from ....tools.responses import r_success, JSONableResponse
+from ....constants import TOKEN_VALIDATION
 from ..generated.models import *
 
 __author__ = 'luckydonald'  # but it's automatically generated.
@@ -89,8 +89,8 @@ async def get_updates(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.get_updates(
         offset=offset,
@@ -128,8 +128,8 @@ async def set_webhook(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.set_webhook(
         url=url,
@@ -154,8 +154,8 @@ async def delete_webhook(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.delete_webhook(
     )
@@ -176,8 +176,8 @@ async def get_webhook_info(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.get_webhook_info(
     )
@@ -198,8 +198,8 @@ async def get_me(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.get_me(
     )
@@ -231,7 +231,7 @@ async def send_message(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -271,7 +271,7 @@ async def forward_message(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -319,7 +319,7 @@ async def send_photo(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -379,7 +379,7 @@ async def send_audio(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -439,7 +439,7 @@ async def send_document(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -500,7 +500,7 @@ async def send_video(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -564,7 +564,7 @@ async def send_animation(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -620,7 +620,7 @@ async def send_voice(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -677,7 +677,7 @@ async def send_video_note(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -722,7 +722,7 @@ async def send_media_group(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -766,7 +766,7 @@ async def send_location(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -812,7 +812,7 @@ async def edit_message_live_location(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -855,7 +855,7 @@ async def stop_message_live_location(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -902,7 +902,7 @@ async def send_venue(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -953,7 +953,7 @@ async def send_contact(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1000,7 +1000,7 @@ async def send_poll(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1041,7 +1041,7 @@ async def send_chat_action(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1075,8 +1075,8 @@ async def get_user_profile_photos(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.get_user_profile_photos(
         user_id=user_id,
@@ -1102,8 +1102,8 @@ async def get_file(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.get_file(
         file_id=file_id,
@@ -1128,7 +1128,7 @@ async def kick_chat_member(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1162,7 +1162,7 @@ async def unban_chat_member(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1201,7 +1201,7 @@ async def restrict_chat_member(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1244,7 +1244,7 @@ async def promote_chat_member(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1286,7 +1286,7 @@ async def set_chat_administrator_custom_title(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1324,7 +1324,7 @@ async def set_chat_permissions(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1359,7 +1359,7 @@ async def export_chat_invite_link(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1395,7 +1395,7 @@ async def set_chat_photo(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1427,7 +1427,7 @@ async def delete_chat_photo(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1459,7 +1459,7 @@ async def set_chat_title(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1492,7 +1492,7 @@ async def set_chat_description(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1526,7 +1526,7 @@ async def pin_chat_message(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1559,7 +1559,7 @@ async def unpin_chat_message(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1590,7 +1590,7 @@ async def leave_chat(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1621,7 +1621,7 @@ async def get_chat(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1652,7 +1652,7 @@ async def get_chat_administrators(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1683,7 +1683,7 @@ async def get_chat_members_count(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1715,7 +1715,7 @@ async def get_chat_member(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1748,7 +1748,7 @@ async def set_chat_sticker_set(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1780,7 +1780,7 @@ async def delete_chat_sticker_set(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1818,8 +1818,8 @@ async def answer_callback_query(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.answer_callback_query(
         callback_query_id=callback_query_id,
@@ -1856,7 +1856,7 @@ async def edit_message_text(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1902,7 +1902,7 @@ async def edit_message_caption(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1950,7 +1950,7 @@ async def edit_message_media(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -1992,7 +1992,7 @@ async def edit_message_reply_markup(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -2032,7 +2032,7 @@ async def stop_poll(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -2066,7 +2066,7 @@ async def delete_message(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -2110,7 +2110,7 @@ async def send_sticker(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -2145,8 +2145,8 @@ async def get_sticker_set(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.get_sticker_set(
         name=name,
@@ -2174,8 +2174,8 @@ async def upload_sticker_file(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.upload_sticker_file(
         user_id=user_id,
@@ -2213,8 +2213,8 @@ async def create_new_sticker_set(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.create_new_sticker_set(
         user_id=user_id,
@@ -2255,8 +2255,8 @@ async def add_sticker_to_set(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.add_sticker_to_set(
         user_id=user_id,
@@ -2284,8 +2284,8 @@ async def set_sticker_position_in_set(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.set_sticker_position_in_set(
         sticker=sticker,
@@ -2309,8 +2309,8 @@ async def delete_sticker_from_set(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.delete_sticker_from_set(
         sticker=sticker,
@@ -2343,8 +2343,8 @@ async def answer_inline_query(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.answer_inline_query(
         inline_query_id=inline_query_id,
@@ -2403,7 +2403,7 @@ async def send_invoice(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -2463,8 +2463,8 @@ async def answer_shipping_query(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.answer_shipping_query(
         shipping_query_id=shipping_query_id,
@@ -2492,8 +2492,8 @@ async def answer_pre_checkout_query(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.answer_pre_checkout_query(
         pre_checkout_query_id=pre_checkout_query_id,
@@ -2524,8 +2524,8 @@ async def set_passport_data_errors(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
-    
+
+
 
     result = await bot.set_passport_data_errors(
         user_id=user_id,
@@ -2557,7 +2557,7 @@ async def send_game(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -2598,7 +2598,7 @@ async def set_game_score(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:
@@ -2641,7 +2641,7 @@ async def get_game_high_scores(
 
     from .....main import _get_bot
     bot = await _get_bot(token)
-    
+
     try:
         entity = await get_entity(bot, chat_id)
     except BotMethodInvalidError:

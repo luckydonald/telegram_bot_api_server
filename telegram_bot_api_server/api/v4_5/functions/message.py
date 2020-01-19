@@ -11,11 +11,11 @@ from telethon.client.chats import _ChatAction
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.messages import SetTypingRequest, GetStickerSetRequest
 
-from .....tools.fastapi_issue_884_workaround import Json, parse_obj_as
-from .....tools.responses import r_success, JSONableResponse
-from .....constants import TOKEN_VALIDATION
-from .....deserializer import to_telethon
-from .....serializer import to_web_api, get_entity
+from ....tools.fastapi_issue_884_workaround import Json, parse_obj_as
+from ....tools.responses import r_success, JSONableResponse
+from ....constants import TOKEN_VALIDATION
+from ....deserializer import to_telethon
+from ....serializer import to_web_api, get_entity
 from ..generated.models import ForceReplyModel, InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel
 
 __author__ = 'luckydonald'
@@ -53,7 +53,7 @@ async def send_message(
     )
     buttons = await to_telethon(reply_markup, None)
 
-    from .....main import _get_bot
+    from ....main import _get_bot
     bot = await _get_bot(token)
 
     try:
@@ -93,7 +93,7 @@ async def forward_message(
 
     https://core.telegram.org/bots/api#forwardmessage
     """
-    from .....main import _get_bot
+    from ....main import _get_bot
     bot = await _get_bot(token)
 
     try:
@@ -156,7 +156,7 @@ async def send_chat_action(
     chat_id: Union[int, str] = Query(..., description="Unique identifier for the target chat or username of the target channel (in the format @channelusername)", regex=r"@[a-zA-Z][a-zA-Z0-9_]{2,}"),
     action: ChatAction = Query(..., description='Type of action to broadcast. Choose one, depending on what the user is about to receive: "typing" for text messages, "upload_photo" for photos, "record_video" or "upload_video" for "videos", "record_audio" or "upload_audio" for audio files, "upload_document" for general files, "find_location" for location data, "record_video_note" or "upload_video_note" for video notes. Additionally added by this API implementation are "play_game", "choose_contact" and "cancel".'),
 ):
-    from .....main import _get_bot
+    from ....main import _get_bot
     bot = await _get_bot(token)
     try:
         entity = await get_entity(bot, chat_id)
@@ -179,52 +179,3 @@ async def send_chat_action(
     return r_success()
 # end def
 
-
-@routes.api_route('/{token}/getStickerSet', methods=['GET', 'POST'], tags=['official', 'sticker'])
-async def get_sticker_set(
-    token: str = TOKEN_VALIDATION,
-    name: str = Query(..., description='Name of the sticker set'),
-) -> JSONableResponse:
-    """
-    Use this method to get a sticker set. On success, a StickerSet object is returned.
-
-    https://core.telegram.org/bots/api#getstickerset
-    """
-    from .....main import _get_bot
-    bot = await _get_bot(token)
-
-    result = await bot(GetStickerSetRequest(stickerset=InputStickerSetShortName(name)))
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
-
-
-from pydantic import BaseModel
-
-class TestModel(BaseModel):
-    name: str
-    description: str
-    price: float
-    tax: float
-# end class
-
-
-@routes.api_route('/test', methods=['GET', 'POST'], tags=['debug', 'will_be_removed'])
-async def get_sticker_set(
-    foo: str,
-    moop: Json[List['TestModel']] = Query(..., description='Name of the sticker set'),
-    # reply_markup: Optional[Union[Json['InlineKeyboardMarkupModel'], Json['ReplyKeyboardMarkupModel'], Json['ReplyKeyboardRemoveModel'], Json['ForceReplyModel']]] = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
-) -> JSONableResponse:
-    """
-    Use this method to get a sticker set. On success, a StickerSet object is returned.
-
-    https://core.telegram.org/bots/api#getstickerset
-    """
-    # model loading and verification
-
-    moop: List[TestModel] = parse_obj_as(
-        type_=List[TestModel],
-        obj=moop,
-    )
-    return {'data': moop}
-# end def

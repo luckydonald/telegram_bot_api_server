@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-from luckydonaldUtils.exceptions import assert_type_or_raise
-from luckydonaldUtils.encoding import unicode_type, to_unicode as u
 from pydantic import BaseModel
-from typing import Any, Union, List, Optional
+from typing import Union, List, Optional
 from ..custom_models import *
 
 __author__ = 'luckydonald'
@@ -34,7 +32,7 @@ else:
     # end def
     Json = __JsonWrapper()  # so Json[Type] does call Json.__getitem__(self, item=Type)
 
-    from pydantic import parse_obj_as
+
 # end if
 
 

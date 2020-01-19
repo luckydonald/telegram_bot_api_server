@@ -15,11 +15,11 @@ from telethon.tl.types import (
 
 __author__ = 'luckydonald'
 
-from .....tools.fastapi_issue_884_workaround import Json, parse_obj_as
-from .....tools.responses import JSONableResponse, r_success
-from .....constants import TOKEN_VALIDATION
-from .....serializer import to_web_api, get_entity
-from .....deserializer import to_telethon
+from ....tools.fastapi_issue_884_workaround import Json, parse_obj_as
+from ....tools.responses import JSONableResponse, r_success
+from ....constants import TOKEN_VALIDATION
+from ....serializer import to_web_api, get_entity
+from ....deserializer import to_telethon
 from ..generated.models import *
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ async def send_location(
     )
 
     # get client
-    from .....main import _get_bot
+    from ....main import _get_bot
     bot = await _get_bot(token)
 
     # models -> bot
@@ -127,7 +127,7 @@ async def edit_message_live_location(
     # models -> bot
     buttons = await to_telethon(reply_markup, None)
 
-    from .....main import _get_bot
+    from ....main import _get_bot
     bot = await _get_bot(token)
 
     try:
@@ -182,7 +182,7 @@ async def stop_message_live_location(
     # models -> bot
     buttons = await to_telethon(reply_markup, None)
 
-    from .....main import _get_bot
+    from ....main import _get_bot
     bot = await _get_bot(token)
 
     try:
@@ -237,7 +237,7 @@ async def send_venue(
     # models -> bot
     buttons = await to_telethon(reply_markup, None)
 
-    from .....main import _get_bot
+    from ....main import _get_bot
     bot = await _get_bot(token)
 
     try:
