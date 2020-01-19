@@ -11,7 +11,7 @@ from telethon.client.chats import _ChatAction
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.messages import SetTypingRequest, GetStickerSetRequest
 
-from .....tools.fastapi_issue_884_workaround import Json
+from .....tools.fastapi_issue_884_workaround import Json, parse_obj_as
 from .....tools.responses import r_success, JSONableResponse
 from .....constants import TOKEN_VALIDATION
 from ..generated.models import ForceReplyModel, InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel
@@ -45,7 +45,7 @@ async def send_message(
     https://core.telegram.org/bots/api#sendmessage
     """
     # model loading and verification
-    reply_markup: Optional[Union['InlineKeyboardMarkupModel', 'ReplyKeyboardMarkupModel', 'ReplyKeyboardRemoveModel', 'ForceReplyModel']] = Json.parse_obj_as(
+    reply_markup: Optional[Union['InlineKeyboardMarkupModel', 'ReplyKeyboardMarkupModel', 'ReplyKeyboardRemoveModel', 'ForceReplyModel']] = parse_obj_as(
         type_=Optional[Union['InlineKeyboardMarkupModel', 'ReplyKeyboardMarkupModel', 'ReplyKeyboardRemoveModel', 'ForceReplyModel']],
         obj=reply_markup,
     )
@@ -219,7 +219,7 @@ async def get_sticker_set(
     """
     # model loading and verification
 
-    moop: List[TestModel] = Json.parse_obj_as(
+    moop: List[TestModel] = parse_obj_as(
         type_=List[TestModel],
         obj=moop,
     )
