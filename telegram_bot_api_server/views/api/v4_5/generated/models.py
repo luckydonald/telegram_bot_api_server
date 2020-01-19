@@ -3,6 +3,7 @@ from luckydonaldUtils.exceptions import assert_type_or_raise
 from luckydonaldUtils.encoding import unicode_type, to_unicode as u
 from pydantic import BaseModel
 from typing import Any, Union, List, Optional
+from ..custom_models import *
 
 __author__ = 'luckydonald'
 
