@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from typing import Union, Optional
 from fastapi import Query, APIRouter, HTTPException
-from pydantic import Json
 from luckydonaldUtils.logger import logging
 from telethon.errors import BotMethodInvalidError
 
@@ -10,11 +9,12 @@ from telethon.tl.types import (
     InputMediaGeoPoint as TInputMediaGeoPoint,
     InputGeoPoint as TInputGeoPoint,
     InputMediaGeoLive as TInputMediaGeoLive,
+    InputGeoPointEmpty as TInputGeoPointEmpty,
 )
 
 __author__ = 'luckydonald'
 
-from .....tools.fastapi_issue_884_workaround import parse_obj_as
+from .....tools.fastapi_issue_884_workaround import Json, parse_obj_as
 from .....tools.responses import JSONableResponse, r_success
 from .....constants import TOKEN_VALIDATION
 from .....serializer import to_web_api, get_entity
@@ -35,10 +35,10 @@ async def send_location(
     chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
     latitude: float = Query(..., description='Latitude of the location', gt=-90, lt=90),
     longitude: float = Query(..., description='Longitude of the location', gt=-180, lt=180),
-    live_period: Optional[int] = Query(None, description='Period in seconds for which the location will be updated (see Live Locations, should be between 60 and 86400.', gt=0, le=300),
+    live_period: Optional[int] = Query(None, description='Period in seconds for which the location will be updated (see Live Locations, should be between 60 and 86400.', gt=60, le=86400),
     disable_notification: Optional[bool] = Query(None, description='Sends the message silently. Users will receive a notification with no sound.'),
     reply_to_message_id: Optional[int] = Query(None, description='If the message is a reply, ID of the original message'),
-    reply_markup: Json = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
+    reply_markup: Optional[Json[InlineKeyboardMarkupModel]] = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
 ) -> JSONableResponse:
     """
     Use this method to send point on the map. On success, the sent Message is returned.
