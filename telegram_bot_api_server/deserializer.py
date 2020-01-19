@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from luckydonaldUtils.logger import logging
 from .views.api.v4_5.generated.models import *
-from telethon import Button
+from telethon.tl.custom import Button
 
 __author__ = 'luckydonald'
 
@@ -18,6 +18,18 @@ async def to_telethon(o, client):
         for row in o.keyboard:
             buttons.append([])
             for button in row:
+                buttons[-1].append(await to_telethon(button, client=client))
+            # end for
+        # end for
+        return buttons
+    if isinstance(o, InlineKeyboardMarkupModel):
+        buttons = []
+        for row in o.inline_keyboard:
+            buttons.append([])
+            for button in row:
+                if isinstance(button, dict):
+                    button = InlineKeyboardButtonModel.parse_obj(button)
+                # end if
                 buttons[-1].append(await to_telethon(button, client=client))
             # end for
         # end for
