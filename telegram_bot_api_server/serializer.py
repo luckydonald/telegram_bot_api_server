@@ -474,22 +474,22 @@ async def to_web_api(
         if user_as_chat:
             return ChatPhoto(
                 small_file_id=pack_bot_file_id(o.photo_small),
-                small_file_unique_id=calculate_file_unique_id(o.photo_big.local_id),
+                small_file_unique_id=calculate_file_unique_id(FileType.ProfilePhoto, o.photo_big.local_id),
                 big_file_id=pack_bot_file_id(o.photo_big),
-                big_file_unique_id=calculate_file_unique_id(o.photo_small.local_id),
+                big_file_unique_id=calculate_file_unique_id(FileType.ProfilePhoto, o.photo_small.local_id),
             )
         return UserProfilePhotos(
             total_count=2,
             photos=[
                 PhotoSize(
                     file_id=pack_bot_file_id(o.photo_big),
-                    file_unique_id=calculate_file_unique_id(o.photo_big.local_id),
+                    file_unique_id=calculate_file_unique_id(FileType.ProfilePhoto, o.photo_big.local_id),
                     width=0,  # TODO somehow look up more data.
                     height=0  # TODO somehow look up more data.
                 ),
                 PhotoSize(
                     file_id=pack_bot_file_id(o.photo_small),
-                    file_unique_id=calculate_file_unique_id(o.photo_small.local_id),
+                    file_unique_id=calculate_file_unique_id(FileType.ProfilePhoto, o.photo_small.local_id),
                     width=0,  # TODO somehow look up more data.
                     height=0  # TODO somehow look up more data.
                 ),
@@ -949,7 +949,7 @@ async def to_web_api(
         return None
     if isinstance(o, TPhoto):
         file_id = pack_bot_file_id(o)
-        file_unique_id = calculate_file_unique_id(o.id)
+        file_unique_id = calculate_file_unique_id(type_id=FileType.Photo, id=o.id)
         return [
             await to_web_api(size, client, file_id=file_id, file_unique_id=file_unique_id)
             for size in o.sizes
