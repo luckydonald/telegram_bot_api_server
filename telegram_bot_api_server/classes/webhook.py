@@ -17,7 +17,7 @@ from telethon.network import ConnectionTcpFull, Connection
 from telethon.sessions import Session
 from telethon.tl.types import TypeUpdate, UpdateChannelMessageViews, UpdateChannel
 
-from serializer import to_web_api
+from ..serializer import to_web_api
 
 __author__ = 'luckydonald'
 

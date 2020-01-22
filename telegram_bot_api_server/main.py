@@ -22,6 +22,7 @@ from starlette.exceptions import HTTPException
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.auth import SignInRequest
 
+from .classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from .tools.responses import r_error, r_success, JSONableResponse
 from .constants import TOKEN_VALIDATION
 
