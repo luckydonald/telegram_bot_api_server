@@ -101,6 +101,7 @@ from telethon.tl.types import StickerSet as TStickerSet2
 
 from telethon.utils import pack_bot_file_id, get_peer_id
 
+from tools.file_id import FileId
 from .tools.api import TYPE_CHANNEL, as_channel_id, calculate_file_unique_id, FileType, calculate_file_id
 
 __author__ = 'luckydonald'
@@ -286,16 +287,18 @@ async def to_web_api(
 
         for attr in o.attributes:
             if isinstance(attr, TDocumentAttributeAnimated):
+                cast(FileId, data['file_id']).change_type(FileType.Animation)
                 data['is_animated'] = True
-                data['file_id'] = calculate_file_id(type_id=FileType.Animation, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
+                # data['file_id']:FileId
                 data['file_unique_id'] = calculate_file_unique_id(FileType.Animation, id)
             if isinstance(attr, TDocumentAttributeAudio):
+                cast(FileId, data['file_id']).change_type(FileType.VoiceNote if attr.voice else FileType.Audio)
                 data['duration'] = attr.duration
                 data['voice'] = attr.voice
                 data['title'] = attr.title
                 data['performer'] = attr.performer
                 # data['waveform'] = attr.waveform
-                data['file_id'] = calculate_file_id(type_id=FileType.Audio, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
+                # data['file_id'] = calculate_file_id(type_id=FileType.Audio, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
                 data['file_unique_id'] = calculate_file_unique_id(FileType.Audio, id)
             if isinstance(attr, TDocumentAttributeFilename):
                 data['file_name'] = attr.file_name
@@ -308,18 +311,20 @@ async def to_web_api(
                 stickerset_stickers_set: TStickerSet2 = stickerset_stickers.set
                 set_name: Union[str, None] = stickerset_stickers_set.short_name
                 # set_name: Union[str, None] = await to_web_api(attr.stickerset, client)
+                cast(FileId, data['file_id']).change_type(FileType.Sticker)
                 data['emoji'] = attr.alt
                 data['set_name'] = set_name
                 data['mask'] = attr.mask
                 data['mask_position'] = await to_web_api(attr.mask_coords, client)
-                data['file_id'] = calculate_file_id(type_id=FileType.Sticker, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
+                # data['file_id'] = calculate_file_id(type_id=FileType.Sticker, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
                 data['file_unique_id'] = calculate_file_unique_id(FileType.Sticker, id)
             # end if
             if isinstance(attr, TDocumentAttributeVideo):
+                cast(FileId, data['file_id']).change_type(FileType.VideoNote if attr.round_message else FileType.Video)
                 data['width'] = attr.w
                 data['height'] = attr.h
                 data['duration'] = attr.duration
-                data['file_id'] = calculate_file_id(type_id=FileType.Video, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
+                # data['file_id'] = calculate_file_id(type_id=FileType.Video, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
                 data['file_unique_id'] = calculate_file_unique_id(FileType.Video, id)
             # end if
             data['thumb'] = None  # TODO get this information from somewhere.
