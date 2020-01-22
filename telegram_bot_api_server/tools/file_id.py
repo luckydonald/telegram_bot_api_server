@@ -274,13 +274,12 @@ class DocumentFileId(FileId):
         )
     # end def
 
-    def as_photo(self, location: 'PhotoFileId.Location'):
-        location =
+    def as_photo(self, location: 'PhotoFileId.Location', something: int):
         return PhotoFileId(
             file_id=self.file_id,
             type_id=self.type_id, type_detailed=self.type_detailed, dc_id=self.dc_id, access_hash=self.access_hash,
             location=location,
-            something=
+            something=something,
         )
 
     def to_file_id(self, version=None):
@@ -429,25 +428,25 @@ class PhotoFileId(FileId):
                 # version
                 2
             )
-    elif version == 4:
-        binary = struct.pack(
-            '<iiqqqqiibb',
-            # type, dc_id, id,
-            self.type_id, self.dc_id, self.id if self.id else 0,
-            # access_hash,
-            self.access_hash if self.access_hash else 0,
-            # location_volume_id, location_secret,
-            self.location.volume_id, self.location.secret,
-            # something,
-            self.something,
-            #  location_local_id,
-            self.location.local_id,
-            # twentytwo, version
-            22, 4
-        )
+        elif version == 4:
+            binary = struct.pack(
+                '<iiqqqqiibb',
+                # type, dc_id, id,
+                self.type_id, self.dc_id, self.id if self.id else 0,
+                # access_hash,
+                self.access_hash if self.access_hash else 0,
+                # location_volume_id, location_secret,
+                self.location.volume_id, self.location.secret,
+                # something,
+                self.something,
+                #  location_local_id,
+                self.location.local_id,
+                # twentytwo, version
+                22, 4
+            )
         else:
             raise ValueError(f'Unknown version to use: {version}')
-        # end if
+            # end if
         return base64url_encode(rle_encode(binary))
     # end def
 
