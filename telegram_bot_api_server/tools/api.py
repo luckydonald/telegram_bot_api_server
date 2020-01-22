@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import struct
+from enum import IntEnum
 from math import floor, log10
 from typing import Union, Tuple
 # noinspection PyProtectedMember
@@ -15,17 +16,70 @@ if __name__ == '__main__':
     logging.add_colored_handler(level=logging.DEBUG)
 # end if
 
+class FileType(IntEnum):
+  Thumbnail = 0
+  ProfilePhoto = 1
+  Photo = 2
+  VoiceNote = 3
+  Video = 4
+  Document = 5
+  Encrypted = 6
+  Temp = 7
+  Sticker = 8
+  Audio = 9
+  Animation = 10
+  EncryptedThumbnail = 11
+  Wallpaper = 12
+  VideoNote = 13
+  SecureRaw = 14
+  Secure = 15
+  Background = 16
+  Size = 17
+# end class
+
 
 # noinspection PyShadowingBuiltins
-def calculate_file_unique_id(id: int) -> str:
+def calculate_file_unique_id(type_id: int, id: int) -> str:
     return _encode_telegram_base64(
         _rle_encode(
             struct.pack(
-                '<q',
-                id
+                '<iq',
+                type_id, id
             )
         )
     )
+# end def
+
+
+def calculate_file_id(type_id: FileType, dc_id: int, id: int, access_hash: int, version: int = 4):
+    assert(
+        type_id in
+        (FileType.Voice, FileType.Video, FileType.Document, FileType.Sticker, FileType.Song, FileType.VideoNote)
+    )
+    if version == 2:
+        binary = struct.pack(
+            "<iiqqb",
+            # type, dc_id, id,
+            type_id, dc_id, id if id else 0,
+            # access_hash
+            access_hash if access_hash else 0,
+            # version
+            2
+        )
+    elif version == 4:
+        binary = struct.pack(
+            "<iiqqbb",
+            # type, dc_id, id,
+            type_id, dc_id, id if id else 0,
+            # access_hash,
+            access_hash if access_hash else 0,
+            # twentytwo, version
+            22, 4
+        )
+    else:
+        raise ValueError(f'Unknown version flag: {version}')
+    # end if
+    return _encode_telegram_base64(_rle_encode(binary))
 # end def
 
 
