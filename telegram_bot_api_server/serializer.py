@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from typing import Union
+from typing import Union, cast
 
 from luckydonaldUtils.encoding import to_native
 from luckydonaldUtils.exceptions import assert_type_or_raise
@@ -272,10 +272,14 @@ async def to_web_api(
             file_size=len(o.bytes),
         )
     if isinstance(o, TDocument):
+        assert isinstance(o.id, int)
+        id: int = cast(int, o.id)
+        pack_bot_file_id(o)
         data = {
-            'file_id': pack_bot_file_id(o),
-            'file_unique_id': calculate_file_unique_id(o.id),
-            'thumb': None,
+            'file_id': FileId(type_id=FileType.Document, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4),
+            'file_unique_id': calculate_file_unique_id(FileType.Document, id),
+            # 'mime_type': # note o.mime_type
+            'thumb': None,  # note: o.thumbs
         }
         # thumb: TTypePhotoSize = o.thumbs[0]
         # thumb = await to_web_api(thumb, file_id=thumb.location)
@@ -283,12 +287,16 @@ async def to_web_api(
         for attr in o.attributes:
             if isinstance(attr, TDocumentAttributeAnimated):
                 data['is_animated'] = True
+                data['file_id'] = calculate_file_id(type_id=FileType.Animation, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
+                data['file_unique_id'] = calculate_file_unique_id(FileType.Animation, id)
             if isinstance(attr, TDocumentAttributeAudio):
                 data['duration'] = attr.duration
                 data['voice'] = attr.voice
                 data['title'] = attr.title
                 data['performer'] = attr.performer
                 # data['waveform'] = attr.waveform
+                data['file_id'] = calculate_file_id(type_id=FileType.Audio, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
+                data['file_unique_id'] = calculate_file_unique_id(FileType.Audio, id)
             if isinstance(attr, TDocumentAttributeFilename):
                 data['file_name'] = attr.file_name
             if isinstance(attr, TDocumentAttributeImageSize):
@@ -304,11 +312,15 @@ async def to_web_api(
                 data['set_name'] = set_name
                 data['mask'] = attr.mask
                 data['mask_position'] = await to_web_api(attr.mask_coords, client)
+                data['file_id'] = calculate_file_id(type_id=FileType.Sticker, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
+                data['file_unique_id'] = calculate_file_unique_id(FileType.Sticker, id)
             # end if
             if isinstance(attr, TDocumentAttributeVideo):
                 data['width'] = attr.w
                 data['height'] = attr.h
                 data['duration'] = attr.duration
+                data['file_id'] = calculate_file_id(type_id=FileType.Video, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4)
+                data['file_unique_id'] = calculate_file_unique_id(FileType.Video, id)
             # end if
             data['thumb'] = None  # TODO get this information from somewhere.
             data['mime_type'] = None  # TODO get this information from somewhere.
