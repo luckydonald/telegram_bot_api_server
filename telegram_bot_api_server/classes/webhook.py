@@ -7,7 +7,7 @@ from enum import Enum
 from random import randint
 from typing import Type, Union, List
 
-import aiohttp
+import httpx
 from luckydonaldUtils.exceptions import assert_type_or_raise
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types import TgBotApiObject
@@ -129,8 +129,8 @@ class TelegramClientUpdateCollector(TelegramClient):
             self.updates.append(data)
         elif self.mode == UpdateModes.WEBHOOK:
             # Send the updates
-            async with aiohttp.ClientSession() as session:
-                async with session.post(self.webhook_url, json=json) as response:
+            async with httpx.AsyncClient() as client:
+                async with client.post(self.webhook_url, json=json) as response:
                     logger.info("Response: " + repr(await response.text()))
                 # end with
             # end with

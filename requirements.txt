@@ -1,11 +1,12 @@
-aiohttp_debugtoolbar
+# aiohttp_debugtoolbar
+# aiohttp-devtools
 luckydonald-utils
-aiohttp[speedups]
-aiohttp-devtools
+# aiohttp[speedups]
+httpx
 asynctest
 pydantic
 aiocron
-uvloop
+# uvloop
 
 
 # telethon
