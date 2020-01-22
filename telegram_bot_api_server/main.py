@@ -8,10 +8,8 @@ from aiocron import crontab
 from asyncio import get_event_loop
 from fastapi import FastAPI, APIRouter, Query
 from pydantic import BaseModel
-from pytgbot.api_types.receivable import WebhookInfo
 from starlette import status
 from telethon.utils import parse_phone
-from classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError, RPCError
 from fastapi.encoders import jsonable_encoder
 from telethon.tl.types import User
@@ -21,6 +19,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 from luckydonaldUtils.logger import logging
 from telethon.tl.functions.auth import SignInRequest
+from pytgbot.api_types.receivable import WebhookInfo
 
 from .classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from .tools.responses import r_error, r_success, JSONableResponse
