@@ -25,7 +25,7 @@ from ..generated.models import ForceReplyModel, InlineKeyboardMarkupModel, Reply
 from ..custom_models import InputFileModel, AttachUrl
 
 __author__ = 'luckydonald'
-DOWNLOAD_MAX_SIZE = 10 * 1024
+DOWNLOAD_MAX_SIZE = 10 * 1024 * 1024
 
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
@@ -115,7 +115,7 @@ async def send_photo(
             filename = path.basename(parsed_url.path)
             async with httpx.AsyncClient() as client:
                 try:
-                    async with client.stream('GET', 'https://www.example.com/') as response:
+                    async with client.stream('GET', photo) as response:
                         if response.status_code != 200:
                             return r_error(
                                 400,
@@ -142,7 +142,7 @@ async def send_photo(
                         size = 0
                         file_bytes = BytesIO()
                         file_bytes.name = filename
-                        async for chunk in response.aiter_raw():
+                        async for chunk in response.aiter_bytes():
                             size += len(chunk)
                             file_bytes.write(chunk)
                             if size > DOWNLOAD_MAX_SIZE:
