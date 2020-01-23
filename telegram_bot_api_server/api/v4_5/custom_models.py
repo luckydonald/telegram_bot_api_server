@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from typing import Union
 from fastapi import UploadFile
-from pydantic import HttpUrl, AnyUrl, Json
+from pydantic import HttpUrl, AnyUrl
 from luckydonaldUtils.logger import logging
 
 __author__ = 'luckydonald'
@@ -37,5 +37,5 @@ InputFileModel = Union[
     str,  # file_id,
     AttachUrl,  # attach://filename
     HttpUrl,  # HTTP URL,
-    Json[UploadFile],  # multipart/form-data
+    UploadFile,  # multipart/form-data
 ]
