@@ -502,6 +502,8 @@ from .api.v4_5.functions.sticker import routes as sticker_routes
 app.include_router(sticker_routes)
 from .api.v4_5.functions.testing123 import routes as testing123_routes
 app.include_router(testing123_routes)
+from .api.v4_5.functions.media import routes as media_routes
+app.include_router(media_routes)
 
 
 def main():
