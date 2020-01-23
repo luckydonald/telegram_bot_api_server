@@ -115,12 +115,24 @@ class FileId(object):
         self.version = version
     # end def __init__
 
+    def change_type(self, type_id):
+        """
+        Changes the type of the document.
+
+        :param type_id:
+        :return:
+        """
+        self.type_id = type_id
+        self.type_detailed = DocumentFileId.TYPES[self.type_id]
+        return self.recalculate()
+    # end def
+
     @staticmethod
-    def generate_new(file_id, type_id, type_detailed, dc_id, id, access_hash, location=None):
+    def generate_new(file_id, type_id, type_detailed, dc_id, id, access_hash, location=None, something=None, version=2):
         if location:
-            return PhotoFileId(file_id, type_id, type_detailed, dc_id, id, access_hash, location)
+            return PhotoFileId(file_id, type_id, type_detailed, dc_id, id, access_hash, location, something, version)
         # end if
-        return DocumentFileId(file_id, type_id, type_detailed, dc_id, id, access_hash)
+        return DocumentFileId(file_id, type_id, type_detailed, dc_id, id, access_hash, version)
     # end def
 
     @classmethod
@@ -151,14 +163,6 @@ class FileId(object):
         file_id = self.to_file_id()
         self.file_id = file_id
         return file_id
-    # end def
-
-    def to_file_id(self):
-        """
-        Subclasses do calculation here.
-        :return:
-        """
-        return self.file_id
     # end def
 
     def __repr__(self):
@@ -228,18 +232,6 @@ class DocumentFileId(FileId):
         """
 
         self.change_type(FileId.TYPE_STICKER if self.type_id == FileId.TYPE_DOCUMENT else FileId.TYPE_DOCUMENT)
-        return self.recalculate()
-    # end def
-
-    def change_type(self, type_id):
-        """
-        Changes the type of the document.
-
-        :param type_id:
-        :return:
-        """
-        self.type_id = type_id
-        self.type_detailed = DocumentFileId.TYPES[self.type_id]
         return self.recalculate()
     # end def
 

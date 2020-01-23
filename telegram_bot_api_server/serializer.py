@@ -277,7 +277,7 @@ async def to_web_api(
         id: int = cast(int, o.id)
         pack_bot_file_id(o)
         data = {
-            'file_id': FileId(type_id=FileType.Document, dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4),
+            'file_id': FileId.generate_new(file_id=None, type_id=FileType.Document, type_detailed="document", dc_id=o.dc_id, id=id, access_hash=o.access_hash, version=4),
             'file_unique_id': calculate_file_unique_id(FileType.Document, id),
             # 'mime_type': # note o.mime_type
             'thumb': None,  # note: o.thumbs
@@ -331,10 +331,11 @@ async def to_web_api(
             data['mime_type'] = None  # TODO get this information from somewhere.
             data['file_size'] = None  # TODO get this information from somewhere.
         # end for
+        data['file_id'] = data['file_id'].recalculate()
         for attr in o.attributes:
             if isinstance(attr, TDocumentAttributeSticker):
                 return Sticker(
-                    file_id=data['file_id'],
+                    file_id=data['file_id'].file_id,
                     file_unique_id=data['file_unique_id'],
                     width=data['width'],
                     height=data['height'],
@@ -403,10 +404,14 @@ async def to_web_api(
             if isinstance(attr, TDocumentAttributeHasStickers):
                 raise ValueError(f'Unexpected {type(attr)}')
         # end for
+        thumbs = None
+        if o.thumbs:
+            await to_web_api(o.thumbs[0], client)
+        # end if
         return Document(
             file_id=data['file_id'],
             file_unique_id=data['file_unique_id'],
-            thumb=await to_web_api(o.thumbs[0], client),
+            thumb=thumbs,
             file_name=data.get('file_name'),
             mime_type=data.get('mime_type'),
             file_size=data.get('file_size'),
