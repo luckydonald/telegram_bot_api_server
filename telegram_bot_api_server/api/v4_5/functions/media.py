@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 from enum import Enum
 from io import BytesIO
-from os import path
+from os import path, SEEK_END, SEEK_SET
+from tempfile import SpooledTemporaryFile, TemporaryFile
 from typing import Union, Optional, List
 
 import httpx
 from fastapi import APIRouter as Blueprint, HTTPException, UploadFile
-from fastapi.params import Query
+from fastapi.params import Query, Param, File
+from pydantic.fields import FieldInfo
+from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 from telethon.errors import BotMethodInvalidError
 from telethon.tl.types import TypeSendMessageAction, InputStickerSetShortName, InputMessageID
@@ -53,9 +56,10 @@ async def send_photo(
 
     https://core.telegram.org/bots/api#sendphoto
     """
-    photo: Union[InputFileModel, str] = parse_obj_as(
+    file = photo
+    file: Union[InputFileModel, str] = parse_obj_as(
         Union[InputFileModel, str],
-        obj=photo,
+        obj=file,
     )
     reply_markup: Optional[Union[InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel, ForceReplyModel]] = parse_obj_as(
         Optional[Union[InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel, ForceReplyModel]],
@@ -74,10 +78,12 @@ async def send_photo(
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    if isinstance(photo, str):
+    given_file = file
+    if isinstance(given_file, str):
         # url, attachment or file_id
-        if photo.startswith('attach://'):
-            field = photo[9:]
+        # noinspection PyProtectedMember
+        if given_file.startswith('attach://'):
+            field = given_file[9:]
             # new we need to qurey the resulting field
             form = await request.form()
             if not form[field]:
@@ -89,13 +95,14 @@ async def send_photo(
                     errors=[
                         ErrorWrapper(
                             MissingError(), loc=('form', field)
-                        ),
+                         ),
                     ],
                 )
             # end if
-            photo = form[field]
+            # noinspection PyTypeChecker
+            file: UploadFile = form[field]
             try:
-                UploadFile.validate(photo)
+                UploadFile.validate(file)
             except ValueError as e:
                 from pydantic import MissingError
                 from fastapi.exceptions import RequestValidationError
@@ -109,13 +116,38 @@ async def send_photo(
                     ],
                 )
             # end try
-        elif photo.startswith('http'):  # either http:// and https://
+            file_name = file.filename
+            original_file: UploadFile = file
+            underlying_file: SpooledTemporaryFile = original_file.file
+            # underlying_file is a file-like object, and has .seek and .tell available.
+            # determine the size by jumping to the end and reading the position
+            await run_in_threadpool(underlying_file.seek, 0, SEEK_END)
+            file_size = await run_in_threadpool(underlying_file.tell)
+            # reset to position 0 to be able to read it again later.
+            await run_in_threadpool(underlying_file.seek, 0, SEEK_SET)
+            # check that size
+            if file_size > DOWNLOAD_MAX_SIZE:
+                return r_error(
+                    400,
+                    description="BAD REQUEST: failed to get HTTP URL content (File size too large)",
+                    result={'reason': 'size', 'size': file_size},
+                )
+            # end if
+
+            real_file: Union[BytesIO, TemporaryFile] = underlying_file._file
+            if isinstance(file, BytesIO):
+                file: BytesIO = real_file
+            else:
+                file: BytesIO = BytesIO(real_file.read())
+            # end if
+            file.name = file_name
+        elif given_file.startswith('http'):  # either http:// and https://
             from urllib.parse import urlparse
-            parsed_url = urlparse(photo)
-            filename = path.basename(parsed_url.path)
+            parsed_url = urlparse(given_file)
+            file_name = path.basename(parsed_url.path)
             async with httpx.AsyncClient() as client:
                 try:
-                    async with client.stream('GET', photo) as response:
+                    async with client.stream('GET', given_file) as response:
                         if response.status_code != 200:
                             return r_error(
                                 400,
@@ -131,7 +163,7 @@ async def send_photo(
                                     return r_error(
                                         400,
                                         description="BAD REQUEST: failed to get HTTP URL content (Content-Length too large)",
-                                        result={'reason': 'size'},
+                                        result={'reason': 'size', 'size': content_length},
                                     )
                                 # end if
                             except ValueError:
@@ -140,11 +172,11 @@ async def send_photo(
                         # end if
 
                         size = 0
-                        file_bytes = BytesIO()
-                        file_bytes.name = filename
+                        downloaded_file = BytesIO()
+                        downloaded_file.name = file_name
                         async for chunk in response.aiter_bytes():
                             size += len(chunk)
-                            file_bytes.write(chunk)
+                            downloaded_file.write(chunk)
                             if size > DOWNLOAD_MAX_SIZE:
                                 return r_error(
                                     400,
@@ -153,8 +185,8 @@ async def send_photo(
                                 )
                             # end if
                         # end for
-                        file_bytes.seek(0)
-                        photo = file_bytes
+                        downloaded_file.seek(0)
+                        file: BytesIO = downloaded_file
                     # end with
                 except httpx.exceptions.HTTPError as e:
                     return r_error(
@@ -164,6 +196,8 @@ async def send_photo(
                     )
                 # end try
             # end with
+        else:
+            file: str = given_file
         # end if
     # end if
 
@@ -171,7 +205,7 @@ async def send_photo(
 
     result = await bot.send_file(
         entity=entity,
-        file=photo,
+        file=file,
         force_document=False,
         caption=caption,
         parse_mode=parse_mode,

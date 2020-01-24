@@ -15,5 +15,6 @@ Telethon==1.10.10
 pytgbot==4.5.2
 
 starlette==0.12.9  # before 0.13
+python-multipart
 fastapi
 uvicorn
