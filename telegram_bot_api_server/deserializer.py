@@ -3,7 +3,7 @@
 from luckydonaldUtils.logger import logging
 from telethon.tl.custom import Button
 
-from .api.v4_5.generated.models import *
+from .api.v4_6.generated.models import *
 
 __author__ = 'luckydonald'
 
