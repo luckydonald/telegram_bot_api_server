@@ -17,6 +17,7 @@ from telethon.network import ConnectionTcpFull, Connection
 from telethon.sessions import Session
 from telethon.tl.types import TypeUpdate, UpdateChannelMessageViews, UpdateChannel
 
+from ..tools.telegram_bot_api_server import split_token
 from ..serializer import to_web_api
 
 __author__ = 'luckydonald'
@@ -101,6 +102,7 @@ class TelegramClientUpdateCollector(TelegramClient):
             base_logger=base_logger
         )
         self.api_key = api_key
+        self.is_api, self.user_id, self.secret = await split_token(api_key)
         self.parse_mode = parse_mode
         self.mode = mode
         self.update_id = self.create_random_update_id()
