@@ -46,4 +46,8 @@ Check the [normal Documentation](core.telegram.org/bots/api) for those.
 - [x] [editMessageLiveLocation](https://core.telegram.org/bots/api#editmessagelivelocation)
 - [x] [stopMessageLiveLocation](https://core.telegram.org/bots/api#stopmessagelivelocation)
 - [x] [sendVenue](https://core.telegram.org/bots/api#sendvenue)
+- [x] [sendPhoto](https://core.telegram.org/bots/api#senphoto)
+    - ⚠️ Currently does not accept file uploads directly to the `photo` form fields.
+        - This is due to (tiangolo/fastapi#907)[https://github.com/tiangolo/fastapi/issues/907]
+        - Workaround is using `attachment://photo_file` (or a different attachment name) and uploading the file to that `photo_file` field instead.
 
