@@ -13,13 +13,17 @@ if __name__ == '__main__':
 # end if
 
 
-async def to_telethon(o, client):
+async def to_telethon(o, client, markup: ReplyKeyboardMarkupModel = None):
+    """
+    :type  markup: ReplyKeyboardMarkupModel
+    :param markup: `KeyboardButtonModel`s need access to `resize_keyboard`, `one_time_keyboard` and `selective`.
+    """
     if isinstance(o, ReplyKeyboardMarkupModel):
         buttons = []
         for row in o.keyboard:
             buttons.append([])
             for button in row:
-                buttons[-1].append(await to_telethon(button, client=client))
+                buttons[-1].append(await to_telethon(button, client=client, markup=o))
             # end for
         # end for
         return buttons
@@ -35,6 +39,40 @@ async def to_telethon(o, client):
             # end for
         # end for
         return buttons
+    if isinstance(o, KeyboardButtonModel):
+        assert o.text
+        assert markup
+        if o.request_poll:
+            assert isinstance(o.request_poll, KeyboardButtonPollTypeModel)
+            return Button.request_poll(
+                text=o.text,
+                force_quiz=o.request_poll.type == 'quiz',
+                resize=markup.resize_keyboard,
+                single_use=markup.one_time_keyboard,
+                selective=markup.selective,
+            )
+        # end if
+        if o.request_contact:
+            assert o.text
+            assert markup
+            return Button.request_phone(
+                o.text,
+                resize=markup.resize_keyboard,
+                single_use=markup.one_time_keyboard,
+                selective=markup.selective,
+            )
+        # end if
+        if o.request_location:
+            assert o.text
+            assert markup
+            return Button.request_location(
+                o.text,
+                resize=markup.resize_keyboard,
+                single_use=markup.one_time_keyboard,
+                selective=markup.selective,
+            )
+        # end if
+        raise TypeError(f'KeyboardButtonModel not handled: {type(o)} with value {o!r}: {o!s}')
     if isinstance(o, InlineKeyboardButtonModel):
         if o.url:
             if o.text:

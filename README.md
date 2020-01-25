@@ -55,7 +55,7 @@ Check the [normal Documentation](core.telegram.org/bots/api) for those.
 - Added API definitions of v4.6, (January 23, 2020) with the following changelog:
     - [ ] Supported [Polls 2.0](https://telegram.org/blog/polls-2-0-vmq).
     - [ ] Added the ability to send non-anonymous, multiple answer, and quiz-style polls: added the parameters `is_anonymous`, `type`, `allows_multiple_answers`, `correct_option_id`, `is_closed` options to the method `sendPoll`.
-    - [ ] Added the object `KeyboardButtonPollType` and the field `request_poll` to the object `KeyboardButton`.
+    - [x] Added the object `KeyboardButtonPollType` and the field `request_poll` to the object `KeyboardButton`.
     - [ ] Added updates about changes of user answers in non-anonymous polls, represented by the object `PollAnswer` and the field `poll_answer` in the `Update` object.
     - [ ] Added the fields `total_voter_count`, `is_anonymous`, `type`, `allows_multiple_answers`, `correct_option_id` to the `Poll` object.
     - [ ] Bots can now send polls to private chats.
