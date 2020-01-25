@@ -32,8 +32,10 @@ else:
     # end def
     Json = __JsonWrapper()  # so Json[Type] does call Json.__getitem__(self, item=Type)
 
-
+    from pydantic import parse_obj_as
 # end if
+
+
 
 
 class UpdateModel(BaseModel):  # Receivable
@@ -53,6 +55,7 @@ class UpdateModel(BaseModel):  # Receivable
     shipping_query: Optional['ShippingQueryModel']
     pre_checkout_query: Optional['PreCheckoutQueryModel']
     poll: Optional['PollModel']
+    poll_answer: Optional['PollAnswerModel']
 # end class Update
 
 
@@ -84,6 +87,9 @@ class UserModel(BaseModel):  # Peer
     last_name: Optional[str]
     username: Optional[str]
     language_code: Optional[str]
+    can_join_groups: Optional[bool]
+    can_read_all_group_messages: Optional[bool]
+    supports_inline_queries: Optional[bool]
 # end class User
 
 
@@ -177,6 +183,7 @@ class MessageEntityModel(BaseModel):  # Result
     length: int
     url: Optional[str]
     user: Optional['UserModel']
+    language: Optional[str]
 # end class MessageEntity
 
 
@@ -340,6 +347,18 @@ class PollOptionModel(BaseModel):  # Receivable
 # end class PollOption
 
 
+class PollAnswerModel(BaseModel):  # Receivable
+    """
+    This object represents an answer of a user in a non-anonymous poll.
+
+    https://core.telegram.org/bots/api#pollanswer
+    """
+    poll_id: str
+    user: 'UserModel'
+    option_ids: List[int]
+# end class PollAnswer
+
+
 class PollModel(BaseModel):  # Media
     """
     This object contains information about a poll.
@@ -349,7 +368,12 @@ class PollModel(BaseModel):  # Media
     id: str
     question: str
     options: List['PollOptionModel']
+    total_voter_count: int
     is_closed: bool
+    is_anonymous: bool
+    type: str
+    allows_multiple_answers: bool
+    correct_option_id: Optional[int]
 # end class Poll
 
 
@@ -394,15 +418,26 @@ class ReplyKeyboardMarkupModel(BaseModel):  # ReplyMarkup
 
 class KeyboardButtonModel(BaseModel):  # Button
     """
-    This object represents one button of the reply keyboard. For simple text buttons String can be used instead of this object to specify text of the button. Optional fields are mutually exclusive.
-    Note: request_contact and request_location options will only work in Telegram versions released after 9 April, 2016. Older clients will ignore them.
+    This object represents one button of the reply keyboard. For simple text buttons String can be used instead of this object to specify text of the button. Optional fields request_contact, request_location, and request_poll are mutually exclusive.
+    Note: request_contact and request_location options will only work in Telegram versions released after 9 April, 2016. Older clients will receive unsupported message.Note: request_poll option will only work in Telegram versions released after 23 January, 2020. Older clients will receive unsupported message.
 
     https://core.telegram.org/bots/api#keyboardbutton
     """
     text: str
     request_contact: Optional[bool]
     request_location: Optional[bool]
+    request_poll: Optional['KeyboardButtonPollTypeModel']
 # end class KeyboardButton
+
+
+class KeyboardButtonPollTypeModel(BaseModel):  # Button
+    """
+    This object represents type of a poll, which is allowed to be created and sent when the corresponding button is pressed.
+
+    https://core.telegram.org/bots/api#keyboardbuttonpolltype
+    """
+    type: Optional[str]
+# end class KeyboardButtonPollType
 
 
 class ReplyKeyboardRemoveModel(BaseModel):  # ReplyMarkup
@@ -1487,11 +1522,13 @@ ContactModel.update_forward_refs()
 LocationModel.update_forward_refs()
 VenueModel.update_forward_refs()
 PollOptionModel.update_forward_refs()
+PollAnswerModel.update_forward_refs()
 PollModel.update_forward_refs()
 UserProfilePhotosModel.update_forward_refs()
 FileModel.update_forward_refs()
 ReplyKeyboardMarkupModel.update_forward_refs()
 KeyboardButtonModel.update_forward_refs()
+KeyboardButtonPollTypeModel.update_forward_refs()
 ReplyKeyboardRemoveModel.update_forward_refs()
 InlineKeyboardMarkupModel.update_forward_refs()
 InlineKeyboardButtonModel.update_forward_refs()
