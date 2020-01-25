@@ -455,6 +455,7 @@ async def to_web_api(
                 # sticker_set_name=None,
                 # can_set_sticker_set=None,
             )
+        # end if
         return User(
             id=chat_id,
             is_bot=o.bot,
@@ -462,6 +463,9 @@ async def to_web_api(
             last_name=o.last_name,
             username=o.username,
             language_code=o.lang_code,
+            can_join_groups=o.bot_nochats,
+            can_read_all_group_messages=o.bot_chat_history,
+            supports_inline_queries=o.bot_inline_geo,
         )
     # end if
     if isinstance(o, TChannel):

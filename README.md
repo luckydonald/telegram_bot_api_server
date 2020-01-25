@@ -59,7 +59,7 @@ Check the [normal Documentation](core.telegram.org/bots/api) for those.
     - [ ] Added updates about changes of user answers in non-anonymous polls, represented by the object `PollAnswer` and the field `poll_answer` in the `Update` object.
     - [ ] Added the fields `total_voter_count`, `is_anonymous`, `type`, `allows_multiple_answers`, `correct_option_id` to the `Poll` object.
     - [ ] Bots can now send polls to private chats.
-    - [ ] Added more information about the bot in response to the `getMe` request: added the fields `can_join_groups`, `can_read_all_group_messages` and `supports_inline_queries` to the User object.
+    - [x] Added more information about the bot in response to the `getMe` request: added the fields `can_join_groups`, `can_read_all_group_messages` and `supports_inline_queries` to the User object.
     - [ ] Added the optional field `language` to the `MessageEntity` object.
 - The new stuff:
     - New Fields:
