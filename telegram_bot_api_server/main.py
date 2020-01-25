@@ -21,6 +21,7 @@ from luckydonaldUtils.logger import logging
 from telethon.tl.functions.auth import SignInRequest
 from pytgbot.api_types.receivable import WebhookInfo
 
+from .tools.telegram_bot_api_server import split_token
 from .classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from .tools.responses import r_error, r_success, JSONableResponse
 from .constants import TOKEN_VALIDATION
