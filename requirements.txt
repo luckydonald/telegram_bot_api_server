@@ -10,9 +10,11 @@ aiocron
 
 
 # telethon
-Telethon==1.10.10
+#Telethon==1.10.10+
+-e git://github.com/LonamiWebs/Telethon.git@22e645e22f006afa8b2741fb832baff34715c5c0#egg=Telethon_22e645
 # pytgbot
-pytgbot==4.6
+# pytgbot==4.6
+-e git://github.com/luckydonald/pytgbot.git@10905bda41870a5b29d3ed363b13ce08cc124196#egg=pytgbot_10905b
 
 starlette==0.12.9  # before 0.13
 python-multipart
