@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import asyncio
+import json
 
 from abc import abstractmethod
 from enum import Enum
@@ -9,6 +10,7 @@ from typing import Type, Union, List
 
 import httpx
 from luckydonaldUtils.exceptions import assert_type_or_raise
+from luckydonaldUtils.files.basics import mkdir_p
 from luckydonaldUtils.logger import logging
 from pytgbot.api_types import TgBotApiObject
 from pytgbot.api_types.receivable.updates import Update, Message
@@ -131,6 +133,7 @@ class TelegramClientUpdateCollector(TelegramClient):
             self.updates.append(data)
         elif self.mode == UpdateModes.WEBHOOK:
             # Send the updates
+            logger.debug('sending to the webhook.')
             async with httpx.AsyncClient() as client:
                 async with client.post(self.webhook_url, json=json) as response:
                     logger.info("Response: " + repr(await response.text()))
@@ -162,7 +165,8 @@ class TelegramClientUpdateCollector(TelegramClient):
             # end if
             from datetime import datetime
             now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            with open(f'logs/update_{now}.py', 'w') as f:
+            mkdir_p(f'logs/{self.user_id}/')
+            with open(f'logs/{self.user_id}/{self.api_key}update_{now}.py', 'w') as f:
                 f.write('from telethon.tl.types import *\nfrom telethon.tl.patched import *\nimport datetime\n\n')
                 f.write(str(event))
             # end with
@@ -184,9 +188,7 @@ class TelegramClientUpdateCollector(TelegramClient):
                 raise events.StopPropagation
             # end def
 
-            from datetime import datetime
-            import json
-            with open(f'logs/update_{now}.json', 'w') as f:
+            with open(f'logs/{self.user_id}/update_{now}.json', 'w') as f:
                 json.dump(update.to_array() if isinstance(update, TgBotApiObject) else update, f)
             # end with
 
