@@ -888,6 +888,7 @@ async def to_web_api(
             type='pre',
             offset=o.offset,
             length=o.length,
+            language=o.language if o.language else None,
         )
     if isinstance(o, TMessageEntityStrike):
         return MessageEntity(

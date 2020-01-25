@@ -60,7 +60,7 @@ Check the [normal Documentation](core.telegram.org/bots/api) for those.
     - [ ] Added the fields `total_voter_count`, `is_anonymous`, `type`, `allows_multiple_answers`, `correct_option_id` to the `Poll` object.
     - [ ] Bots can now send polls to private chats.
     - [x] Added more information about the bot in response to the `getMe` request: added the fields `can_join_groups`, `can_read_all_group_messages` and `supports_inline_queries` to the User object.
-    - [ ] Added the optional field `language` to the `MessageEntity` object.
+    - [x] Added the optional field `language` to the `MessageEntity` object.
 - The new stuff:
     - New Fields:
         - `pytgbot.api_types.receivable.media.MessageEntity`: `language`
