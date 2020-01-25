@@ -463,7 +463,7 @@ async def to_web_api(
             last_name=o.last_name,
             username=o.username,
             language_code=o.lang_code,
-            can_join_groups=o.bot_nochats,
+            can_join_groups=not o.bot_nochats,
             can_read_all_group_messages=o.bot_chat_history,
             supports_inline_queries=o.bot_inline_geo,
         )
