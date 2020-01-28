@@ -12,9 +12,9 @@ ENV BIND 0.0.0.0:80
 ENV LOG_LEVEL debug
 
 
-COPY ./start.sh /start.sh
-COPY ./gunicorn_conf.py /gunicorn_conf.py
-COPY ./start-reload.sh /start-reload.sh
+COPY docker/start.sh /start.sh
+COPY docker/gunicorn_conf.py /gunicorn_conf.py
+COPY docker/start-reload.sh /start-reload.sh
 
 EXPOSE 80
 
