@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from typing import Tuple
+
 from luckydonaldUtils.logger import logging
 
 __author__ = 'luckydonald'
@@ -10,7 +12,7 @@ if __name__ == '__main__':
 # end if
 
 
-def split_token(token):
+def split_token(token: str) -> Tuple[bool, int, str]:
     if token.startswith('bot') and ":" in token:
         token = token[3:]  # [3:] to remove "bot" prefix
         user_id, _ = token.split(":", maxsplit=1)
