@@ -9,6 +9,7 @@ if __name__ == '__main__':
     logging.add_colored_handler(level=logging.DEBUG)
 # end if
 
+
 async def split_token(token):
     if token.startswith('bot') and ":" in token:
         token = token[3:]  # [3:] to remove "bot" prefix
