@@ -34,4 +34,4 @@ COPY ./main.py /app/main.py
 COPY ./telegram_bot_api_server /app/telegram_bot_api_server
 COPY ./requirements.txt /app/requirements.txt
 COPY ./requirements.freeze.txt /app/requirements.freeze.txt
-RUN pip install uvicorn && pip install -r requirements.txt
+RUN pip install gunicorn && pip install -r requirements.txt
