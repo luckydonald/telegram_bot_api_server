@@ -31,7 +31,7 @@ from .classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from .tools.responses import r_error, r_success, JSONableResponse
 from .constants import TOKEN_VALIDATION
 
-from somewhere import TG_API_ID, TG_API_HASH
+from .environment_vars import TG_APP_ID, TG_APP_HASH
 
 
 __author__ = 'luckydonald'
