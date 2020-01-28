@@ -12,6 +12,7 @@ aiocron
 # telethon
 #Telethon==1.10.10+
 -e git://github.com/LonamiWebs/Telethon.git@22e645e22f006afa8b2741fb832baff34715c5c0#egg=Telethon_22e645
+hachoir
 # pytgbot
 # pytgbot==4.6
 -e git://github.com/luckydonald/pytgbot.git@930d69c866c4a3844d9d2563f2139b78404558de#egg=pytgbot_930d69
