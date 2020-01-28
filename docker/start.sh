@@ -1,5 +1,5 @@
 #! /usr/bin/env sh
-set -e
+set -ex;
 
 if [ -f /app/app/main.py ]; then
     DEFAULT_MODULE_NAME=app.main
@@ -30,5 +30,4 @@ else
 fi
 
 # Start Gunicorn
-set -e;
 exec gunicorn -k uvicorn.workers.UvicornWorker -c "$GUNICORN_CONF" "$APP_MODULE"
