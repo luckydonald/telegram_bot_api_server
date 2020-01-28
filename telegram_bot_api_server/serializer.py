@@ -101,7 +101,7 @@ from telethon.tl.types import StickerSet as TStickerSet2
 
 from telethon.utils import pack_bot_file_id, get_peer_id
 
-from tools.file_id import FileId
+from .tools.file_id import FileId
 from .tools.api import TYPE_CHANNEL, as_channel_id, calculate_file_unique_id, FileType, calculate_file_id
 
 __author__ = 'luckydonald'
