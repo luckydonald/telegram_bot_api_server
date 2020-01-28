@@ -10,7 +10,7 @@ __author__ = 'luckydonald'
 
 from telethon.tl.functions.messages import GetStickerSetRequest
 from telethon.tl.types import InputStickerSetShortName
-from pydantic import Json
+# from pydantic import Json
 
 # from ....tools.fastapi_issue_884_workaround import Json, parse_obj_as
 from ....tools.responses import JSONableResponse, r_success
@@ -35,6 +35,8 @@ class TestModel(BaseModel):
     price: float
     tax: float
 # end class
+
+from ....tools.fastapi_issue_884_workaround import Json
 
 
 @routes.api_route('/testing', methods=['GET', 'POST'], tags=['debug', 'will_be_removed'])
