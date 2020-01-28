@@ -27,12 +27,10 @@ from telethon.tl.functions.auth import SignInRequest
 from pytgbot.api_types.receivable import WebhookInfo
 
 from .tools.telegram_bot_api_server import split_token
+from .environment_vars import TG_APP_ID, TG_APP_HASH
 from .classes.webhook import TelegramClientUpdateCollector, UpdateModes
 from .tools.responses import r_error, r_success, JSONableResponse
 from .constants import TOKEN_VALIDATION
-
-from .environment_vars import TG_APP_ID, TG_APP_HASH
-
 
 __author__ = 'luckydonald'
 
@@ -191,7 +189,7 @@ async def authorize_phone(
 ):
     logger.info(f"Args: phone={phone}, password={password}, bot_token={bot_token}, force_sms={force_sms}, code={code}.")
     bot = TelegramClientUpdateCollector(
-        session=StringSession(session), api_id=TG_API_ID, api_hash=TG_API_HASH,
+        session=StringSession(session), api_id=TG_APP_ID, api_hash=TG_APP_HASH,
         mode=UpdateModes.SILENT,
     )
     if not bot.is_connected():
@@ -405,8 +403,8 @@ async def _get_bot(token: str) -> Union[TelegramClientUpdateCollector]:
     logger.debug(f'could not find instance for user_id {user_id},\nlaunching telegram muted client.')
     bot = TelegramClientUpdateCollector(
         session=StringSession(None if is_api else secret),  # set a session if not bot
-        api_id=TG_API_ID,
-        api_hash=TG_API_HASH,
+        api_id=TG_APP_ID,
+        api_hash=TG_APP_HASH,
         api_key=secret if is_api else None,  # use the api_key if is bot
         token=token,
         mode=UpdateModes.SILENT
