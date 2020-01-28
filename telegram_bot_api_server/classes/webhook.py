@@ -104,7 +104,7 @@ class TelegramClientUpdateCollector(TelegramClient):
             base_logger=base_logger
         )
         self.api_key = api_key
-        self.is_api, self.user_id, self.secret = await split_token(api_key)
+        self.is_api, self.user_id, self.secret = split_token(api_key)
         self.parse_mode = parse_mode
         self.mode = mode
         self.update_id = self.create_random_update_id()

@@ -347,7 +347,7 @@ async def get_updates(
     https://core.telegram.org/bots/api#getupdates
     """
     global bots
-    is_api, user_id, secret = await split_token(token)
+    is_api, user_id, secret = split_token(token)
     logger.debug(f'Setting webhook for {user_id}...')
 
     if user_id in bots:
@@ -393,7 +393,7 @@ async def _get_bot(token: str) -> Union[TelegramClientUpdateCollector]:
     - User account: `user123456@asdasdajkhasd` (phone number + login hash)
     """
     global bots
-    is_api, user_id, secret = await split_token(token)
+    is_api, user_id, secret = split_token(token)
     logger.debug(f"loading {'api' if is_api else 'user'} bot with id {user_id!r} and the token {secret!r}...")
     user_id = int(user_id)
 

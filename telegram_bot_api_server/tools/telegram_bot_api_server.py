@@ -10,7 +10,7 @@ if __name__ == '__main__':
 # end if
 
 
-async def split_token(token):
+def split_token(token):
     if token.startswith('bot') and ":" in token:
         token = token[3:]  # [3:] to remove "bot" prefix
         user_id, _ = token.split(":", maxsplit=1)
