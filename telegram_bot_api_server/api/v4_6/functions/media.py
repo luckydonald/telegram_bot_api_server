@@ -13,7 +13,7 @@ from telethon.errors import BotMethodInvalidError
 from starlette.requests import Request
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.concurrency import run_in_threadpool
-from telethon.tl.types import TypeSendMessageAction, InputStickerSetShortName, InputMessageID
+from telethon.tl.types import DocumentAttributeAudio, DocumentAttributeFilename
 from telethon.client.chats import _ChatAction
 from luckydonaldUtils.files.mime import get_file_suffix
 from luckydonaldUtils.logger import logging
@@ -223,6 +223,102 @@ async def send_photo(
         parse_mode=parse_mode,
         silent=disable_notification,
         reply_to=reply_to_message_id,
+        buttons=buttons,
+    )
+    data = await to_web_api(result, bot)
+    return r_success(data.to_array())
+# end def
+
+
+@routes.api_route('/{token}/sendAudio', methods=['GET', 'POST'], tags=['official', 'send'])
+async def send_audio(
+    token: str = TOKEN_VALIDATION,
+    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+    audio: 'InputFileModel' = Query(..., description='Audio file to send. Pass a file_id as String to send an audio file that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get an audio file from the Internet, or upload a new one using multipart/form-data. More info on Sending Files »'),
+    caption: Optional[str] = Query(None, description='Audio caption, 0-1024 characters'),
+    parse_mode: Optional[str] = Query(None, description='Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in the media caption.'),
+    duration: Optional[int] = Query(None, description='Duration of the audio in seconds'),
+    performer: Optional[str] = Query(None, description='Performer'),
+    title: Optional[str] = Query(None, description='Track name'),
+    thumb: Optional[Json[Union['InputFileModel', str]]] = Query(None, description='Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail‘s width and height should not exceed 320. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can’t be reused and can be only uploaded as a new file, so you can pass "attach://<file_attach_name>" if the thumbnail was uploaded using multipart/form-data under <file_attach_name>. More info on Sending Files »'),
+    disable_notification: Optional[bool] = Query(None, description='Sends the message silently. Users will receive a notification with no sound.'),
+    reply_to_message_id: Optional[int] = Query(None, description='If the message is a reply, ID of the original message'),
+    reply_markup: Optional[Json[Union['InlineKeyboardMarkupModel', 'ReplyKeyboardMarkupModel', 'ReplyKeyboardRemoveModel', 'ForceReplyModel']]] = Query(None, description='Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.'),
+    request: Request = None,
+) -> JSONableResponse:
+    """
+    Use this method to send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .MP3 or .M4A format. On success, the sent Message is returned. Bots can currently send audio files of up to 50 MB in size, this limit may be changed in the future.
+    For sending voice messages, use the sendVoice method instead.
+
+    https://core.telegram.org/bots/api#sendaudio
+    """
+    audio: Union[InputFileModel, str] = parse_obj_as(
+        Union[InputFileModel, str],
+        obj=audio,
+    )
+    thumb: Optional[Union[InputFileModel, str]] = parse_obj_as(
+        Optional[Union[InputFileModel, str]],
+        obj=thumb,
+    )
+    reply_markup: Optional[Union[InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel, ForceReplyModel]] = parse_obj_as(
+        Optional[Union[InlineKeyboardMarkupModel, ReplyKeyboardMarkupModel, ReplyKeyboardRemoveModel, ForceReplyModel]],
+        obj=reply_markup,
+    )
+
+    # TODO: thumb
+
+    from ....main import _get_bot
+    bot = await _get_bot(token)
+
+    try:
+        entity = await get_entity(bot, chat_id)
+    except BotMethodInvalidError:
+        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+        entity = chat_id
+    except ValueError:
+        raise HTTPException(404, detail="chat not found?")
+    # end try
+
+    file: Union[BytesIO, str] = await process_file(given_file=audio, request=request)
+    if isinstance(file, JSONableResponse):
+        # abort
+        return file
+    # end def
+
+    buttons = await to_telethon(reply_markup, bot)
+
+    attributes = []
+    if duration or title or performer:
+        attributes.append(
+            DocumentAttributeAudio(
+                duration=duration if duration else 0,
+                title=title,
+                performer=performer,
+                waveform=None,
+            )
+        )
+    # end if
+    if isinstance(file, BytesIO):
+        attributes.append(
+            DocumentAttributeFilename(
+                file_name=file.name
+            )
+        )
+    # end if
+
+
+    result = await bot.send_file(
+        entity=entity,
+        file=file,
+        attributes=attributes,
+        caption=caption,
+        parse_mode=parse_mode,
+        duration=duration,
+        performer=performer,
+        title=title,
+        thumb=thumb,
+        disable_notification=disable_notification,
+        reply_to_message_id=reply_to_message_id,
         buttons=buttons,
     )
     data = await to_web_api(result, bot)

@@ -46,10 +46,14 @@ Check the [normal Documentation](core.telegram.org/bots/api) for those.
 - [x] [editMessageLiveLocation](https://core.telegram.org/bots/api#editmessagelivelocation)
 - [x] [stopMessageLiveLocation](https://core.telegram.org/bots/api#stopmessagelivelocation)
 - [x] [sendVenue](https://core.telegram.org/bots/api#sendvenue)
-- [x] [sendPhoto](https://core.telegram.org/bots/api#senphoto)
+- [x] [sendPhoto](https://core.telegram.org/bots/api#sendphoto)
     - ⚠️ Currently does not accept file uploads directly to the `photo` form fields.
         - This is due to (tiangolo/fastapi#907)[https://github.com/tiangolo/fastapi/issues/907]
-        - Workaround is using `attachment://photo_file` (or a different attachment name) and uploading the file to that `photo_file` field instead.
+        - Workaround is using `attachment://photo_file` (or a different attachment name) and uploading the file to that very same `photo_file` field instead.
+- [x] [sendAudio](https://core.telegram.org/bots/api#sendaudio)
+    - ⚠️ Currently does not accept file uploads directly to the `audio` form fields.
+        - This is due to (tiangolo/fastapi#907)[https://github.com/tiangolo/fastapi/issues/907]
+        - Workaround is using `attachment://audio_file` (or a different attachment name) and uploading the file to that very same `audio_file` field instead.
 
 
 - Added API definitions of v4.6, (January 23, 2020) with the following changelog:
