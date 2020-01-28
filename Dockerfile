@@ -1,11 +1,11 @@
 # FROM tiangolo/uvicorn-gunicorn
-FROM python:3.7
+FROM python:3.8
 
 ENV MODULE_NAME main
 ENV VARIABLE_NAME app
 ENV APP_MODULE main:app
 ENV WORKERS_PER_CORE 1
-# ENV WEB_CONCURRENCY 2  # core count
+ENV TOTAL_WORKERS 1
 # ENV HOST
 ENV PORT 80
 ENV BIND 0.0.0.0:80
