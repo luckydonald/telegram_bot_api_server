@@ -408,6 +408,7 @@ async def _get_bot(token: str) -> Union[TelegramClientUpdateCollector]:
         api_id=TG_API_ID,
         api_hash=TG_API_HASH,
         api_key=secret if is_api else None,  # use the api_key if is bot
+        token=token,
         mode=UpdateModes.SILENT
     )
     logger.debug(f'Connecting in the bot {token}.')

@@ -59,6 +59,7 @@ class TelegramClientUpdateCollector(TelegramClient):
         api_id: int,
         api_hash: str,
         mode: UpdateModes,
+        token: Union[str, None] = None,
         api_key: Union[str, None] = None,
         webhook_url: Union[str, None] = None,
         parse_mode: Union[str, None] = "html",  # <- Render things nicely
@@ -103,8 +104,23 @@ class TelegramClientUpdateCollector(TelegramClient):
             loop=loop,
             base_logger=base_logger
         )
-        self.api_key = api_key
-        self.is_api, self.user_id, self.secret = split_token(api_key)
+        if token and not (token.startswith('user') or token.startswith('bot')):
+            raise ValueError('Your API key has to start with either "user" or "bot"')
+        # end if
+        self.is_api, self.user_id, self.secret = None, None, None
+        if token:
+            self.is_api, self.user_id, self.secret = split_token(token)
+            if self.is_api:
+                if api_key and api_key != self.secret:
+                    raise ValueError(f'secret determined from the `token` and given `api_key` doesn\'t match: token: {token!r}, api_key: {api_key!r}.')
+                # end if
+                self.api_key = self.secret
+            # end if
+        # end if
+        if api_key:
+            self.api_key = api_key
+        # end if
+
         self.parse_mode = parse_mode
         self.mode = mode
         self.update_id = self.create_random_update_id()
