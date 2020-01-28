@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import asyncio
-import uvloop
+try:
+    import uvloop
+except ImportError:
+    uvloop = None
+# end if
+
 from enum import Enum
 from typing import Dict, Union, List, Optional, Any
 from aiocron import crontab
@@ -31,7 +36,9 @@ from somewhere import TG_API_ID, TG_API_HASH
 
 __author__ = 'luckydonald'
 
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+if uvloop:
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+# end if
 
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
