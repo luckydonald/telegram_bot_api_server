@@ -31,7 +31,7 @@ ENV PYTHONPATH=/app
 CMD ["/start.sh"]
 
 COPY ./main.py /app/main.py
-COPY ./telegram_bot_api_server /app/telegram_bot_api_server
 COPY ./requirements.txt /app/requirements.txt
-COPY ./requirements.freeze.txt /app/requirements.freeze.txt
 RUN pip install gunicorn && pip install -r requirements.txt
+COPY ./requirements.freeze.txt /app/requirements.freeze.txt
+COPY ./telegram_bot_api_server /app/telegram_bot_api_server
