@@ -56,7 +56,7 @@ async def process_file(given_file: Union[str, FastApiUploadFile, StarletteUpload
                     errors=[
                         ErrorWrapper(
                             MissingError(), loc=('form', field_name)
-                         ),
+                        ),
                     ],
                 )
             # end if
