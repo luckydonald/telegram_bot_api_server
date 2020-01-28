@@ -98,6 +98,7 @@ from telethon.tl.types import UpdateWebPage as TUpdateWebPage
 from telethon.tl.functions.messages import GetStickerSetRequest as TGetStickerSetRequest
 from telethon.tl.types.messages import StickerSet as TStickerSet1
 from telethon.tl.types import StickerSet as TStickerSet2
+from telethon.tl.types import UpdateDraftMessage as TUpdateDraftMessage
 
 from telethon.utils import pack_bot_file_id, get_peer_id
 
@@ -989,10 +990,13 @@ async def to_web_api(
         logger.debug(f"Ignoring status {o.status} of user {o.user_id}.")
         return None
     if isinstance(o, TUpdateDeleteChannelMessages):
-        logger.debug(f"Ignoring deleted message(s) in channel {o.channel_id}.")
+        logger.debug(f"Ignoring deleted message in channel {o.channel_id}.")
         return None
     if isinstance(o, TUpdateWebPage):
-        logger.debug(f"Ignoring webpage update message(s) in channel {o.webpage}.")
+        logger.debug(f"Ignoring webpage update message in chat {o.webpage}.")
+        return None
+    if isinstance(o, TUpdateDraftMessage):
+        logger.debug(f"Ignoring draft in chat {o}.")
         return None
     raise TypeError(f'Type not handled: {type(o)} with value {o!r}: {o!s}')
 
