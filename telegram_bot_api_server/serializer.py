@@ -574,7 +574,7 @@ async def to_web_api(
                 caption=o.raw_text if o.media else None,
                 entities=None if o.media else entities,  # entities can be ether part of a caption or text
                 caption_entities=entities if o.media else None,  # entities can be ether part of a caption or text
-                document=None if any([o.photo, o.sticker, o.video, o.voice, o.video_note]) else await to_web_api(o.document, client),
+                document=None if any([o.audio, o.photo, o.sticker, o.video, o.voice, o.video_note]) else await to_web_api(o.document, client),
                 # animation=await to_web_api(o.animation), TODO
                 audio=await to_web_api(o.audio, client),
                 # game=await to_web_api(o.game), TODO
