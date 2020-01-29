@@ -43,7 +43,7 @@ if not REQUIRED and not EXTRAS:
     for extra in extras:
         print('Found extra requirements list: ' + repr(extra))
         assert os.path.exists(extra)
-        m = re.match(r'requirements\.(.+)\.txt')
+        m = re.match(r'requirements\.(.+)\.txt', extra)
         assert m
         feature = m.group(1)
         assert feature
