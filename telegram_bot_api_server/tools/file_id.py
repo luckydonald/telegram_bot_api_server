@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import struct
 import base64
+from abc import abstractmethod
+
 from luckydonaldUtils.logger import logging
 from luckydonaldUtils.encoding import to_unicode
 
@@ -182,6 +184,11 @@ class FileId(object):
 
     SUPPORTED_VERSIONS = (2, 4)
     MAX_VERSION = 4
+
+    @abstractmethod
+    def to_file_id(self):
+        raise NotImplementedError('Subclasses should have code here.')
+    # end def
 # end class FileId
 
 
