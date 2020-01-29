@@ -108,6 +108,7 @@ class TelegramClientUpdateCollector(TelegramClient):
             raise ValueError('Your API key has to start with either "user" or "bot"')
         # end if
         self.is_api, self.user_id, self.secret = None, None, None
+        self.api_key = None
         if token:
             self.is_api, self.user_id, self.secret = split_token(token)
             if self.is_api:
@@ -174,7 +175,7 @@ class TelegramClientUpdateCollector(TelegramClient):
         @self.on(events.Raw)
         async def got_some_update(event: events.NewMessage):
             """Process incomming Updates."""
-            logger.info(f'account {self.api_key!r} got message: {event!s}')
+            logger.info(f'account {self.user_id!r} got message: {event!s}')
             if isinstance(event, (UpdateChannelMessageViews, UpdateChannel)):
                 logger.info(f'Skipping Update type {type(event)}')
                 return
@@ -182,7 +183,7 @@ class TelegramClientUpdateCollector(TelegramClient):
             from datetime import datetime
             now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             mkdir_p(f'logs/{self.user_id}/')
-            with open(f'logs/{self.user_id}/{self.api_key}update_{now}.py', 'w') as f:
+            with open(f'logs/{self.user_id}/update_{now}.py', 'w') as f:
                 f.write('from telethon.tl.types import *\nfrom telethon.tl.patched import *\nimport datetime\n\n')
                 f.write(str(event))
             # end with
