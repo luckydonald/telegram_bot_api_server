@@ -13,7 +13,7 @@ from serializer import to_web_api
 
 # replace functions so we can use our fake client
 serializer.get_entity = lambda c, o: c.get_entity(o)
-async def get_reply_message_mock_proxy(e: Message):
+async def get_reply_message_mock_proxy(e: Message, client_user_id: int):
     e._client: FakeClient
     return e._client.get_reply_message(e)
 # end def

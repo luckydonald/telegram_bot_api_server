@@ -197,7 +197,7 @@ class TelegramClientUpdateCollector(TelegramClient):
             except TypeError as e:
                 logger.exception('Serializing element failed')
 
-                with open(f'logs/update_{now}.txt', 'w') as f:
+                with open(f'logs/{self.user_id}/update_{now}.txt', 'w') as f:
                     f.write(str(e))
                 # end with
 

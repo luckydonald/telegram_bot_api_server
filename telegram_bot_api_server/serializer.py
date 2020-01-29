@@ -527,7 +527,7 @@ async def to_web_api(
         if isinstance(o, TMessage):
             reply = None
             if include_reply and o.is_reply:
-                reply = await get_reply_message(o)
+                reply = await get_reply_message(o, client.user_id)
                 reply = await to_web_api(reply, client, include_reply=False)  # don't have a reply in the reply.
             # end if
             forward_date = None
@@ -1040,7 +1040,7 @@ async def get_entity(client, peer):
         else:
             raise e
         # end for
-    with open(f'logs/peer_{peer!s}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as f:
+    with open(f'logs/{client.user_id}/peer_{peer!s}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as f:
         f.write('from telethon.tl.types import *\nfrom telethon.tl.patched import *\nimport datetime\n\n')
         f.write(f'input = {peer}\nresult = {entity!s}')
     # end with
@@ -1048,10 +1048,10 @@ async def get_entity(client, peer):
 # end def
 
 
-async def get_reply_message(e: TMessage):
+async def get_reply_message(e: TMessage, client_user_id: int):
     """ wrapper for debug. """
     msg = await e.get_reply_message()
-    with open(f'logs/msg_{e.chat_id!s}#{e.id}#{e.id}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as f:
+    with open(f'logs/{client_user_id}/msg_{e.chat_id!s}#{e.id}#{e.id}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as f:
         f.write('from telethon.tl.types import *\nfrom telethon.tl.patched import *\nimport datetime\n\n')
         f.write(f'{{\n  "{e.chat_id!s}#{e.id}": {msg!s}\n}}')
     # end with
