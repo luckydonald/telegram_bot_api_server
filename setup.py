@@ -34,14 +34,14 @@ EXTRAS = {
 
 if not REQUIRED and not EXTRAS:
     if os.path.exists('requirements.txt'):
-        print(f'Found requirements list {"requirements.txt"!r}.')
+        print(f'Found requirements list: ' + repr("requirements.txt"))
         with open('requirements.txt') as f:
             REQUIRED = f.read().splitlines()
         # end with
     # end uf
     extras = glob('requirements.*.txt')
     for extra in extras:
-        print(f'Found extra requirements list {extra!r}.')
+        print('Found extra requirements list: ' + repr(extra))
         assert os.path.exists(extra)
         m = re.match(r'requirements\.(.+)\.txt')
         assert m
