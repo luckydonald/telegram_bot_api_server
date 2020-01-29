@@ -337,7 +337,7 @@ async def to_web_api(
         for attr in o.attributes:
             if isinstance(attr, TDocumentAttributeSticker):
                 return Sticker(
-                    file_id=data['file_id'].file_id,
+                    file_id=data['file_id'],
                     file_unique_id=data['file_unique_id'],
                     width=data['width'],
                     height=data['height'],
