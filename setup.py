@@ -34,7 +34,7 @@ EXTRAS = {
 
 if not REQUIRED and not EXTRAS:
     if os.path.exists('requirements.txt'):
-        print(f'Found requirements list: ' + repr("requirements.txt"))
+        print('Found requirements list: ' + repr("requirements.txt"))
         with open('requirements.txt') as f:
             REQUIRED = f.read().splitlines()
         # end with
