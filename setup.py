@@ -36,7 +36,7 @@ if not REQUIRED and not EXTRAS:
     if os.path.exists('requirements.txt'):
         print('Found requirements list: ' + repr("requirements.txt"))
         with open('requirements.txt') as f:
-            REQUIRED = f.read().splitlines()
+            REQUIRED = (line.strip() for line in f.read().splitlines() if not line.strip().startswith('#'))
         # end with
     # end uf
     extras = glob('requirements.*.txt')
@@ -48,7 +48,7 @@ if not REQUIRED and not EXTRAS:
         feature = m.group(1)
         assert feature
         with open(extra) as f:
-            EXTRAS[feature] = f.read().splitlines()
+            EXTRAS[feature] = (line.strip() for line in f.read().splitlines() if not line.strip().startswith('#'))
         # end with
     # end if
 
