@@ -36,7 +36,7 @@ if not REQUIRED and not EXTRAS:
     if os.path.exists('requirements.txt'):
         print('Found requirements list: ' + repr("requirements.txt"))
         with open('requirements.txt') as f:
-            REQUIRED = (line.strip() for line in f.read().splitlines() if not line.strip().startswith('#'))
+            REQUIRED = (line for line in (line.strip() for line in f.read().splitlines()) if line and not line.startswith('#'))
         # end with
     # end uf
     extras = glob('requirements.*.txt')
@@ -48,9 +48,14 @@ if not REQUIRED and not EXTRAS:
         feature = m.group(1)
         assert feature
         with open(extra) as f:
-            EXTRAS[feature] = (line.strip() for line in f.read().splitlines() if not line.strip().startswith('#'))
+            EXTRAS[feature] = (line for line in (line.strip() for line in f.read().splitlines()) if line and not line.startswith('#'))
         # end with
     # end if
+# end if
+
+for pack in REQUIRED:
+    print('pip install ' + pack)
+# end if
 
 # The rest you shouldn't have to touch too much :)
 # ------------------------------------------------
