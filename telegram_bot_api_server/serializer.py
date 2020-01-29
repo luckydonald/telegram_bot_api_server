@@ -99,6 +99,7 @@ from telethon.tl.functions.messages import GetStickerSetRequest as TGetStickerSe
 from telethon.tl.types.messages import StickerSet as TStickerSet1
 from telethon.tl.types import StickerSet as TStickerSet2
 from telethon.tl.types import UpdateDraftMessage as TUpdateDraftMessage
+from telethon.tl.types import UpdateUserTyping as TUpdateUserTyping
 
 from telethon.utils import pack_bot_file_id, get_peer_id
 
@@ -997,6 +998,9 @@ async def to_web_api(
         return None
     if isinstance(o, TUpdateDraftMessage):
         logger.debug(f"Ignoring draft in chat {o}.")
+        return None
+    if isinstance(o, TUpdateUserTyping):
+        logger.debug(f"Ignoring typing user {o.user_id}.")
         return None
     raise TypeError(f'Type not handled: {type(o)} with value {o!r}: {o!s}')
 
