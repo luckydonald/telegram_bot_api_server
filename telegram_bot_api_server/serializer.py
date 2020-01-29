@@ -653,7 +653,7 @@ async def to_web_api(
             # end if
             if isinstance(o.action, TMessageActionChatJoinedByLink):
                 user = await get_entity(client, o.from_id)
-                user = await to_web_api(user)
+                user = await to_web_api(user, client)
                 # TODO is swapping from_peer(inviter_id) and new_chat_members(from_id), is that correct?
                 return Message(
                     message_id=o.id,
