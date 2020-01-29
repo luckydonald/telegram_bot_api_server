@@ -380,7 +380,7 @@ async def get_updates(
     # end if
 
     # in any case we wanna return the updates
-    return r_success([x.to_array() for x in bots[user_id].updates if x is not None])
+    return r_success([x.to_array() if x is not None else None for x in bots[user_id].updates])
 # end def
 
 

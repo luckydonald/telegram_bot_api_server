@@ -208,7 +208,10 @@ class TelegramClientUpdateCollector(TelegramClient):
             with open(f'logs/{self.user_id}/update_{now}.json', 'w') as f:
                 json.dump(update.to_array() if isinstance(update, TgBotApiObject) else update, f)
             # end with
-
+            if update is None:
+                logger.debug(f'Skipping `None` event: {event!r}')
+                return
+            # end if
             await self.send_event(update)
             # await event.respond()
 
