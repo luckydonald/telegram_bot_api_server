@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from typing import Union, cast
+from typing import Union, cast, Dict
 
 from luckydonaldUtils.encoding import to_native
 from luckydonaldUtils.exceptions import assert_type_or_raise
@@ -11,6 +11,7 @@ from pytgbot.api_types.receivable.media import ChatPhoto, UserProfilePhotos, Pho
 from pytgbot.api_types.receivable.media import Audio
 from pytgbot.api_types.receivable.media import Sticker, VideoNote
 from pytgbot.api_types.receivable.media import Contact, Venue, Video, Document, Animation
+from pytgbot.api_types.receivable.media import Poll, PollAnswer, PollOption
 from pytgbot.api_types.receivable.passport import PassportData, EncryptedCredentials, EncryptedPassportElement
 from pytgbot.api_types.receivable.payments import ShippingQuery, PreCheckoutQuery, OrderInfo, Invoice, SuccessfulPayment
 from pytgbot.api_types.receivable.peer import User, Chat
@@ -100,6 +101,8 @@ from telethon.tl.types.messages import StickerSet as TStickerSet1
 from telethon.tl.types import StickerSet as TStickerSet2
 from telethon.tl.types import UpdateDraftMessage as TUpdateDraftMessage
 from telethon.tl.types import UpdateUserTyping as TUpdateUserTyping
+from telethon.tl.types import UpdateMessagePoll as TUpdateMessagePoll, PollAnswer as TPollAnswer
+from telethon.tl.types import PollAnswerVoters as TPollAnswerVoters, Poll as TPoll, PollResults as TPollResults
 
 from telethon.utils import pack_bot_file_id, get_peer_id
 
@@ -972,6 +975,38 @@ async def to_web_api(
             for size in o.sizes
             if not isinstance(size, (TPhotoSizeEmpty, TPhotoStrippedSize))
         ]
+    if isinstance(o, TUpdateMessagePoll):
+        if prefer_update:
+            poll: Poll = await to_web_api(o, client, prefer_update=False)
+            return Update(
+                update_id=client.update_id,
+                poll=poll,
+            )
+        # end if
+        poll_options: Dict[bytes, PollOption] = {}
+
+        # first find all answer texts, and store them by index.
+        for answer in o.poll.answers:
+            answer: TPollAnswer
+            poll_options[answer.option] = PollOption(answer.text, voter_count=-1)
+        # end def
+        # now iteraterate through the results to add the voter count
+        for result in o.results.results:
+            result: TPollAnswerVoters
+            poll_options[result.option].voter_count = result.voters
+        # end def
+
+        return Poll(
+            id=str(o.poll_id),
+            question=o.poll.question,
+            options=list(poll_options.values()),
+            total_voter_count=o.results.total_voters,
+            is_closed=o.poll.closed,
+            is_anonymous=(not o.poll.public_voters) if o.poll.public_voters is not None else None,
+            type='regular',
+            allows_multiple_answers=o.poll.multiple_choice,
+            correct_option_id=None,
+        )
     if isinstance(o, datetime):
         return int(o.timestamp())
     if isinstance(o, tuple):

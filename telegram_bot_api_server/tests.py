@@ -8,8 +8,8 @@ from telethon.tl.patched import Message
 import datetime
 from typing import Dict
 
-import serializer
-from serializer import to_web_api
+from telegram_bot_api_server import serializer
+from telegram_bot_api_server.serializer import to_web_api
 
 # replace functions so we can use our fake client
 serializer.get_entity = lambda c, o: c.get_entity(o)
@@ -751,7 +751,6 @@ class MyTestCase(asynctest.TestCase):
         )
     # end def
 
-
     async def test_reply_to_text(self):
         msg = Message(
             id=3543,
@@ -805,6 +804,82 @@ class MyTestCase(asynctest.TestCase):
         client = FakeClient(peers=RECYCLE_PEERS, messages=CACHED_MESSAGES, update_id=44581234)
         msg._client = client
         result = await to_web_api(event, client)
+        result = result.to_array()
+
+        # for i, result_photo in enumerate(expected["message"]["photo"]):
+        #     expected_photo = result["message"]["photo"][i]
+        #     self.assertEquals(len(expected_photo['file_id']), len(result_photo['file_id']), "length should be same")
+        #     # now delete the file id's as we don't like that to butcher up the comparision
+        #     del result_photo['file_id']
+        #     del expected_photo['file_id']
+        # # end if
+
+        self.assertEqual(
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            'real one vs generated one'
+        )
+    # end def
+
+    async def test_4_6_poll(self):
+        o = UpdateMessagePoll(
+            poll_id=5298678574432124931,
+            results=PollResults(
+                min=False,
+                results=[
+                    PollAnswerVoters(option=b'0', voters=0, chosen=False, correct=False),
+                    PollAnswerVoters(option=b'1', voters=1, chosen=True, correct=False),
+                    PollAnswerVoters(option=b'2', voters=0, chosen=False, correct=False)
+                ],
+                total_voters=1,
+                recent_voters=[]
+            ),
+            poll=Poll(
+                id=5298678574432124931,
+                question='TITLE OF POLL',
+                answers=[
+                    PollAnswer(text='Option 1', option=b'0'),
+                    PollAnswer(text='Second iption', option=b'1'),
+                    PollAnswer(text="That's an typo, lol 😂", option=b'2')
+                ],
+                closed=False,
+                public_voters=False,
+                multiple_choice=False,
+                quiz=False,
+            )
+        )
+
+        expected = {
+            "poll": {
+                "allows_multiple_answers": False,
+                "id": "5298678574432124931",
+                "is_anonymous": True,
+                "is_closed": False,
+                "options": [
+                    {
+                        "text": "Option 1",
+                        "voter_count": 0
+                    },
+                    {
+                        "text": "Second iption",
+                        "voter_count": 1
+                    },
+                    {
+                        "text": "That's an typo, lol 😂",
+                        "voter_count": 0
+                    }
+                ],
+                "question": "TITLE OF POLL",
+                "total_voter_count": 1,
+                "type": "regular"
+            },
+            "update_id": 862110283
+        }
+
+        client = FakeClient(peers=RECYCLE_PEERS, messages=CACHED_MESSAGES, update_id=44581234)
+        o._client = client
+        o._client.update_id = 862110283
+        result = await to_web_api(o, client)
         result = result.to_array()
 
         # for i, result_photo in enumerate(expected["message"]["photo"]):
