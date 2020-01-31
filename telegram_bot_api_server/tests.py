@@ -6,7 +6,7 @@ from telethon.tl.types import *
 from telethon.tl.patched import *
 from telethon.tl.patched import Message
 import datetime
-from typing import Dict
+from typing import Dict, Any, Tuple
 
 from telegram_bot_api_server import serializer
 from telegram_bot_api_server.serializer import to_web_api
@@ -168,11 +168,7 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(event, client)
         result = result.to_array()
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
     # end def
 
     async def test_channel_message(self):
@@ -216,11 +212,7 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(event, client)
         result = result.to_array()
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
     # end def
 
     async def test_channel_message_2(self):
@@ -267,11 +259,7 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(event, client)
         result = result.to_array()
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
     # end def
 
     async def test_channel_message_2_forward_from_channel(self):
@@ -390,11 +378,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
     # end def
 
     async def test_channel_forward_from_user(self):
@@ -488,11 +472,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
     # end def
 
     async def test_channel_forward_video_from_channel_with_signature(self):
@@ -618,11 +598,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
     # end def
 
     async def test_channel_post_with_signature(self):
@@ -666,11 +642,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
     # end def
 
     async def test_reply_to_user_mention(self):
@@ -750,11 +722,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
     # end def
 
     async def test_reply_to_text(self):
@@ -820,11 +788,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
     # end def
 
     async def test_4_6_anon_poll_update(self):
@@ -889,14 +853,10 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(o, client)
         result = result.to_array()
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
     # end def
 
-    async def test_4_6_known_poll_creation(self):
+    async def test_4_6_nonanon_poll_creation(self):
         # regular non-anon poll, newly created.
         o = UpdateNewChannelMessage(
             message=Message(
@@ -985,17 +945,437 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result,   indent=2, sort_keys=True),
-            'real one vs generated one'
-        )
+        await self.array_compare(expected, result)
+    # end def
+
+    async def test_4_6_nonanon_quiz(self):
+        # quiz non-anon poll, newly created.
+        o = UpdateNewChannelMessage(
+            message=Message(
+                id=3573,
+                to_id=PeerChannel(
+                    channel_id=1032895287),
+                    date=datetime.datetime(2020, 1, 31, 10, 58, 57, tzinfo=datetime.timezone.utc),
+                    message='',
+                    out=True,
+                    mentioned=False,
+                    media_unread=False,
+                    silent=False,
+                    post=False,
+                    from_scheduled=False,
+                    legacy=False,
+                    edit_hide=False,
+                    from_id=10717954,
+                    fwd_from=None,
+                    via_bot_id=None,
+                    reply_to_msg_id=None,
+                    media=MessageMediaPoll(
+                        poll=Poll(
+                            id=5305467573402337281,
+                            question='LOOK MOM A PUBLIC QUIZZZ',
+                            answers=[
+                                PollAnswer(text='QUIZZZzzzz', option=b'0'),
+                                PollAnswer(text='QUI💤', option=b'1'),
+                                PollAnswer(text='QUI😴', option=b'2')
+                            ],
+                            closed=False,
+                            public_voters=True,
+                            multiple_choice=False,
+                            quiz=True),
+                            results=PollResults(
+                                min=False,
+                                results=[],
+                                total_voters=0,
+                                recent_voters=[]
+                            ),
+                    ),
+                    reply_markup=None,
+                    entities=[],
+                    views=None,
+                    edit_date=None,
+                    post_author=None,
+                    grouped_id=None,
+                    restriction_reason=[],
+                ),
+                pts=4402,
+                pts_count=1,
+            )
+
+        expected = {
+            "message": {
+                "chat": {
+                    "id": -1001032895287,
+                    "title": "Test Supergroup [test] #PUBLIC",
+                    "type": "supergroup"
+                },
+                "date": 1580468337,
+                "from": {
+                    "first_name": "luckydonald",
+                    "id": 10717954,
+                    "is_bot": false,
+                    "language_code": "en",
+                    "username": "luckydonald"
+                },
+                "message_id": 3573,
+                "poll": {
+                    "allows_multiple_answers": false,
+                    "correct_option_id": 1,
+                    "id": "5305467573402337281",
+                    "is_anonymous": false,
+                    "is_closed": false,
+                    "options": [
+                        {
+                            "text": "QUIZZZzzzz",
+                            "voter_count": 0
+                        },
+                        {
+                            "text": "QUI💤",
+                            "voter_count": 0
+                        },
+                        {
+                            "text": "QUI😴",
+                            "voter_count": 0
+                        }
+                    ],
+                    "question": "LOOK MOM A PUBLIC QUIZZZ",
+                    "total_voter_count": 0,
+                    "type": "quiz"
+                }
+            },
+            "update_id": 12340069
+        }
+
+        client = FakeClient(peers=RECYCLE_PEERS, messages=CACHED_MESSAGES, update_id=12340069)
+        o._client = client
+        o._client.update_id = 862110285
+        result = await to_web_api(o, client)
+        result = result.to_array()
+
+        # for i, result_photo in enumerate(expected["message"]["photo"]):
+        #     expected_photo = result["message"]["photo"][i]
+        #     self.assertEquals(len(expected_photo['file_id']), len(result_photo['file_id']), "length should be same")
+        #     # now delete the file id's as we don't like that to butcher up the comparision
+        #     del result_photo['file_id']
+        #     del expected_photo['file_id']
+        # # end if
+
+        await self.array_compare(expected, result, volatile_fields=['update_id'])
     # end def
 
 
 # end class
+    async def test_4_6_nonanon_poll_creation(self):
+        # regular non-anon poll, newly created.
+        o = UpdateNewChannelMessage(
+            message=Message(
+                id=356,
+                to_id=PeerChannel(channel_id=1443587969),
+                date=datetime.datetime(2020, 1, 29, 14, 44, tzinfo=datetime.timezone.utc),
+                message='',
+                out=False, mentioned=False, media_unread=False, silent=False,
+                post=False, from_scheduled=False, legacy=False, edit_hide=False,
+                from_id=357231198, fwd_from=None, via_bot_id=None, reply_to_msg_id=None,
+                media=MessageMediaPoll(
+                    poll=Poll(
+                    id=5301227547327987713,
+                    question='@luckydonald',
+                    answers=[
+                        PollAnswer(text='Awesome', option=b'0'),
+                        PollAnswer(text='Great', option=b'1')
+                    ],
+                    closed=False,
+                    public_voters=True,
+                    multiple_choice=False,
+                    quiz=False
+                ),
+                results=PollResults(min=False, results=[], total_voters=0, recent_voters=[])),
+                reply_markup=None,
+                entities=[],
+                views=None,
+                edit_date=None,
+                post_author=None,
+                grouped_id=None,
+                restriction_reason=[]
+            ),
+            pts=373, pts_count=1
+        )
+
+        expected = {
+            "message": {
+                "chat": {
+                    "id": -1001443587969,
+                    "title": "Derp [test] rename",
+                    "type": "supergroup"
+                },
+                "date": 1580309040,
+                "from": {
+                    "first_name": "Bonbotics",
+                    "id": 357231198,
+                    "language_code": "en",
+                    "is_bot": false,
+                    "username": "bonbotics"
+                },
+                "message_id": 356,
+                "poll": {
+                    "allows_multiple_answers": false,
+                    "id": "5301227547327987713",
+                    "is_anonymous": false,
+                    "is_closed": false,
+                    "options": [
+                        {
+                            "text": "Awesome",
+                            "voter_count": 0
+                        },
+                        {
+                            "text": "Great",
+                            "voter_count": 0
+                        }
+                    ],
+                    "question": "@luckydonald",
+                    "total_voter_count": 0,
+                    "type": "regular"
+                }
+            },
+            "update_id": 862110285
+        }
+
+        client = FakeClient(peers=RECYCLE_PEERS, messages=CACHED_MESSAGES, update_id=862110285)
+        o._client = client
+        result = await to_web_api(o, client)
+        result = result.to_array()
+
+        # for i, result_photo in enumerate(expected["message"]["photo"]):
+        #     expected_photo = result["message"]["photo"][i]
+        #     self.assertEquals(len(expected_photo['file_id']), len(result_photo['file_id']), "length should be same")
+        #     # now delete the file id's as we don't like that to butcher up the comparision
+        #     del result_photo['file_id']
+        #     del expected_photo['file_id']
+        # # end if
+
+        await self.array_compare(expected, result, volatile_fields=['update_id', 'message.poll.correct_option_id'])
+    # end def
+
+    async def test_4_6_(self):
+        # quiz non-anon poll, newly created.
+        o = None
+
+        expected = None
+
+        client = FakeClient(peers=RECYCLE_PEERS, messages=CACHED_MESSAGES, update_id=12340069)
+        o._client = client
+        o._client.update_id = 862110285
+        result = await to_web_api(o, client)
+        result = result.to_array()
+
+        await self.array_compare(expected, result)
+
+    async def array_compare(
+        self,
+        expected: Dict[str, Any],
+        result: Dict[str, Any],
+        msg: Optional[str] = 'real one vs generated one',
+        volatile_fields: Optional[List[str]] = None,
+        optional_fields: Optional[List[str]] = None,
+        additional_fields: Optional[List[str]] = None
+    ):
+        """
+        Checks whether dictionary is a equal, while allowing to specify fields to skip.
+
+        Format of `volatile_fields`, `optional_fields` and `additional_fields`:
+        Using the key of the field. E.g. `volatile_fields=['date']` with an dict like `{'important': 'text', 'date': 1580479629}`
+
+        :param expected: Input what we want to have,
+        :param result: What we got instead
+        :param msg: Provide some insights what is failing.
+        :param volatile_fields: A list of fields which needs to be there, but can be any value. See format above.
+        :param optional_fields: A list of fields which doesn't need to be there, which are allowed to be missing in `result`. See format above.
+        :param additional_fields: A list of fields which are allowed to be here regardless of them not being specified in `expected`. See format above.
+        """
+        from unittest.util import safe_repr
+
+        if expected == result:
+            # well that was easy.
+            return
+        # end def
+
+        # make sure we can use them if they are None.
+        if not volatile_fields:
+            volatile_fields = []
+        # end if
+        if not optional_fields:
+            optional_fields = []
+        # end if
+        if not additional_fields:
+            additional_fields = []
+        # end if
+
+        missing = []
+        mismatched = []
+        excess = []
+        for key, value in expected.items():
+            if key not in result and key not in optional_fields:
+                missing.append(key)
+            elif value != result[key] and key not in volatile_fields:
+                mismatched.append((key, f'{safe_repr(key)}, expected: {safe_repr(value)}, actual: {safe_repr(result[key])}'))
+            # end if
+        for key, value in result.items():
+            if key not in result and key not in additional_fields:
+                excess.append(key)
+            # end if
+        # end for
+
+        if not (missing or mismatched or excess):
+            # okey, all is fine.
+            return
+        # end if
+
+        standard_msg = ''
+
+        if missing:
+            standard_msg = 'Missing: %s' % ','.join(safe_repr(m) for m in missing)
+        # end if
+
+        if mismatched:
+            if standard_msg:
+                standard_msg += '; '
+            # end if
+            standard_msg += 'Mismatched: %s' % ','.join(safe_repr(m[0]) for m in mismatched)
+        # end if
+
+        if excess:
+            if standard_msg:
+                standard_msg += '; '
+            # end if
+            standard_msg += 'Excess: %s' % ','.join(excess)
+        # end if
 
 
-if __name__ == '__main__':
-    unittest.main()
-# end if
+        import pprint
+        import difflib
+        diff = ('\n' + '\n'.join(difflib.ndiff(
+                       pprint.pformat(expected).splitlines(),
+                       pprint.pformat(result).splitlines())))
+        # standard_msg = standard_msg + diff
+        # standard_msg = self._truncateMessage(standard_msg, diff)
+        self.assertEqual(
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result, indent=2, sort_keys=True),
+            msg=self._formatMessage(msg, standard_msg),
+        )
+        # self.fail(self._formatMessage(msg, standard_msg) +'\n'+ diff)
+    # end def
+# end class
+
+
+class DictDiffer(object):
+
+    def __init__(self, a, b,
+        route: str = "",
+        volatile_fields: Optional[List[str]] = None,
+        optional_fields: Optional[List[str]] = None,
+        additional_fields: Optional[List[str]] = None,
+    ):
+        self.route = route
+        self.volatile_fields = self._prepare_fields(route, volatile_fields)
+        self.optional_fields = self._prepare_fields(route, optional_fields)
+        self.additional_fields = self._prepare_fields(route, additional_fields)
+        self.a = a
+        self.b = b
+    # end def
+
+    def format_dict_line(self, key: str, value: List, comma=True):
+        result = [f'{key!r}: {value[0]}']
+        if len(value) == 1:
+            return result
+        else:
+            return [f'{key!r}: {value[0]}']
+
+    def render(self) -> Tuple[List[str], List[str]]:
+        result_a = ['{']  # start the dict
+        result_b = ['{']  # start the dict
+
+        keys = list(set(list(self.a.keys()) + list(self.b.keys())))
+        keys.sort()
+
+        for key in keys:
+            if key in self.a:
+                if key in self.b:
+                    # a and b have the key
+                    # => we need to handle them being equal or in `self.volatile_fields`, i.e. that changed values are okey.
+                    value_a = self.a[key]
+                    value_b = self.b[key]
+                    key_route = f'{self.route}{key}'  # remember to add '.' for recursive calls.
+                    diff = DictDiffer(value_a, value_b, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields)
+                    list_a, list_b = diff.render()
+
+                    assert len(list_a) > 0
+                    assert len(list_b) > 0
+                    if len(list_a) == 1 and len(list_b) == 1:
+                        # both are the single line, so it will just diff this line.
+                        # |=| - "asd": 1,
+                        # |=| + "asd": 2,
+
+                        # no need to check `self.volatile_fields`, they are the same anyway.
+                        # if they are not the same, we check if we have to add a note
+                        if list_a == list_b or key_route not in self.volatile_fields:
+                            result_a.append(f'{key!r}: {list_a[0]},')
+                            result_b.append(f'{key!r}: {list_b[0]},')
+                        else:
+                            result_a.append(f'{key!r}: {list_a[0]},  # volatile')
+                            result_b.append(f'{key!r}: {list_b[0]},  # volatile')
+                        # end if
+                    else:
+                        # if any of those is not a single line, make it multiline, to make comparing easier, even with empty elements.
+                        # |=|   "asd": {
+                        # |=| +   "sample": "text",
+                        # |=|   },
+
+                        assert len(list_a) > 1  # we need to handle this! Single line values like `True` or `123`.
+                        assert len(list_b) > 1  # we need to handle this! Single line values like `True` or `123`.
+
+                        # first, make the current line, like `"asd": {`.
+                        result_a.append(f'{key!r}: {list_a[0]}')
+                        result_b.append(f'{key!r}: {list_b[0]}')
+
+                        # add all lines in the middle, adding spaces for indention.
+                        # the loops will not run if we have less than 3 elements,
+                        # i.e. nothing between first and last line.
+                        for elem in list_a[1:-1]:
+                            result_a.append(f'  {elem}')
+                        # end for
+                        for elem in list_b[1:-1]:
+                            result_b.append(f'  {elem}')
+                        # end for
+
+                        # now if we have a last element we add that, and the closing komma, like `},`
+                        if len(list_a) > 1:
+                            result_a.append(f'{list_a[-1]},')
+                        # end if
+                        if len(list_b) > 1:
+                            result_b.append(f'{list_b[-1]},')
+                        # end if
+                    # end if
+                else:
+                    # only a has the key
+                    pass
+                # end if
+            else:
+                # only b has the key
+                pass
+            # end if
+        # end for
+        result_a.append('}')  # close the dict
+        result_b.append('}')  # close the dict
+        return result_a, result_b
+    # end def
+
+    @staticmethod
+    def _prepare_fields(route: str, fields: List[str]):
+        new_fields = []
+        length = len(route)
+        for field in fields:
+            assert field.startswith(route)
+            new_fields.append(field[length:])
+        # end for
+        return new_fields
+    # end if
