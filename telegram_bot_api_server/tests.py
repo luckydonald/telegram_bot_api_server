@@ -52,6 +52,11 @@ class FakeClient(object):
     def get_reply_message(self, o: Message):
         return self.messages[f'{o.chat_id}#{o.id}']
     # end def
+
+    @property
+    def user_id(self):
+        return 4458
+    # end def
 # end clas
 
 
@@ -142,7 +147,7 @@ class MyTestCase(asynctest.TestCase):
             "message": {
                 "chat": {
                     "id": -1001443587969,
-                    "title": "Derp [test]",
+                    "title": "Derp [test] rename",
                     "type": "supergroup"
                 },
                 "date": 1575761460,
@@ -156,10 +161,11 @@ class MyTestCase(asynctest.TestCase):
                 "message_id": 168,
                 "new_chat_title": "Derp [test]"
             },
-            "update_id": 862109754
+            "update_id": 4458007
         }
 
-        result = await to_web_api(event, None)
+        client = FakeClient(peers=RECYCLE_PEERS, messages=None, update_id=4458007)
+        result = await to_web_api(event, client)
         result = result.to_array()
 
         self.assertEqual(
@@ -258,7 +264,7 @@ class MyTestCase(asynctest.TestCase):
         }
 
         client = FakeClient(peers=RECYCLE_PEERS, messages=None, update_id=4458007)
-        result = await to_web_api(event, None)
+        result = await to_web_api(event, client)
         result = result.to_array()
 
         self.assertEqual(
@@ -470,7 +476,7 @@ class MyTestCase(asynctest.TestCase):
             "update_id": 445804458
         }
 
-        from serializer import to_web_api
+        from .serializer import to_web_api
         result = await to_web_api(event, client)
         result = result.to_array()
 
@@ -798,7 +804,7 @@ class MyTestCase(asynctest.TestCase):
                 },
                 "text": "REPLY TEST 7"
             },
-            "update_id": 862109792
+            "update_id": 44581234
         }
 
         client = FakeClient(peers=RECYCLE_PEERS, messages=CACHED_MESSAGES, update_id=44581234)
