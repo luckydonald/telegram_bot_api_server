@@ -1,5 +1,7 @@
 import json
 import unittest
+from enum import IntFlag, auto
+
 import asynctest
 
 from telethon.tl.types import *
@@ -1290,23 +1292,53 @@ class DictDiffer(object):
         else:
             return [f'{key!r}: {value[0]}']
 
-    def render(self) -> Tuple[List[str], List[str]]:
-        result_a = ['{']  # start the dict
-        result_b = ['{']  # start the dict
+    class Status(IntFlag):
+        def __bool__(self) -> bool:
+            return not super().__bool__()
+        # end def
+
+        SUCCESS = 0
+        FAIL_DIFFERENT = auto()
+        FAIL_MISSING = auto()
+        FAIL_EXTRA = auto()
+    # end class
+
+    def render(self) -> Tuple[Status, List[str], List[str]]:
+        """
+        :return: (success, lines_a, lines_b)
+        """
+        if isinstance(self.a, dict):
+            assert isinstance(self.b, dict)
+            return self.render_dict()
+        elif isinstance(self.a, (int, bool, float, str)):
+            assert isinstance(self.b, (int, bool, float, str))
+            return self.Status.SUCCESS if self.a == self.b else self.Status.FAIL_DIFFERENT, [repr(self.a)], [repr(self.b)]
+        # end if
+    # end def
+
+    def render_dict(self) -> Tuple[Status, List[str], List[str]]:
+        """
+        :return: (is_wrong, lines_a, lines_b)
+        """
+        result_a: List[str] = ['{']  # start the dict
+        result_b: List[str] = ['{']  # start the dict
 
         keys = list(set(list(self.a.keys()) + list(self.b.keys())))
         keys.sort()
 
+        is_wrong: DictDiffer.Status = self.Status.SUCCESS
+
         for key in keys:
+            key_route = f'{self.route}{key}'  # remember to add '.' for recursive calls.
             if key in self.a:
                 if key in self.b:
                     # a and b have the key
                     # => we need to handle them being equal or in `self.volatile_fields`, i.e. that changed values are okey.
                     value_a = self.a[key]
                     value_b = self.b[key]
-                    key_route = f'{self.route}{key}'  # remember to add '.' for recursive calls.
                     diff = DictDiffer(value_a, value_b, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields)
-                    list_a, list_b = diff.render()
+                    success, list_a, list_b = diff.render()
+                    volatile_field_saved_the_day = not success and key_route in self.volatile_fields
 
                     assert len(list_a) > 0
                     assert len(list_b) > 0
@@ -1315,58 +1347,123 @@ class DictDiffer(object):
                         # |=| - "asd": 1,
                         # |=| + "asd": 2,
 
-                        # no need to check `self.volatile_fields`, they are the same anyway.
+                        # no need to check `self.volatile_fields`, they are okey anyway.
                         # if they are not the same, we check if we have to add a note
-                        if list_a == list_b or key_route not in self.volatile_fields:
-                            result_a.append(f'{key!r}: {list_a[0]},')
-                            result_b.append(f'{key!r}: {list_b[0]},')
-                        else:
+                        if volatile_field_saved_the_day:  # the `and` can be read as `but`.
+                            # it failed, but that is allowed
                             result_a.append(f'{key!r}: {list_a[0]},  # volatile')
                             result_b.append(f'{key!r}: {list_b[0]},  # volatile')
+                        else:
+                            result_a.append(f'{key!r}: {list_a[0]},')
+                            result_b.append(f'{key!r}: {list_b[0]},')
                         # end if
                     else:
-                        # if any of those is not a single line, make it multiline, to make comparing easier, even with empty elements.
+                        # if any of those is not a single line, make it multiline,
+                        # to make comparing easier, even with empty elements.
                         # |=|   "asd": {
                         # |=| +   "sample": "text",
                         # |=|   },
 
-                        assert len(list_a) > 1  # we need to handle this! Single line values like `True` or `123`.
-                        assert len(list_b) > 1  # we need to handle this! Single line values like `True` or `123`.
+                        def add_multiline(
+                            key: str, result_x: List[str], list_x: List[str], volatile_field_saved_the_day: bool
+                        ) -> List[str]:
+                            """modifies the list to have the needed elements"""
+                            assert len(list_x) > 1  # we need to handle this: Single line values like `True` or `123`.
 
-                        # first, make the current line, like `"asd": {`.
+                            # first, make the current line, like `"asd": {`.
+                            # also if there is an error inside, but we are marked volatile, we can ignore that.
+                            if volatile_field_saved_the_day:
+                                result_x.append(f'{key!r}: {list_x[0]}  # volatile field')
+                            else:
+                                result_x.append(f'{key!r}: {list_x[0]}')
+                            # end if
+
+                            # add all lines in the middle, adding spaces for indention.
+                            # the loops will not run if we have less than 3 elements,
+                            # i.e. nothing between first and last line.
+                            for elem in list_x[1:-1]:
+                                result_x.append(f'  {elem}')
+                            # end for
+
+                            # now if we have a last element we add that, and the closing komma, like `},`
+                            if len(list_x) > 1:
+                                result_x.append(f'{list_x[-1]},')
+                            # end if
+                            return result_x
+                        # end def
+
+                        result_a = add_multiline(key, result_a, list_a, volatile_field_saved_the_day)
+                        result_b = add_multiline(key, result_b, list_b, volatile_field_saved_the_day)
+
+                        # basically all is fine if either the field is volatile or correct.
+                        # otherwise we need to inherit that status
+                        is_wrong |= self.Status.SUCCESS if volatile_field_saved_the_day or success else self.Status.FAIL_DIFFERENT
+                    # end if
+                else:  # only `self.a` has the key
+                    # we expected a key, but it's not there
+                    # is the key optional?
+
+                    # faking a diff here, to get the print output...
+                    value_a = self.a[key]
+                    diff = DictDiffer(value_a, value_a, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields)
+                    success, list_a, _ = diff.render()
+                    assert success  # as it is diffing two times the exactly same stuff.
+                    if key_route in self.optional_fields:  # so all is okey.
+                        result_a.append(f'{key!r}: {list_a[0]}  # optional field')
+                    else:
                         result_a.append(f'{key!r}: {list_a[0]}')
+                        is_wrong |= self.Status.FAIL_MISSING
+                    # end if
+
+                    # add all lines in the middle, adding spaces for indention.
+                    # the loops will not run if we have less than 3 elements,
+                    # i.e. nothing between first and last line.
+                    for elem in list_a[1:-1]:
+                        result_a.append(f'  {elem}')
+                    # end for
+
+                    # now if we have a last element we add that, and the closing komma, like `},`
+                    if len(list_a) > 1:
+                        result_a.append(f'{list_a[-1]},')
+                    # end if
+                # end if
+            else:  # `self.a` has no key
+                if key in self.b:  # only `self.b` has a key
+                    # we expected no key, but it could happen
+                    # is the key additional?
+
+                    # faking a diff here, to get the print output...
+                    value_b = self.b[key]
+                    diff = DictDiffer(value_b, value_b, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields)
+                    success, list_b, _ = diff.render()
+                    assert success  # as it is diffing two times the exactly same stuff.
+                    if key_route in self.optional_fields:  # so all is okey.
+                        result_b.append(f'{key!r}: {list_b[0]}  # optional field')
+                    else:
                         result_b.append(f'{key!r}: {list_b[0]}')
+                        is_wrong |= self.Status.FAIL_EXTRA
+                    # end if
 
-                        # add all lines in the middle, adding spaces for indention.
-                        # the loops will not run if we have less than 3 elements,
-                        # i.e. nothing between first and last line.
-                        for elem in list_a[1:-1]:
-                            result_a.append(f'  {elem}')
-                        # end for
-                        for elem in list_b[1:-1]:
-                            result_b.append(f'  {elem}')
-                        # end for
+                    # add all lines in the middle, adding spaces for indention.
+                    # the loops will not run if we have less than 3 elements,
+                    # i.e. nothing between first and last line.
+                    for elem in list_b[1:-1]:
+                        result_b.append(f'  {elem}')
+                    # end for
 
-                        # now if we have a last element we add that, and the closing komma, like `},`
-                        if len(list_a) > 1:
-                            result_a.append(f'{list_a[-1]},')
-                        # end if
-                        if len(list_b) > 1:
-                            result_b.append(f'{list_b[-1]},')
-                        # end if
+                    # now if we have a last element we add that, and the closing komma, like `},`
+                    if len(list_b) > 1:
+                        result_b.append(f'{list_b[-1]},')
                     # end if
                 else:
-                    # only a has the key
-                    pass
+                    # the key is no where to be found?!?
+                    raise ArithmeticError('Wait what. We made a list combining the keys of the dicts, and now that key was not found?!?')
                 # end if
-            else:
-                # only b has the key
-                pass
             # end if
         # end for
         result_a.append('}')  # close the dict
         result_b.append('}')  # close the dict
-        return result_a, result_b
+        return is_wrong, result_a, result_b
     # end def
 
     @staticmethod
@@ -1379,3 +1476,4 @@ class DictDiffer(object):
         # end for
         return new_fields
     # end if
+# end class
