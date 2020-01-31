@@ -102,7 +102,7 @@ from telethon.tl.types import StickerSet as TStickerSet2
 from telethon.tl.types import UpdateDraftMessage as TUpdateDraftMessage
 from telethon.tl.types import UpdateUserTyping as TUpdateUserTyping
 from telethon.tl.types import UpdateMessagePoll as TUpdateMessagePoll, PollAnswer as TPollAnswer
-from telethon.tl.types import PollAnswerVoters as TPollAnswerVoters, Poll as TPoll, PollResults as TPollResults
+from telethon.tl.types import PollAnswerVoters as TPollAnswerVoters, MessageMediaPoll as TMessageMediaPoll
 
 from telethon.utils import pack_bot_file_id, get_peer_id
 
@@ -130,6 +130,7 @@ async def to_web_api(
     o, client: 'classes.webhook.TelegramClientUpdateCollector',
     user_as_chat=False, prefer_update=True, load_photos=False, include_reply: bool = True,
     file_id: Union[str, None] = None, file_unique_id: Union[str, None] = None,
+    get_me_user: bool = False,
 ):
     """
     Converts Telethon objects to Bot API ones.
@@ -142,6 +143,7 @@ async def to_web_api(
     :param include_reply: Whether you want a `Message` object to have the `reply` attribute filled.
     :param file_id: For returning a `PhotoSize` the the `file_id` and `file_unique_id` are needed.
     :param file_unique_id: For returning a `PhotoSize` the the `file_id` and `file_unique_id` are needed.
+    :param get_me_user: If we should include the additional attributes needed for `getMe`
     """
     if isinstance(o, TUpdateNewMessage):
         return Update(
@@ -461,6 +463,12 @@ async def to_web_api(
                 # can_set_sticker_set=None,
             )
         # end if
+        can_join_groups, can_read_all_group_messages, supports_inline_queries = None, None, None
+        if get_me_user:
+            can_join_groups = not o.bot_nochats
+            can_read_all_group_messages = o.bot_chat_history
+            supports_inline_queries = o.bot_inline_geo
+        # end if
         return User(
             id=chat_id,
             is_bot=o.bot,
@@ -468,10 +476,11 @@ async def to_web_api(
             last_name=o.last_name,
             username=o.username,
             language_code=o.lang_code,
-            can_join_groups=not o.bot_nochats,
-            can_read_all_group_messages=o.bot_chat_history,
-            supports_inline_queries=o.bot_inline_geo,
+            can_join_groups=can_join_groups,
+            can_read_all_group_messages=can_read_all_group_messages,
+            supports_inline_queries=supports_inline_queries,
         )
+        # end if
     # end if
     if isinstance(o, TChannel):
         if o.megagroup:  # or maybe o.broadcast?
@@ -564,35 +573,53 @@ async def to_web_api(
                 message_id=o.id,
                 date=date,
                 chat=chat,
-
                 from_peer=from_peer,
                 forward_from=forward_from,
                 forward_from_chat=forward_from_chat,
                 forward_from_message_id=forward_from_message_id,
                 forward_signature=forward_signature,
+                # TODO: forward_sender_name=None,
                 forward_date=forward_date,
                 reply_to_message=reply,
                 edit_date=await to_web_api(o.edit_date, client),
                 # TODO: media_group_id=,
                 author_signature=author_signature,
                 text=None if o.media else o.raw_text,
-                caption=o.raw_text if o.media else None,
                 entities=None if o.media else entities,  # entities can be ether part of a caption or text
                 caption_entities=entities if o.media else None,  # entities can be ether part of a caption or text
+                audio=None if o.voice else await to_web_api(o.audio, client),
                 document=None if any([o.audio, o.photo, o.sticker, o.video, o.voice, o.video_note]) else await to_web_api(o.document, client),
-                # animation=await to_web_api(o.animation), TODO
-                audio=await to_web_api(o.audio, client),
-                # game=await to_web_api(o.game), TODO
+                animation=await to_web_api(o.gif, client),
+                game=await to_web_api(o.game, client),
                 photo=await to_web_api(o.photo, client),
                 sticker=await to_web_api(o.sticker, client),
                 video=None if o.video_note else await to_web_api(o.video, client),
                 voice=await to_web_api(o.voice, client),
                 video_note=await to_web_api(o.video_note, client),
+                caption=o.raw_text if o.media and o.raw_text else None, # media has a `caption`, else it's just the `text` field. Also use `None` instead of an empty `""` string.
                 contact=await to_web_api(o.contact, client),
                 location=await to_web_api(o.geo, client),
                 venue=await to_web_api(o.venue, client),
-                # pinned_message=, TODO
+                poll=await to_web_api(o.poll, client, prefer_update=False),
                 invoice=await to_web_api(o.invoice, client),
+                # TODO: new_chat_members=None,
+                # TODO: left_chat_member=None,
+                # TODO: new_chat_title=None,
+                # TODO: new_chat_photo=None,
+                # TODO: delete_chat_photo=None,
+                # TODO: group_chat_created=None,
+                # TODO: supergroup_chat_created=None,
+                # TODO: channel_chat_created=None,
+                # TODO: migrate_to_chat_id=None,
+                # TODO: migrate_from_chat_id=None,
+                # TODO: pinned_message=None,
+                # TODO: invoice=None,
+                # TODO: successful_payment=None,
+                # TODO: connected_website=None,
+                # TODO: passport_data=None,
+                # TODO: reply_markup=None,
+                reply_markup=await to_web_api(o.reply_markup, client),
+
             )
         else:  # must be TMessageService
             assert isinstance(o, TMessageService)
@@ -975,7 +1002,7 @@ async def to_web_api(
             for size in o.sizes
             if not isinstance(size, (TPhotoSizeEmpty, TPhotoStrippedSize))
         ]
-    if isinstance(o, TUpdateMessagePoll):
+    if isinstance(o, (TMessageMediaPoll, TUpdateMessagePoll)):
         if prefer_update:
             poll: Poll = await to_web_api(o, client, prefer_update=False)
             return Update(
@@ -988,7 +1015,7 @@ async def to_web_api(
         # first find all answer texts, and store them by index.
         for answer in o.poll.answers:
             answer: TPollAnswer
-            poll_options[answer.option] = PollOption(answer.text, voter_count=-1)
+            poll_options[answer.option] = PollOption(answer.text, voter_count=0)
         # end def
         # now iteraterate through the results to add the voter count
         for result in o.results.results:
@@ -997,7 +1024,7 @@ async def to_web_api(
         # end def
 
         return Poll(
-            id=str(o.poll_id),
+            id=str(o.poll.id),
             question=o.poll.question,
             options=list(poll_options.values()),
             total_voter_count=o.results.total_voters,

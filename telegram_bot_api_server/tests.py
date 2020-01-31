@@ -821,7 +821,8 @@ class MyTestCase(asynctest.TestCase):
         )
     # end def
 
-    async def test_4_6_poll(self):
+    async def test_4_6_anon_poll_update(self):
+        # regular anon poll, when pressing the second option.
         o = UpdateMessagePoll(
             poll_id=5298678574432124931,
             results=PollResults(
@@ -882,6 +883,94 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(o, client)
         result = result.to_array()
 
+        self.assertEqual(
+            json.dumps(expected, indent=2, sort_keys=True),
+            json.dumps(result,   indent=2, sort_keys=True),
+            'real one vs generated one'
+        )
+    # end def
+
+    async def test_4_6_known_poll_creation(self):
+        # regular non-anon poll, newly created.
+        o = UpdateNewChannelMessage(
+            message=Message(
+                id=356,
+                to_id=PeerChannel(channel_id=1443587969),
+                date=datetime.datetime(2020, 1, 29, 14, 44, tzinfo=datetime.timezone.utc),
+                message='',
+                out=False, mentioned=False, media_unread=False, silent=False,
+                post=False, from_scheduled=False, legacy=False, edit_hide=False,
+                from_id=357231198, fwd_from=None, via_bot_id=None, reply_to_msg_id=None,
+                media=MessageMediaPoll(
+                    poll=Poll(
+                    id=5301227547327987713,
+                    question='@luckydonald',
+                    answers=[
+                        PollAnswer(text='Awesome', option=b'0'),
+                        PollAnswer(text='Great', option=b'1')
+                    ],
+                    closed=False,
+                    public_voters=True,
+                    multiple_choice=False,
+                    quiz=False
+                ),
+                results=PollResults(min=False, results=[], total_voters=0, recent_voters=[])),
+                reply_markup=None,
+                entities=[],
+                views=None,
+                edit_date=None,
+                post_author=None,
+                grouped_id=None,
+                restriction_reason=[]
+            ),
+            pts=373, pts_count=1
+        )
+
+        expected = {
+            "message": {
+                "chat": {
+                    "id": -1001443587969,
+                    "title": "Derp [test] rename",
+                    "type": "supergroup"
+                },
+                "date": 1580309040,
+                "from": {
+                    "first_name": "Bonbotics",
+                    "id": 357231198,
+                    "language_code": "en",
+                    "is_bot": false,
+                    "username": "bonbotics"
+                },
+                "message_id": 356,
+                "poll": {
+                    "allows_multiple_answers": false,
+                    "id": "5301227547327987713",
+                    "is_anonymous": false,
+                    "is_closed": false,
+                    "options": [
+                        {
+                            "text": "Awesome",
+                            "voter_count": 0
+                        },
+                        {
+                            "text": "Great",
+                            "voter_count": 0
+                        }
+                    ],
+                    "question": "@luckydonald",
+                    "total_voter_count": 0,
+                    "type": "regular"
+                }
+            },
+            "update_id": 862110285
+        }
+
+        client = FakeClient(peers=RECYCLE_PEERS, messages=CACHED_MESSAGES, update_id=44581234)
+        o._client = client
+        o._client.update_id = 862110285
+        result = await to_web_api(o, client)
+        result = result.to_array()
+
         # for i, result_photo in enumerate(expected["message"]["photo"]):
         #     expected_photo = result["message"]["photo"][i]
         #     self.assertEquals(len(expected_photo['file_id']), len(result_photo['file_id']), "length should be same")
@@ -896,6 +985,8 @@ class MyTestCase(asynctest.TestCase):
             'real one vs generated one'
         )
     # end def
+
+
 # end class
 
 

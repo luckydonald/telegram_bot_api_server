@@ -31,6 +31,6 @@ async def get_me(
     bot = await _get_bot(token)
 
     result = await bot.get_me()
-    data = await to_web_api(result, bot)
+    data = await to_web_api(result, bot, get_me_user=True)
     return r_success(data.to_array())
 # end def
