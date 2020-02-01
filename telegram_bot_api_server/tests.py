@@ -1053,19 +1053,9 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(o, client)
         result = result.to_array()
 
-        # for i, result_photo in enumerate(expected["message"]["photo"]):
-        #     expected_photo = result["message"]["photo"][i]
-        #     self.assertEquals(len(expected_photo['file_id']), len(result_photo['file_id']), "length should be same")
-        #     # now delete the file id's as we don't like that to butcher up the comparision
-        #     del result_photo['file_id']
-        #     del expected_photo['file_id']
-        # # end if
-
         await self.array_compare(expected, result, volatile_fields=['update_id'])
     # end def
 
-
-# end class
     async def test_4_6_nonanon_poll_creation(self):
         # regular non-anon poll, newly created.
         o = UpdateNewChannelMessage(
@@ -1158,6 +1148,7 @@ class MyTestCase(asynctest.TestCase):
     # end def
 
     async def test_4_6_(self):
+        self.skipTest(None)
         # quiz non-anon poll, newly created.
         o = None
 
@@ -1178,7 +1169,8 @@ class MyTestCase(asynctest.TestCase):
         msg: Optional[str] = 'real one vs generated one',
         volatile_fields: Optional[List[str]] = None,
         optional_fields: Optional[List[str]] = None,
-        additional_fields: Optional[List[str]] = None
+        additional_fields: Optional[List[str]] = None,
+        print_correct: bool = True,
     ):
         """
         Checks whether dictionary is a equal, while allowing to specify fields to skip.
@@ -1192,78 +1184,38 @@ class MyTestCase(asynctest.TestCase):
         :param volatile_fields: A list of fields which needs to be there, but can be any value. See format above.
         :param optional_fields: A list of fields which doesn't need to be there, which are allowed to be missing in `result`. See format above.
         :param additional_fields: A list of fields which are allowed to be here regardless of them not being specified in `expected`. See format above.
+        :param print_correct: If it should be printed if it is correct.
         """
-        from unittest.util import safe_repr
+        from test_dict_diff import DictDiffer
 
-        if expected == result:
-            # well that was easy.
-            return
-        # end def
+        status, lines_a, lines_b = DictDiffer(
+            a=expected, b=result,
+            volatile_fields=volatile_fields, optional_fields=optional_fields, additional_fields=additional_fields
+        ).render()
 
-        # make sure we can use them if they are None.
-        if not volatile_fields:
-            volatile_fields = []
-        # end if
-        if not optional_fields:
-            optional_fields = []
-        # end if
-        if not additional_fields:
-            additional_fields = []
-        # end if
-
-        missing = []
-        mismatched = []
-        excess = []
-        for key, value in expected.items():
-            if key not in result and key not in optional_fields:
-                missing.append(key)
-            elif value != result[key] and key not in volatile_fields:
-                mismatched.append((key, f'{safe_repr(key)}, expected: {safe_repr(value)}, actual: {safe_repr(result[key])}'))
-            # end if
-        for key, value in result.items():
-            if key not in result and key not in additional_fields:
-                excess.append(key)
-            # end if
-        # end for
-
-        if not (missing or mismatched or excess):
-            # okey, all is fine.
+        if status:
+            # everything is fine
+            if print_correct:
+                print(DictDiffer.create_diff(lines_a, lines_b))
             return
         # end if
 
-        standard_msg = ''
-
-        if missing:
-            standard_msg = 'Missing: %s' % ','.join(safe_repr(m) for m in missing)
+        try:
+            from teamcity import is_running_under_teamcity
+            from teamcity.diff_tools import EqualsAssertionError
+        except ImportError:
+            is_running_under_teamcity = lambda: False
         # end if
 
-        if mismatched:
-            if standard_msg:
-                standard_msg += '; '
-            # end if
-            standard_msg += 'Mismatched: %s' % ','.join(safe_repr(m[0]) for m in mismatched)
+        msg = self._formatMessage(msg, 'advanced comparison resulted in a failure.'),
+
+        if is_running_under_teamcity():
+            error = EqualsAssertionError("\n".join(lines_a), "\n".join(lines_b), msg)
+            assert error.can_be_serialized()
+            raise error
         # end if
 
-        if excess:
-            if standard_msg:
-                standard_msg += '; '
-            # end if
-            standard_msg += 'Excess: %s' % ','.join(excess)
-        # end if
-
-
-        import pprint
-        import difflib
-        diff = ('\n' + '\n'.join(difflib.ndiff(
-                       pprint.pformat(expected).splitlines(),
-                       pprint.pformat(result).splitlines())))
-        # standard_msg = standard_msg + diff
-        # standard_msg = self._truncateMessage(standard_msg, diff)
-        self.assertEqual(
-            json.dumps(expected, indent=2, sort_keys=True),
-            json.dumps(result, indent=2, sort_keys=True),
-            msg=self._formatMessage(msg, standard_msg),
-        )
-        # self.fail(self._formatMessage(msg, standard_msg) +'\n'+ diff)
+        # else-fallback:
+        self.assertEqual(status, DictDiffer.Status.SUCCESS, msg=DictDiffer.create_diff(lines_a, lines_b) + '\n' + msg)
     # end def
 # end class

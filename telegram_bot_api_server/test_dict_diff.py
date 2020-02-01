@@ -46,7 +46,12 @@ class DictDiffer(object):
 
     def to_string(self) -> Tuple[Status, str]:
         success, lines_a, lines_b = self.render()
-        return success, ('\n' + '\n'.join(difflib.ndiff(lines_a, lines_b)))
+        return success, self.create_diff(lines_a, lines_b)
+    # end def
+
+    @staticmethod
+    def create_diff(lines_a, lines_b):
+        return '\n'.join(difflib.ndiff(lines_a, lines_b))
     # end def
 
     def render(self) -> Tuple[Status, List[str], List[str]]:
