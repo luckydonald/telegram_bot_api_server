@@ -1017,10 +1017,15 @@ async def to_web_api(
             answer: TPollAnswer
             poll_options[answer.option] = PollOption(answer.text, voter_count=0)
         # end def
-        # now iteraterate through the results to add the voter count
-        for result in o.results.results:
+
+        correct_answer = None
+        # now iterate through the results to add the voter count (and the correct answer)
+        for i, result in enumerate(o.results.results):
             result: TPollAnswerVoters
             poll_options[result.option].voter_count = result.voters
+            if result.correct:
+                correct_answer = i
+            # end if
         # end def
 
         return Poll(
@@ -1030,9 +1035,9 @@ async def to_web_api(
             total_voter_count=o.results.total_voters,
             is_closed=o.poll.closed,
             is_anonymous=(not o.poll.public_voters) if o.poll.public_voters is not None else None,
-            type='regular',
+            type='quiz' if o.poll.quiz else 'regular',
             allows_multiple_answers=o.poll.multiple_choice,
-            correct_option_id=None,
+            correct_option_id=correct_answer,
         )
     if isinstance(o, datetime):
         return int(o.timestamp())
