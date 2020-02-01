@@ -955,53 +955,53 @@ class MyTestCase(asynctest.TestCase):
         o = UpdateNewChannelMessage(
             message=Message(
                 id=3573,
-                to_id=PeerChannel(
-                    channel_id=1032895287),
-                    date=datetime.datetime(2020, 1, 31, 10, 58, 57, tzinfo=datetime.timezone.utc),
-                    message='',
-                    out=True,
-                    mentioned=False,
-                    media_unread=False,
-                    silent=False,
-                    post=False,
-                    from_scheduled=False,
-                    legacy=False,
-                    edit_hide=False,
-                    from_id=10717954,
-                    fwd_from=None,
-                    via_bot_id=None,
-                    reply_to_msg_id=None,
-                    media=MessageMediaPoll(
-                        poll=Poll(
-                            id=5305467573402337281,
-                            question='LOOK MOM A PUBLIC QUIZZZ',
-                            answers=[
-                                PollAnswer(text='QUIZZZzzzz', option=b'0'),
-                                PollAnswer(text='QUI💤', option=b'1'),
-                                PollAnswer(text='QUI😴', option=b'2')
-                            ],
-                            closed=False,
-                            public_voters=True,
-                            multiple_choice=False,
-                            quiz=True),
-                            results=PollResults(
-                                min=False,
-                                results=[],
-                                total_voters=0,
-                                recent_voters=[]
-                            ),
+                to_id=PeerChannel(channel_id=1032895287),
+                date=datetime.datetime(2020, 1, 31, 10, 58, 57, tzinfo=datetime.timezone.utc),
+                message='',
+                out=True,
+                mentioned=False,
+                media_unread=False,
+                silent=False,
+                post=False,
+                from_scheduled=False,
+                legacy=False,
+                edit_hide=False,
+                from_id=10717954,
+                fwd_from=None,
+                via_bot_id=None,
+                reply_to_msg_id=None,
+                media=MessageMediaPoll(
+                    poll=Poll(
+                        id=5305467573402337281,
+                        question='LOOK MOM A PUBLIC QUIZZZ',
+                        answers=[
+                            PollAnswer(text='QUIZZZzzzz', option=b'0'),
+                            PollAnswer(text='QUI💤', option=b'1'),
+                            PollAnswer(text='QUI😴', option=b'2')
+                        ],
+                        closed=False,
+                        public_voters=True,
+                        multiple_choice=False,
+                        quiz=True
                     ),
-                    reply_markup=None,
-                    entities=[],
-                    views=None,
-                    edit_date=None,
-                    post_author=None,
-                    grouped_id=None,
-                    restriction_reason=[],
+                    results=PollResults(
+                        min=False,
+                        results=[],
+                        total_voters=0,
+                        recent_voters=[]
+                    ),
                 ),
-                pts=4402,
-                pts_count=1,
-            )
+                reply_markup=None,
+                entities=[],
+                views=None,
+                edit_date=None,
+                post_author=None,
+                grouped_id=None,
+                restriction_reason=[],
+            ),
+            pts=4402,
+            pts_count=1,
+        )
 
         expected = {
             "message": {
