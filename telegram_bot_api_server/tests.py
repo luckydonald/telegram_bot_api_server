@@ -63,6 +63,8 @@ class FakeClient(object):
 
 
 class MyTestCase(asynctest.TestCase):
+    array_compare = DictDiffer.unittest_compare()
+
     async def test_supergroup_add_other_user(self):
         event = UpdateNewChannelMessage(
             message=MessageService(
@@ -170,7 +172,7 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(event, client)
         result = result.to_array()
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_channel_message(self):
@@ -214,7 +216,7 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(event, client)
         result = result.to_array()
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_channel_message_2(self):
@@ -261,7 +263,7 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(event, client)
         result = result.to_array()
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_channel_message_2_forward_from_channel(self):
@@ -380,7 +382,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_channel_forward_from_user(self):
@@ -462,7 +464,6 @@ class MyTestCase(asynctest.TestCase):
             "update_id": 445804458
         }
 
-        from .serializer import to_web_api
         result = await to_web_api(event, client)
         result = result.to_array()
 
@@ -474,7 +475,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_channel_forward_video_from_channel_with_signature(self):
@@ -600,7 +601,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_channel_post_with_signature(self):
@@ -644,7 +645,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_reply_to_user_mention(self):
@@ -724,7 +725,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_reply_to_text(self):
@@ -790,7 +791,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_4_6_anon_poll_update(self):
@@ -855,7 +856,7 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(o, client)
         result = result.to_array()
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_4_6_nonanon_poll_creation(self):
@@ -947,7 +948,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        await self.array_compare(expected, result)
+        self.array_compare(expected, result)
     # end def
 
     async def test_4_6_nonanon_quiz(self):
@@ -1053,7 +1054,7 @@ class MyTestCase(asynctest.TestCase):
         result = await to_web_api(o, client)
         result = result.to_array()
 
-        await self.array_compare(expected, result, volatile_fields=['update_id'])
+        self.array_compare(expected, result, volatile_fields=['update_id'])
     # end def
 
     async def test_4_6_nonanon_poll_creation(self):
@@ -1144,7 +1145,7 @@ class MyTestCase(asynctest.TestCase):
         #     del expected_photo['file_id']
         # # end if
 
-        await self.array_compare(expected, result, volatile_fields=['update_id', 'message.poll.correct_option_id'])
+        self.array_compare(expected, result, volatile_fields=['update_id', 'message.poll.correct_option_id'])
     # end def
 
     async def test_4_6_(self):
