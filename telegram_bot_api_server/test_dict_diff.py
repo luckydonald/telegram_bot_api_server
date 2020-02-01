@@ -1,3 +1,5 @@
+import difflib
+import unittest
 from enum import IntFlag, auto
 from typing import List, Tuple, Optional
 
@@ -18,7 +20,7 @@ class DictDiffer(object):
         self.b = b
     # end def
 
-    def format_dict_line(self, key: str, value: List, comma=True):
+    def format_dict_line(self, key: str, value: List):
         result = [f'{key!r}: {value[0]}']
         if len(value) == 1:
             return result
@@ -35,6 +37,17 @@ class DictDiffer(object):
         FAIL_MISSING = auto()
         FAIL_EXTRA = auto()
     # end class
+
+    def print(self) -> Status:
+        success, text = self.to_string()
+        print(text)
+        return success
+    # end def
+
+    def to_string(self) -> Tuple[Status, str]:
+        success, lines_a, lines_b = self.render()
+        return success, ('\n' + '\n'.join(difflib.ndiff(lines_a, lines_b)))
+    # end def
 
     def render(self) -> Tuple[Status, List[str], List[str]]:
         """
@@ -72,6 +85,9 @@ class DictDiffer(object):
                     diff = DictDiffer(value_a, value_b, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields)
                     success, list_a, list_b = diff.render()
                     volatile_field_saved_the_day = not success and key_route in self.volatile_fields
+                    if not success and not volatile_field_saved_the_day:
+                        is_wrong |= self.Status.FAIL_DIFFERENT
+                    # end if
 
                     assert len(list_a) > 0
                     assert len(list_b) > 0
@@ -84,11 +100,11 @@ class DictDiffer(object):
                         # if they are not the same, we check if we have to add a note
                         if volatile_field_saved_the_day:  # the `and` can be read as `but`.
                             # it failed, but that is allowed
-                            result_a.append(f'{key!r}: {list_a[0]},  # volatile')
-                            result_b.append(f'{key!r}: {list_b[0]},  # volatile')
+                            result_a.append(f'  {key!r}: {list_a[0]},  # volatile')
+                            result_b.append(f'  {key!r}: {list_b[0]},  # volatile')
                         else:
-                            result_a.append(f'{key!r}: {list_a[0]},')
-                            result_b.append(f'{key!r}: {list_b[0]},')
+                            result_a.append(f'  {key!r}: {list_a[0]},')
+                            result_b.append(f'  {key!r}: {list_b[0]},')
                         # end if
                     else:
                         # if any of those is not a single line, make it multiline,
@@ -106,9 +122,9 @@ class DictDiffer(object):
                             # first, make the current line, like `"asd": {`.
                             # also if there is an error inside, but we are marked volatile, we can ignore that.
                             if volatile_field_saved_the_day:
-                                result_x.append(f'{key!r}: {list_x[0]}  # volatile field')
+                                result_x.append(f'  {key!r}: {list_x[0]}  # volatile field')
                             else:
-                                result_x.append(f'{key!r}: {list_x[0]}')
+                                result_x.append(f'  {key!r}: {list_x[0]}')
                             # end if
 
                             # add all lines in the middle, adding spaces for indention.
@@ -120,7 +136,7 @@ class DictDiffer(object):
 
                             # now if we have a last element we add that, and the closing komma, like `},`
                             if len(list_x) > 1:
-                                result_x.append(f'{list_x[-1]},')
+                                result_x.append(f'  {list_x[-1]},')
                             # end if
                             return result_x
                         # end def
@@ -142,9 +158,9 @@ class DictDiffer(object):
                     success, list_a, _ = diff.render()
                     assert success  # as it is diffing two times the exactly same stuff.
                     if key_route in self.optional_fields:  # so all is okey.
-                        result_a.append(f'{key!r}: {list_a[0]}  # optional field')
+                        result_a.append(f'  {key!r}: {list_a[0]}  # optional field')
                     else:
-                        result_a.append(f'{key!r}: {list_a[0]}')
+                        result_a.append(f'  {key!r}: {list_a[0]}')
                         is_wrong |= self.Status.FAIL_MISSING
                     # end if
 
@@ -157,7 +173,7 @@ class DictDiffer(object):
 
                     # now if we have a last element we add that, and the closing komma, like `},`
                     if len(list_a) > 1:
-                        result_a.append(f'{list_a[-1]},')
+                        result_a.append(f'  {list_a[-1]},')
                     # end if
                 # end if
             else:  # `self.a` has no key
@@ -170,10 +186,10 @@ class DictDiffer(object):
                     diff = DictDiffer(value_b, value_b, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields)
                     success, list_b, _ = diff.render()
                     assert success  # as it is diffing two times the exactly same stuff.
-                    if key_route in self.optional_fields:  # so all is okey.
-                        result_b.append(f'{key!r}: {list_b[0]}  # optional field')
+                    if key_route in self.additional_fields:  # so all is okey.
+                        result_b.append(f'  {key!r}: {list_b[0]}  # additional field')
                     else:
-                        result_b.append(f'{key!r}: {list_b[0]}')
+                        result_b.append(f'  {key!r}: {list_b[0]}')
                         is_wrong |= self.Status.FAIL_EXTRA
                     # end if
 
@@ -186,7 +202,7 @@ class DictDiffer(object):
 
                     # now if we have a last element we add that, and the closing komma, like `},`
                     if len(list_b) > 1:
-                        result_b.append(f'{list_b[-1]},')
+                        result_b.append(f'  {list_b[-1]},')
                     # end if
                 else:
                     # the key is no where to be found?!?
@@ -200,13 +216,74 @@ class DictDiffer(object):
     # end def
 
     @staticmethod
-    def _prepare_fields(route: str, fields: List[str]):
+    def _prepare_fields(route: str, fields: Optional[List[str]]) -> List[str]:
         new_fields = []
-        length = len(route)
-        for field in fields:
-            assert field.startswith(route)
-            new_fields.append(field[length:])
-        # end for
+        if fields:
+            length = len(route)
+            for field in fields:
+                if not field.startswith(route):
+                    continue  # don't append => ignore
+                # end if
+                new_fields.append(field[length:])
+            # end for
+        # end if
         return new_fields
     # end if
 # end class
+
+
+class DictDifferSimpleTestCase(unittest.TestCase):
+    def test_same(self):
+        diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'abc', 'b': 'abc'})
+        # success, lines_a, lines_b = diff.render()
+        success = diff.print()
+        self.assertTrue(success)
+    # end def
+
+    def test_fail_diff(self):
+        diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'xyz', 'b': 'abc'})
+        # success, lines_a, lines_b = diff.render()
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.FAIL_DIFFERENT)
+    # end def
+
+    def test_fail_missing(self):
+        diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'abc'})
+        # success, lines_a, lines_b = diff.render()
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.FAIL_MISSING)
+    # end def
+
+    def test_fail_extra(self):
+        diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'abc', 'b': 'abc', 'c': 'abc'})
+        # success, lines_a, lines_b = diff.render()
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.FAIL_EXTRA)
+    # end def
+
+    def test_allowed_diff(self):
+        diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'xyz', 'b': 'abc'}, volatile_fields=['a'])
+        # success, lines_a, lines_b = diff.render()
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.SUCCESS)
+    # end def
+
+    def test_allowed_missing(self):
+        diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'abc'}, optional_fields=['b'])
+        # success, lines_a, lines_b = diff.render()
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.SUCCESS)
+    # end def
+
+    def test_allowed_extra(self):
+        diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'abc', 'b': 'abc', 'c': 'abc'}, additional_fields=['c'])
+        # success, lines_a, lines_b = diff.render()
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.SUCCESS)
+    # end def
+# end class
+
+
+if __name__ == '__main__':
+    unittest.main()
+# end if
