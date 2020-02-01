@@ -1,6 +1,5 @@
 import json
 import unittest
-from enum import IntFlag, auto
 
 import asynctest
 
@@ -10,6 +9,7 @@ from telethon.tl.patched import Message
 import datetime
 from typing import Dict, Any, Tuple
 
+from test_dict_diff import DictDiffer
 from telegram_bot_api_server import serializer
 from telegram_bot_api_server.serializer import to_web_api
 
@@ -1161,6 +1161,7 @@ class MyTestCase(asynctest.TestCase):
         result = result.to_array()
 
         await self.array_compare(expected, result)
+    # end def
 
     async def array_compare(
         self,
@@ -1172,50 +1173,7 @@ class MyTestCase(asynctest.TestCase):
         additional_fields: Optional[List[str]] = None,
         print_correct: bool = True,
     ):
-        """
-        Checks whether dictionary is a equal, while allowing to specify fields to skip.
-
-        Format of `volatile_fields`, `optional_fields` and `additional_fields`:
-        Using the key of the field. E.g. `volatile_fields=['date']` with an dict like `{'important': 'text', 'date': 1580479629}`
-
-        :param expected: Input what we want to have,
-        :param result: What we got instead
-        :param msg: Provide some insights what is failing.
-        :param volatile_fields: A list of fields which needs to be there, but can be any value. See format above.
-        :param optional_fields: A list of fields which doesn't need to be there, which are allowed to be missing in `result`. See format above.
-        :param additional_fields: A list of fields which are allowed to be here regardless of them not being specified in `expected`. See format above.
-        :param print_correct: If it should be printed if it is correct.
-        """
-        from test_dict_diff import DictDiffer
-
-        status, lines_a, lines_b = DictDiffer(
-            a=expected, b=result,
-            volatile_fields=volatile_fields, optional_fields=optional_fields, additional_fields=additional_fields
-        ).render()
-
-        if status:
-            # everything is fine
-            if print_correct:
-                print(DictDiffer.create_diff(lines_a, lines_b))
-            return
-        # end if
-
-        try:
-            from teamcity import is_running_under_teamcity
-            from teamcity.diff_tools import EqualsAssertionError
-        except ImportError:
-            is_running_under_teamcity = lambda: False
-        # end if
-
-        msg = self._formatMessage(msg, 'advanced comparison resulted in a failure.'),
-
-        if is_running_under_teamcity():
-            error = EqualsAssertionError("\n".join(lines_a), "\n".join(lines_b), msg)
-            assert error.can_be_serialized()
-            raise error
-        # end if
-
-        # else-fallback:
-        self.assertEqual(status, DictDiffer.Status.SUCCESS, msg=DictDiffer.create_diff(lines_a, lines_b) + '\n' + msg)
-    # end def
+        return DictDiffer.unittest_compare(
+            expected, result, msg, volatile_fields, optional_fields, additional_fields, print_correct
+        )
 # end class

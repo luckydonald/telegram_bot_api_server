@@ -1,7 +1,7 @@
 import difflib
 import unittest
 from enum import IntFlag, auto
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Any, Callable
 
 
 class DictDiffer(object):
@@ -320,6 +320,79 @@ class DictDiffer(object):
         # end if
         return new_fields
     # end if
+
+    @classmethod
+    def unittest_compare(
+        cls,
+    ) -> Callable[
+        [
+            Any,
+            Dict[str, Any],
+            Dict[str, Any],
+            Optional[str],
+            Optional[List[str]],
+            Optional[List[str]],
+            Optional[List[str]],
+            bool,
+        ],
+        None,
+    ]:
+        def unittest_compare_inner(
+            unittest_self: Any,
+            expected: Dict[str, Any],
+            result: Dict[str, Any],
+            msg: Optional[str] = 'real one vs generated one',
+            volatile_fields: Optional[List[str]] = None,
+            optional_fields: Optional[List[str]] = None,
+            additional_fields: Optional[List[str]] = None,
+            print_correct: bool = True,
+        ):
+            """
+            Checks whether dictionary is a equal, while allowing to specify fields to skip.
+
+            Format of `volatile_fields`, `optional_fields` and `additional_fields`:
+            Using the key of the field. E.g. `volatile_fields=['date']` with an dict like `{'important': 'text', 'date': 1580479629}`
+
+            :param expected: Input what we want to have,
+            :param result: What we got instead
+            :param msg: Provide some insights what is failing.
+            :param volatile_fields: A list of fields which needs to be there, but can be any value. See format above.
+            :param optional_fields: A list of fields which doesn't need to be there, which are allowed to be missing in `result`. See format above.
+            :param additional_fields: A list of fields which are allowed to be here regardless of them not being specified in `expected`. See format above.
+            :param print_correct: If it should be printed if it is correct.
+            """
+            status, lines_a, lines_b = cls(
+                a=expected, b=result,
+                volatile_fields=volatile_fields, optional_fields=optional_fields, additional_fields=additional_fields
+            ).render()
+
+            if status:
+                # everything is fine
+                if print_correct:
+                    print(DictDiffer.create_diff(lines_a, lines_b))
+                return
+            # end if
+
+            try:
+                from teamcity import is_running_under_teamcity
+                from teamcity.diff_tools import EqualsAssertionError
+            except ImportError:
+                is_running_under_teamcity = lambda: False
+            # end if
+
+            msg = unittest_self._formatMessage(msg, 'advanced comparison resulted in a failure.'),
+
+            if is_running_under_teamcity():
+                error = EqualsAssertionError("\n".join(lines_a), "\n".join(lines_b), msg)
+                assert error.can_be_serialized()
+                raise error
+            # end if
+
+            # else-fallback:
+            unittest_self.assertEqual(status, DictDiffer.Status.SUCCESS, msg=DictDiffer.create_diff(lines_a, lines_b) + '\n' + msg)
+        # end def
+        return unittest_compare_inner
+    # end def
 # end class
 
 
