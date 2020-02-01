@@ -219,12 +219,11 @@ class DictDiffer(object):
     def _prepare_fields(route: str, fields: Optional[List[str]]) -> List[str]:
         new_fields = []
         if fields:
-            length = len(route)
             for field in fields:
                 if not field.startswith(route):
                     continue  # don't append => ignore
                 # end if
-                new_fields.append(field[length:])
+                new_fields.append(field)
             # end for
         # end if
         return new_fields
@@ -235,49 +234,113 @@ class DictDiffer(object):
 class DictDifferSimpleTestCase(unittest.TestCase):
     def test_same(self):
         diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'abc', 'b': 'abc'})
-        # success, lines_a, lines_b = diff.render()
         success = diff.print()
         self.assertTrue(success)
     # end def
 
     def test_fail_diff(self):
         diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'xyz', 'b': 'abc'})
-        # success, lines_a, lines_b = diff.render()
         success = diff.print()
         self.assertEqual(success, DictDiffer.Status.FAIL_DIFFERENT)
     # end def
 
     def test_fail_missing(self):
         diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'abc'})
-        # success, lines_a, lines_b = diff.render()
         success = diff.print()
         self.assertEqual(success, DictDiffer.Status.FAIL_MISSING)
     # end def
 
     def test_fail_extra(self):
         diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'abc', 'b': 'abc', 'c': 'abc'})
-        # success, lines_a, lines_b = diff.render()
         success = diff.print()
         self.assertEqual(success, DictDiffer.Status.FAIL_EXTRA)
     # end def
 
     def test_allowed_diff(self):
         diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'xyz', 'b': 'abc'}, volatile_fields=['a'])
-        # success, lines_a, lines_b = diff.render()
         success = diff.print()
         self.assertEqual(success, DictDiffer.Status.SUCCESS)
     # end def
 
     def test_allowed_missing(self):
         diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'abc'}, optional_fields=['b'])
-        # success, lines_a, lines_b = diff.render()
         success = diff.print()
         self.assertEqual(success, DictDiffer.Status.SUCCESS)
     # end def
 
     def test_allowed_extra(self):
         diff = DictDiffer({'a': 'abc', 'b': 'abc'}, {'a': 'abc', 'b': 'abc', 'c': 'abc'}, additional_fields=['c'])
-        # success, lines_a, lines_b = diff.render()
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.SUCCESS)
+    # end def
+# end class
+
+
+
+
+class DictDifferNestedTestCase(unittest.TestCase):
+    def test_same(self):
+        diff = DictDiffer(
+            {'a': {'b': {'c': 'abc', 'd': 'abc', 'e': 'abc'}}},
+            {'a': {'b': {'c': 'abc', 'd': 'abc', 'e': 'abc'}}}
+        )
+        success = diff.print()
+        self.assertTrue(success)
+    # end def
+
+    def test_fail_diff(self):
+        diff = DictDiffer(
+            {'a': {'b': {'c': 'abc', 'd': 'abc', 'e': 'abc'}}},
+            {'a': {'b': {'c': 'abc', 'd': 'xyz', 'e': 'abc'}}}
+        )
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.FAIL_DIFFERENT)
+    # end def
+
+    def test_fail_missing(self):
+        diff = DictDiffer(
+            {'a': {'b': {'c': 'abc', 'd': 'abc', 'e': 'abc'}}},
+            {'a': {'b': {'c': 'abc', 'e': 'abc'}}}
+        )
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.FAIL_DIFFERENT)
+    # end def
+
+    def test_fail_extra(self):
+        diff = DictDiffer(
+            {'a': {'b': {'c': 'abc', 'd': 'abc', 'e': 'abc'}}},
+            {'a': {'b': {'c': 'abc', 'd': 'abc', 'e': 'abc', 'z': 'extra'}}}
+        )
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.FAIL_DIFFERENT)
+    # end def
+
+    def test_allowed_diff(self):
+        diff = DictDiffer(
+            {'a': {'b': {'c': 'abc', 'd': 'abc', 'e': 'abc'}}},
+            {'a': {'b': {'c': 'abc', 'd': 'xyz', 'e': 'abc'}}},
+            volatile_fields=['a.b.d']
+        )
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.SUCCESS)
+    # end def
+
+    def test_allowed_missing(self):
+        diff = DictDiffer(
+            {'a': {'b': {'c': 'abc', 'd': 'abc', 'e': 'abc'}}},
+            {'a': {'b': {'c': 'abc', 'e': 'abc'}}},
+            optional_fields=['a.b.e']
+        )
+        success = diff.print()
+        self.assertEqual(success, DictDiffer.Status.SUCCESS)
+    # end def
+
+    def test_allowed_extra(self):
+        diff = DictDiffer(
+            {'a': {'b': {'c': 'abc', 'd': 'abc', 'e': 'abc'}}},
+            {'a': {'b': {'c': 'abc', 'd': 'abc', 'e': 'abc', 'z': 'extra'}}},
+            additional_fields=['a.b.z']
+        )
         success = diff.print()
         self.assertEqual(success, DictDiffer.Status.SUCCESS)
     # end def
