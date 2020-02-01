@@ -56,11 +56,100 @@ class DictDiffer(object):
         if isinstance(self.a, dict):
             assert isinstance(self.b, dict)
             return self.render_dict()
+        elif isinstance(self.a, list):
+            assert isinstance(self.b, list)
+            return self.render_list()
         elif isinstance(self.a, (int, bool, float, str)):
             assert isinstance(self.b, (int, bool, float, str))
             return self.Status.SUCCESS if self.a == self.b else self.Status.FAIL_DIFFERENT, [repr(self.a)], [repr(self.b)]
+        else:
+            raise TypeError('Not supported.')
         # end if
     # end def
+
+    def render_list(self) -> Tuple[Status, List[str], List[str]]:
+        """
+        :return: (is_wrong, lines_a, lines_b)
+        """
+        result_a: List[str] = ['[']  # start the dict
+        result_b: List[str] = ['[']  # start the dict
+
+        i_a: int = 0  # used to calulate missing fields
+        i_b: int = 0  # used to calulate missing fields
+        i: int = 0
+
+        is_wrong: DictDiffer.Status = self.Status.SUCCESS
+
+        len_a = len(self.a)
+        len_b = len(self.b)
+
+        if len_a > len_b:
+            is_wrong |= self.Status.FAIL_MISSING
+        # end if
+        if len_a < len_b:
+            is_wrong |= self.Status.FAIL_EXTRA
+        # end if
+
+        while True:
+            key_route = f'{self.route}{i!s}'  # remember to add '.' when calling recursive.
+            value_a = self.a[i_a]
+            value_b = self.b[i_b]
+
+            # no success => this list is somehow different.
+            success, list_a, list_b = DictDiffer(value_a, value_b, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields).render()
+
+            volatile_field_saved_the_day = False
+            if not success:
+                if key_route in self.volatile_fields:
+                     volatile_field_saved_the_day = True
+                else:
+                    is_wrong |= self.Status.FAIL_DIFFERENT
+                # end if
+            # end if
+
+            def add_multiline(
+                result_x: List[str], list_x: List[str], volatile_field_saved_the_day: bool
+            ) -> List[str]:
+                """modifies the list to have the needed elements"""
+                assert len(list_x) > 1  # we need to handle this: Single line values like `True` or `123`.
+
+                # first, make the current line, like `"asd": {`.
+                # also if there is an error inside, but we are marked volatile, we can ignore that.
+                if volatile_field_saved_the_day:
+                    result_x.append(f'  {list_x[0]}  # volatile field')
+                else:
+                    result_x.append(f'  {list_x[0]}')
+                # end if
+
+                # add all lines in the middle, adding spaces for indention.
+                # the loops will not run if we have less than 3 elements,
+                # i.e. nothing between first and last line.
+                for elem in list_x[1:-1]:
+                    result_x.append(f'  {elem}')
+                # end for
+
+                # now if we have a last element we add that, and the closing komma, like `},`
+                if len(list_x) > 1:
+                    result_x.append(f'  {list_x[-1]},')
+                # end if
+                return result_x
+
+            # end def
+
+            result_a = add_multiline(result_a, list_a, volatile_field_saved_the_day)
+            result_b = add_multiline(result_b, list_b, volatile_field_saved_the_day)
+
+            i += 1
+            if i >= len_a or i >= len_b:
+                break
+            # end if
+        # end while
+
+        result_a.append(']')  # close the list
+        result_b.append(']')  # close the list
+        return is_wrong, result_a, result_b
+    # end def
+
 
     def render_dict(self) -> Tuple[Status, List[str], List[str]]:
         """
@@ -75,15 +164,14 @@ class DictDiffer(object):
         is_wrong: DictDiffer.Status = self.Status.SUCCESS
 
         for key in keys:
-            key_route = f'{self.route}{key}'  # remember to add '.' for recursive calls.
+            key_route = f'{self.route}{key}'  # remember to add '.' when calling recursive.
             if key in self.a:
                 if key in self.b:
                     # a and b have the key
                     # => we need to handle them being equal or in `self.volatile_fields`, i.e. that changed values are okey.
                     value_a = self.a[key]
                     value_b = self.b[key]
-                    diff = DictDiffer(value_a, value_b, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields)
-                    success, list_a, list_b = diff.render()
+                    success, list_a, list_b = DictDiffer(value_a, value_b, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields).render()
                     volatile_field_saved_the_day = not success and key_route in self.volatile_fields
                     if not success and not volatile_field_saved_the_day:
                         is_wrong |= self.Status.FAIL_DIFFERENT
@@ -154,8 +242,7 @@ class DictDiffer(object):
 
                     # faking a diff here, to get the print output...
                     value_a = self.a[key]
-                    diff = DictDiffer(value_a, value_a, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields)
-                    success, list_a, _ = diff.render()
+                    success, list_a, _ = DictDiffer(value_a, value_a, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields).render()
                     assert success  # as it is diffing two times the exactly same stuff.
                     if key_route in self.optional_fields:  # so all is okey.
                         result_a.append(f'  {key!r}: {list_a[0]}  # optional field')
@@ -183,8 +270,7 @@ class DictDiffer(object):
 
                     # faking a diff here, to get the print output...
                     value_b = self.b[key]
-                    diff = DictDiffer(value_b, value_b, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields)
-                    success, list_b, _ = diff.render()
+                    success, _, list_b = DictDiffer(value_b, value_b, route=key_route + '.', volatile_fields=self.volatile_fields, optional_fields=self.optional_fields, additional_fields=self.additional_fields).render()
                     assert success  # as it is diffing two times the exactly same stuff.
                     if key_route in self.additional_fields:  # so all is okey.
                         result_b.append(f'  {key!r}: {list_b[0]}  # additional field')
@@ -210,6 +296,7 @@ class DictDiffer(object):
                 # end if
             # end if
         # end for
+
         result_a.append('}')  # close the dict
         result_b.append('}')  # close the dict
         return is_wrong, result_a, result_b
