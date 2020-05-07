@@ -32,7 +32,89 @@ __all__ = [
 routes = Blueprint()  # APIRouter is basically a Blueprint
 
 
-@routes.api_route('/{token}/kickChatMember', methods=['GET', 'POST'], tags=['official'])
+def new_edit_permissions(bot, entity, user, until_date, permissions: ChatPermissionsModel):
+    try:
+        result = await bot.edit_permissions(
+            entity=entity,
+            user=user,  # is chat default
+            until_date=None,  # is chat default
+            view_messages = True,
+            send_messages = permissions.can_send_messages,
+            send_media = permissions.can_send_media_messages,
+            send_stickers = permissions.can_send_other_messages,
+            send_gifs = permissions.can_send_other_messages,
+            send_games = permissions.can_send_other_messages,
+            send_inline = permissions.can_send_other_messages,
+            send_polls = permissions.can_send_polls,
+            change_info = permissions.can_change_info,
+            invite_users = permissions.can_invite_users,
+            pin_messages = permissions.can_pin_messages,
+            embed_links = permissions.can_add_web_page_previews,
+        )
+        logger.warning('It worked, so telethon was updated? Maintainer, remove compatibility workaround, pls.')
+    except TypeError:
+
+        from telethon import helpers
+        from telethon.tl import types
+        from telethon.tl import functions
+
+        entity = entity
+        view_messages = True
+        send_messages = permissions.can_send_messages
+        send_media = permissions.can_send_media_messages
+        send_stickers = permissions.can_send_other_messages
+        send_gifs = permissions.can_send_other_messages
+        send_games = permissions.can_send_other_messages
+        send_inline = permissions.can_send_other_messages
+        send_polls = permissions.can_send_polls
+        change_info = permissions.can_change_info
+        invite_users = permissions.can_invite_users
+        pin_messages = permissions.can_pin_messages
+        embed_links = permissions.can_add_web_page_previews
+
+        entity=await bot.get_input_entity(entity)
+        ty = helpers._entity_type(entity)
+        if ty != helpers._EntityType.CHANNEL:
+            raise ValueError('You must pass either a channel or a supergroup')
+
+        rights = types.ChatBannedRights(
+            until_date=until_date,
+            view_messages=not view_messages,
+            send_messages=not send_messages,
+            send_media=not send_media,
+            send_stickers=not send_stickers,
+            send_gifs=not send_gifs,
+            send_games=not send_games,
+            send_inline=not send_inline,
+            send_polls=not send_polls,
+            change_info=not change_info,
+            invite_users=not invite_users,
+            pin_messages=not pin_messages,
+            embed_links=not embed_links,
+        )
+
+        if user is None:
+            return await bot(functions.messages.EditChatDefaultBannedRightsRequest(
+                peer=entity,
+                banned_rights=rights
+            ))
+
+        user = await bot.get_input_entity(user)
+        ty = helpers._entity_type(user)
+        if ty != helpers._EntityType.USER:
+            raise ValueError('You must pass a user entity')
+
+        if isinstance(user, types.InputPeerSelf):
+            raise ValueError('You cannot restrict yourself')
+
+        result = await bot(functions.channels.EditBannedRequest(
+            channel=entity,
+            user_id=user,
+            banned_rights=rights
+        ))
+    # end try
+
+@routes.api_route('/{token}/kickChatMember', methods=['GET', 'POST'], tags=['official', 'chats'])
 async def kick_chat_member(
     token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description='Unique identifier for the target group or username of the target supergroup or channel (in the format @channelusername)'),
@@ -57,9 +139,10 @@ async def kick_chat_member(
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    result = await bot.kick_chat_member(
+    result = await bot.edit_permissions(
         entity=entity,
-        user_id=user_id,
+        user=user_id,
+        view_messages=False,
         until_date=until_date,
     )
     data = await to_web_api(result, bot)
@@ -67,40 +150,42 @@ async def kick_chat_member(
 # end def
 
 
-@routes.api_route('/{token}/unbanChatMember', methods=['GET', 'POST'], tags=['official'])
-async def unban_chat_member(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target group or username of the target supergroup or channel (in the format @username)'),
-    user_id: int = Query(..., description='Unique identifier of the target user'),
-) -> JSONableResponse:
-    """
-    Use this method to unban a previously kicked user in a supergroup or channel. The user will not return to the group or channel automatically, but will be able to join via link, etc. The bot must be an administrator for this to work. Returns True on success.
+def __ignore__():
+    @routes.api_route('/{token}/unbanChatMember', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def unban_chat_member(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target group or username of the target supergroup or channel (in the format @username)'),
+        user_id: int = Query(..., description='Unique identifier of the target user'),
+    ) -> JSONableResponse:
+        """
+        Use this method to unban a previously kicked user in a supergroup or channel. The user will not return to the group or channel automatically, but will be able to join via link, etc. The bot must be an administrator for this to work. Returns True on success.
 
-    https://core.telegram.org/bots/api#unbanchatmember
-    """
+        https://core.telegram.org/bots/api#unbanchatmember
+        """
 
-    from ....main import _get_bot
-    bot = await _get_bot(token)
+        from ....main import _get_bot
+        bot = await _get_bot(token)
 
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
 
-    result = await bot.unban_chat_member(
-        entity=entity,
-        user_id=user_id,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
+        result = await bot.edit_permissions(
+            entity=entity,
+            user=user_id,
+            view_messages=True,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
 
 
-@routes.api_route('/{token}/restrictChatMember', methods=['GET', 'POST'], tags=['official'])
+@routes.api_route('/{token}/restrictChatMember', methods=['GET', 'POST'], tags=['official', 'chats'])
 async def restrict_chat_member(
     token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername)'),
@@ -130,67 +215,69 @@ async def restrict_chat_member(
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    result = await bot.restrict_chat_member(
+    result = await new_edit_permissions(
+        bot,
         entity=entity,
-        user_id=user_id,
-        permissions=permissions,
+        user=user_id,
         until_date=until_date,
+        permissions=permissions,
     )
     data = await to_web_api(result, bot)
     return r_success(data.to_array())
 # end def
 
 
-@routes.api_route('/{token}/promoteChatMember', methods=['GET', 'POST'], tags=['official'])
-async def promote_chat_member(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
-    user_id: int = Query(..., description='Unique identifier of the target user'),
-    can_change_info: Optional[bool] = Query(None, description='Pass True, if the administrator can change chat title, photo and other settings'),
-    can_post_messages: Optional[bool] = Query(None, description='Pass True, if the administrator can create channel posts, channels only'),
-    can_edit_messages: Optional[bool] = Query(None, description='Pass True, if the administrator can edit messages of other users and can pin messages, channels only'),
-    can_delete_messages: Optional[bool] = Query(None, description='Pass True, if the administrator can delete messages of other users'),
-    can_invite_users: Optional[bool] = Query(None, description='Pass True, if the administrator can invite new users to the chat'),
-    can_restrict_members: Optional[bool] = Query(None, description='Pass True, if the administrator can restrict, ban or unban chat members'),
-    can_pin_messages: Optional[bool] = Query(None, description='Pass True, if the administrator can pin messages, supergroups only'),
-    can_promote_members: Optional[bool] = Query(None, description='Pass True, if the administrator can add new administrators with a subset of their own privileges or demote administrators that he has promoted, directly or indirectly (promoted by administrators that were appointed by him)'),
-) -> JSONableResponse:
-    """
-    Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Pass False for all boolean parameters to demote a user. Returns True on success.
+def __ignore__():
+    @routes.api_route('/{token}/promoteChatMember', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def promote_chat_member(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+        user_id: int = Query(..., description='Unique identifier of the target user'),
+        can_change_info: Optional[bool] = Query(None, description='Pass True, if the administrator can change chat title, photo and other settings'),
+        can_post_messages: Optional[bool] = Query(None, description='Pass True, if the administrator can create channel posts, channels only'),
+        can_edit_messages: Optional[bool] = Query(None, description='Pass True, if the administrator can edit messages of other users and can pin messages, channels only'),
+        can_delete_messages: Optional[bool] = Query(None, description='Pass True, if the administrator can delete messages of other users'),
+        can_invite_users: Optional[bool] = Query(None, description='Pass True, if the administrator can invite new users to the chat'),
+        can_restrict_members: Optional[bool] = Query(None, description='Pass True, if the administrator can restrict, ban or unban chat members'),
+        can_pin_messages: Optional[bool] = Query(None, description='Pass True, if the administrator can pin messages, supergroups only'),
+        can_promote_members: Optional[bool] = Query(None, description='Pass True, if the administrator can add new administrators with a subset of their own privileges or demote administrators that he has promoted, directly or indirectly (promoted by administrators that were appointed by him)'),
+    ) -> JSONableResponse:
+        """
+        Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Pass False for all boolean parameters to demote a user. Returns True on success.
 
-    https://core.telegram.org/bots/api#promotechatmember
-    """
+        https://core.telegram.org/bots/api#promotechatmember
+        """
 
-    from ....main import _get_bot
-    bot = await _get_bot(token)
+        from ....main import _get_bot
+        bot = await _get_bot(token)
 
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
 
-    result = await bot.promote_chat_member(
-        entity=entity,
-        user_id=user_id,
-        can_change_info=can_change_info,
-        can_post_messages=can_post_messages,
-        can_edit_messages=can_edit_messages,
-        can_delete_messages=can_delete_messages,
-        can_invite_users=can_invite_users,
-        can_restrict_members=can_restrict_members,
-        can_pin_messages=can_pin_messages,
-        can_promote_members=can_promote_members,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
+        result = await bot.promote_chat_member(
+            entity=entity,
+            user_id=user_id,
+            can_change_info=can_change_info,
+            can_post_messages=can_post_messages,
+            can_edit_messages=can_edit_messages,
+            can_delete_messages=can_delete_messages,
+            can_invite_users=can_invite_users,
+            can_restrict_members=can_restrict_members,
+            can_pin_messages=can_pin_messages,
+            can_promote_members=can_promote_members,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
 
 
-@routes.api_route('/{token}/setChatAdministratorCustomTitle', methods=['GET', 'POST'], tags=['official'])
+@routes.api_route('/{token}/setChatAdministratorCustomTitle', methods=['GET', 'POST'], tags=['official', 'chats'])
 async def set_chat_administrator_custom_title(
     token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername)'),
@@ -215,17 +302,17 @@ async def set_chat_administrator_custom_title(
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    result = await bot.set_chat_administrator_custom_title(
+    result = await bot.edit_admin(
         entity=entity,
-        user_id=user_id,
-        custom_title=custom_title,
+        user=user_id,
+        title=custom_title,
     )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
+    # data = await to_web_api(result, bot)
+    return r_success(True)
 # end def
 
 
-@routes.api_route('/{token}/setChatPermissions', methods=['GET', 'POST'], tags=['official'])
+@routes.api_route('/{token}/setChatPermissions', methods=['GET', 'POST'], tags=['official', 'chats'])
 async def set_chat_permissions(
     token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername)'),
@@ -253,184 +340,186 @@ async def set_chat_permissions(
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    result = await bot.set_chat_permissions(
-        entity=entity,
-        permissions=permissions,
-    )
+    _
+
     data = await to_web_api(result, bot)
     return r_success(data.to_array())
 # end def
 
 
-@routes.api_route('/{token}/exportChatInviteLink', methods=['GET', 'POST'], tags=['official'])
-async def export_chat_invite_link(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
-) -> JSONableResponse:
-    """
-    Use this method to generate a new invite link for a chat; any previously generated link is revoked. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns the new invite link as String on success.
+def __ingnored__():
+    @routes.api_route('/{token}/exportChatInviteLink', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def export_chat_invite_link(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+    ) -> JSONableResponse:
+        """
+        Use this method to generate a new invite link for a chat; any previously generated link is revoked. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns the new invite link as String on success.
 
-    Note: Each administrator in a chat generates their own invite links. Bots can't use invite links generated by other administrators. If you want your bot to work with invite links, it will need to generate its own link using exportChatInviteLink — after this the link will become available to the bot via the getChat method. If your bot needs to generate a new invite link replacing its previous one, use exportChatInviteLink again.
+        Note: Each administrator in a chat generates their own invite links. Bots can't use invite links generated by other administrators. If you want your bot to work with invite links, it will need to generate its own link using exportChatInviteLink — after this the link will become available to the bot via the getChat method. If your bot needs to generate a new invite link replacing its previous one, use exportChatInviteLink again.
 
 
-    https://core.telegram.org/bots/api#exportchatinvitelink
-    """
+        https://core.telegram.org/bots/api#exportchatinvitelink
+        """
 
-    from ....main import _get_bot
-    bot = await _get_bot(token)
+        from ....main import _get_bot
+        bot = await _get_bot(token)
 
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
 
-    result = await bot.export_chat_invite_link(
-        entity=entity,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
+        result = await bot.chat(
+            entity=entity,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
 # end def
 
+def __ignored__():
+    @routes.api_route('/{token}/setChatPhoto', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def set_chat_photo(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+        photo: Json['InputFileModel'] = Query(..., description='New chat photo, uploaded using multipart/form-data'),
+    ) -> JSONableResponse:
+        """
+        Use this method to set a new profile photo for the chat. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
 
-@routes.api_route('/{token}/setChatPhoto', methods=['GET', 'POST'], tags=['official'])
-async def set_chat_photo(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
-    photo: Json['InputFileModel'] = Query(..., description='New chat photo, uploaded using multipart/form-data'),
-) -> JSONableResponse:
-    """
-    Use this method to set a new profile photo for the chat. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
+        https://core.telegram.org/bots/api#setchatphoto
+        """
+        photo: InputFileModel = parse_obj_as(
+            InputFileModel,
+            obj=photo,
+        )
 
-    https://core.telegram.org/bots/api#setchatphoto
-    """
-    photo: InputFileModel = parse_obj_as(
-        InputFileModel,
-        obj=photo,
-    )
+        from ....main import _get_bot
+        bot = await _get_bot(token)
 
-    from ....main import _get_bot
-    bot = await _get_bot(token)
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
 
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
-
-    result = await bot.set_chat_photo(
-        entity=entity,
-        photo=photo,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
-
-
-@routes.api_route('/{token}/deleteChatPhoto', methods=['GET', 'POST'], tags=['official'])
-async def delete_chat_photo(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
-) -> JSONableResponse:
-    """
-    Use this method to delete a chat photo. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
-
-    https://core.telegram.org/bots/api#deletechatphoto
-    """
-
-    from ....main import _get_bot
-    bot = await _get_bot(token)
-
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
-
-    result = await bot.delete_chat_photo(
-        entity=entity,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
+        result = await bot.set_chat_photo(
+            entity=entity,
+            photo=photo,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
 
 
-@routes.api_route('/{token}/setChatTitle', methods=['GET', 'POST'], tags=['official'])
-async def set_chat_title(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
-    title: str = Query(..., description='New chat title, 1-255 characters'),
-) -> JSONableResponse:
-    """
-    Use this method to change the title of a chat. Titles can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
+def __ignored__():
+    @routes.api_route('/{token}/deleteChatPhoto', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def delete_chat_photo(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+    ) -> JSONableResponse:
+        """
+        Use this method to delete a chat photo. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
 
-    https://core.telegram.org/bots/api#setchattitle
-    """
+        https://core.telegram.org/bots/api#deletechatphoto
+        """
 
-    from ....main import _get_bot
-    bot = await _get_bot(token)
+        from ....main import _get_bot
+        bot = await _get_bot(token)
 
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
 
-    result = await bot.set_chat_title(
-        entity=entity,
-        title=title,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
+        result = await bot.delete_chat_photo(
+            entity=entity,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
+
+def __later__():
+    @routes.api_route('/{token}/setChatTitle', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def set_chat_title(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+        title: str = Query(..., description='New chat title, 1-255 characters'),
+    ) -> JSONableResponse:
+        """
+        Use this method to change the title of a chat. Titles can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
+
+        https://core.telegram.org/bots/api#setchattitle
+        """
+
+        from ....main import _get_bot
+        bot = await _get_bot(token)
+
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
+
+        result = await bot.edit_permissions(
+            entity=entity,
+            title=title,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
 
 
-@routes.api_route('/{token}/setChatDescription', methods=['GET', 'POST'], tags=['official'])
-async def set_chat_description(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
-    description: Optional[str] = Query(None, description='New chat description, 0-255 characters'),
-) -> JSONableResponse:
-    """
-    Use this method to change the description of a group, a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
+def __later__():
+    @routes.api_route('/{token}/setChatDescription', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def set_chat_description(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
+        description: Optional[str] = Query(None, description='New chat description, 0-255 characters'),
+    ) -> JSONableResponse:
+        """
+        Use this method to change the description of a group, a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
 
-    https://core.telegram.org/bots/api#setchatdescription
-    """
+        https://core.telegram.org/bots/api#setchatdescription
+        """
 
-    from ....main import _get_bot
-    bot = await _get_bot(token)
+        from ....main import _get_bot
+        bot = await _get_bot(token)
 
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
 
-    result = await bot.set_chat_description(
-        entity=entity,
-        description=description,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
+        result = await bot.set_chat_description(
+            entity=entity,
+            description=description,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
 
 
-@routes.api_route('/{token}/pinChatMessage', methods=['GET', 'POST'], tags=['official'])
+@routes.api_route('/{token}/pinChatMessage', methods=['GET', 'POST'], tags=['official', 'chats'])
 async def pin_chat_message(
     token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
@@ -455,17 +544,17 @@ async def pin_chat_message(
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    result = await bot.pin_chat_message(
+    result = await bot.pin_message(
         entity=entity,
-        message_id=message_id,
-        disable_notification=disable_notification,
+        message=message_id,
+        notify=not disable_notification,
     )
     data = await to_web_api(result, bot)
     return r_success(data.to_array())
 # end def
 
 
-@routes.api_route('/{token}/unpinChatMessage', methods=['GET', 'POST'], tags=['official'])
+@routes.api_route('/{token}/unpinChatMessage', methods=['GET', 'POST'], tags=['official', 'chats'])
 async def unpin_chat_message(
     token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target channel (in the format @channelusername)'),
@@ -488,15 +577,17 @@ async def unpin_chat_message(
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    result = await bot.unpin_chat_message(
+    result = await bot.pin_message(
         entity=entity,
+        message=None,
+        notify=False,
     )
     data = await to_web_api(result, bot)
     return r_success(data.to_array())
 # end def
 
 
-@routes.api_route('/{token}/leaveChat', methods=['GET', 'POST'], tags=['official'])
+@routes.api_route('/{token}/leaveChat', methods=['GET', 'POST'], tags=['official', 'chats'])
 async def leave_chat(
     token: str = TOKEN_VALIDATION,
     chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)'),
@@ -519,199 +610,205 @@ async def leave_chat(
         raise HTTPException(404, detail="chat not found?")
     # end try
 
-    result = await bot.leave_chat(
+    result = await bot.kick_participant(
         entity=entity,
+        user='me',
     )
     data = await to_web_api(result, bot)
     return r_success(data.to_array())
 # end def
 
+def __later_i_guess__():
+    @routes.api_route('/{token}/getChat', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def get_chat(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)'),
+    ) -> JSONableResponse:
+        """
+        Use this method to get up to date information about the chat (current name of the user for one-on-one conversations, current username of a user, group or channel, etc.). Returns a Chat object on success.
 
-@routes.api_route('/{token}/getChat', methods=['GET', 'POST'], tags=['official'])
-async def get_chat(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)'),
-) -> JSONableResponse:
-    """
-    Use this method to get up to date information about the chat (current name of the user for one-on-one conversations, current username of a user, group or channel, etc.). Returns a Chat object on success.
+        https://core.telegram.org/bots/api#getchat
+        """
 
-    https://core.telegram.org/bots/api#getchat
-    """
+        from ....main import _get_bot
+        bot = await _get_bot(token)
 
-    from ....main import _get_bot
-    bot = await _get_bot(token)
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
 
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
-
-    result = await bot.get_chat(
-        entity=entity,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
-
-
-@routes.api_route('/{token}/getChatAdministrators', methods=['GET', 'POST'], tags=['official'])
-async def get_chat_administrators(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)'),
-) -> JSONableResponse:
-    """
-    Use this method to get a list of administrators in a chat. On success, returns an Array of ChatMember objects that contains information about all chat administrators except other bots. If the chat is a group or a supergroup and no administrators were appointed, only the creator will be returned.
-
-    https://core.telegram.org/bots/api#getchatadministrators
-    """
-
-    from ....main import _get_bot
-    bot = await _get_bot(token)
-
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
-
-    result = await bot.get_chat_administrators(
-        entity=entity,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
+        result = await bot.get_me(
+            entity=entity,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
 
 
-@routes.api_route('/{token}/getChatMembersCount', methods=['GET', 'POST'], tags=['official'])
-async def get_chat_members_count(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)'),
-) -> JSONableResponse:
-    """
-    Use this method to get the number of members in a chat. Returns Int on success.
+def __later__():
+    @routes.api_route('/{token}/getChatAdministrators', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def get_chat_administrators(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)'),
+    ) -> JSONableResponse:
+        """
+        Use this method to get a list of administrators in a chat. On success, returns an Array of ChatMember objects that contains information about all chat administrators except other bots. If the chat is a group or a supergroup and no administrators were appointed, only the creator will be returned.
 
-    https://core.telegram.org/bots/api#getchatmemberscount
-    """
+        https://core.telegram.org/bots/api#getchatadministrators
+        """
 
-    from ....main import _get_bot
-    bot = await _get_bot(token)
+        from ....main import _get_bot
+        bot = await _get_bot(token)
 
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
 
-    result = await bot.get_chat_members_count(
-        entity=entity,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
-
-
-@routes.api_route('/{token}/getChatMember', methods=['GET', 'POST'], tags=['official'])
-async def get_chat_member(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)'),
-    user_id: int = Query(..., description='Unique identifier of the target user'),
-) -> JSONableResponse:
-    """
-    Use this method to get information about a member of a chat. Returns a ChatMember object on success.
-
-    https://core.telegram.org/bots/api#getchatmember
-    """
-
-    from ....main import _get_bot
-    bot = await _get_bot(token)
-
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
-
-    result = await bot.get_chat_member(
-        entity=entity,
-        user_id=user_id,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
+        result = await bot.(
+            entity=entity,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
 
 
-@routes.api_route('/{token}/setChatStickerSet', methods=['GET', 'POST'], tags=['official'])
-async def set_chat_sticker_set(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername)'),
-    sticker_set_name: str = Query(..., description='Name of the sticker set to be set as the group sticker set'),
-) -> JSONableResponse:
-    """
-    Use this method to set a new group sticker set for a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Use the field can_set_sticker_set optionally returned in getChat requests to check if the bot can use this method. Returns True on success.
+def __later__():
+    @routes.api_route('/{token}/getChatMembersCount', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def get_chat_members_count(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)'),
+    ) -> JSONableResponse:
+        """
+        Use this method to get the number of members in a chat. Returns Int on success.
 
-    https://core.telegram.org/bots/api#setchatstickerset
-    """
+        https://core.telegram.org/bots/api#getchatmemberscount
+        """
 
-    from ....main import _get_bot
-    bot = await _get_bot(token)
+        from ....main import _get_bot
+        bot = await _get_bot(token)
 
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
 
-    result = await bot.set_chat_sticker_set(
-        entity=entity,
-        sticker_set_name=sticker_set_name,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
+        result = await bot.get_chat_members_count(
+            entity=entity,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
 
 
-@routes.api_route('/{token}/deleteChatStickerSet', methods=['GET', 'POST'], tags=['official'])
-async def delete_chat_sticker_set(
-    token: str = TOKEN_VALIDATION,
-    chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername)'),
-) -> JSONableResponse:
-    """
-    Use this method to delete a group sticker set from a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Use the field can_set_sticker_set optionally returned in getChat requests to check if the bot can use this method. Returns True on success.
+def __later__():
+    @routes.api_route('/{token}/getChatMember', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def get_chat_member(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername)'),
+        user_id: int = Query(..., description='Unique identifier of the target user'),
+    ) -> JSONableResponse:
+        """
+        Use this method to get information about a member of a chat. Returns a ChatMember object on success.
 
-    https://core.telegram.org/bots/api#deletechatstickerset
-    """
+        https://core.telegram.org/bots/api#getchatmember
+        """
 
-    from ....main import _get_bot
-    bot = await _get_bot(token)
+        from ....main import _get_bot
+        bot = await _get_bot(token)
 
-    try:
-        entity = await get_entity(bot, chat_id)
-    except BotMethodInvalidError:
-        assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
-        entity = chat_id
-    except ValueError:
-        raise HTTPException(404, detail="chat not found?")
-    # end try
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
 
-    result = await bot.delete_chat_sticker_set(
-        entity=entity,
-    )
-    data = await to_web_api(result, bot)
-    return r_success(data.to_array())
-# end def
+        result = await bot.get_chat_member(
+            entity=entity,
+            user_id=user_id,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
+
+
+def __later__():
+    @routes.api_route('/{token}/setChatStickerSet', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def set_chat_sticker_set(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername)'),
+        sticker_set_name: str = Query(..., description='Name of the sticker set to be set as the group sticker set'),
+    ) -> JSONableResponse:
+        """
+        Use this method to set a new group sticker set for a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Use the field can_set_sticker_set optionally returned in getChat requests to check if the bot can use this method. Returns True on success.
+
+        https://core.telegram.org/bots/api#setchatstickerset
+        """
+
+        from ....main import _get_bot
+        bot = await _get_bot(token)
+
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
+
+        result = await bot.set_chat_sticker_set(
+            entity=entity,
+            sticker_set_name=sticker_set_name,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
+
+
+def __later__():
+    @routes.api_route('/{token}/deleteChatStickerSet', methods=['GET', 'POST'], tags=['official', 'chats'])
+    async def delete_chat_sticker_set(
+        token: str = TOKEN_VALIDATION,
+        chat_id: Union[int, str] = Query(..., description='Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername)'),
+    ) -> JSONableResponse:
+        """
+        Use this method to delete a group sticker set from a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Use the field can_set_sticker_set optionally returned in getChat requests to check if the bot can use this method. Returns True on success.
+
+        https://core.telegram.org/bots/api#deletechatstickerset
+        """
+
+        from ....main import _get_bot
+        bot = await _get_bot(token)
+
+        try:
+            entity = await get_entity(bot, chat_id)
+        except BotMethodInvalidError:
+            assert isinstance(chat_id, int) or (isinstance(chat_id, str) and len(chat_id) > 0 and chat_id[0] == '@')
+            entity = chat_id
+        except ValueError:
+            raise HTTPException(404, detail="chat not found?")
+        # end try
+
+        result = await bot.delete_chat_sticker_set(
+            entity=entity,
+        )
+        data = await to_web_api(result, bot)
+        return r_success(data.to_array())
+    # end def
