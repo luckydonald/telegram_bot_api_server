@@ -9,6 +9,7 @@ from luckydonaldUtils.logger import logging
 __author__ = 'luckydonald'
 
 from telethon.errors import BotMethodInvalidError
+from telethon.tl.types import ChannelParticipantsAdmins
 
 from ....api.v4_6.generated.models import ChatPermissionsModel, InputFileModel
 from ....tools.fastapi_issue_884_workaround import Json, parse_obj_as
@@ -21,6 +22,7 @@ if __name__ == '__main__':
     logging.add_colored_handler(level=logging.DEBUG)
 # end if
 
+# noinspection PyUnresolvedReferences
 __all__ = [
     'kick_chat_member', 'unban_chat_member', 'restrict_chat_member', 'promote_chat_member', 'set_chat_administrator_custom_title',
     'set_chat_permissions', 'export_chat_invite_link', 'delete_chat_photo', 'set_chat_title', 'set_chat_description',
@@ -674,8 +676,10 @@ def __later__():
             raise HTTPException(404, detail="chat not found?")
         # end try
 
-        result = await bot.(
+        # https://t.me/TelethonChat/248256
+        result = await bot.iter_participants(
             entity=entity,
+            filter=ChannelParticipantsAdmins()
         )
         data = await to_web_api(result, bot)
         return r_success(data.to_array())
@@ -706,9 +710,14 @@ def __later__():
             raise HTTPException(404, detail="chat not found?")
         # end try
 
-        result = await bot.get_chat_members_count(
+        # https://t.me/TelethonChat/248260
+        # ((await client.get_participants(chat, limit=0)).total
+        # which is sending
+        # (await client(functions.channels.GetFullChannelRequest(entity))).full_chat.participants_count
+        result = await bot.get_participants(
             entity=entity,
-        )
+            limit=0,
+        ).total
         data = await to_web_api(result, bot)
         return r_success(data.to_array())
     # end def
