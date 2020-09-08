@@ -1,10 +1,39 @@
-# tg bot api server
+# telegram bot api server
 
-Powered by pytgbot, the endorsed python Telegram API client.
+> Powered by pytgbot, the endorsed python Telegram API client.
+
+
+This is a standalone API implementation allowing bots and user accounts.
+
+For bots this API will work _even if api.telegram.org is down_,
+and for user accounts it allows you to use regular bot code to manage groups, etc.
+
+## Usage with `pytgbot`
+The `pytgbot` library must be installed.
+
+```bash
+pip install pytgbot
+```
+Now you have to replace the bot api url of the bot to connect to with the one of your (self-)hosted instance.
+```python
+from pytgbot import Bot
+
+Bot._base_url = "https://api.telegram.rest/bot{api_key}/{command}"
+
+bot = Bot('123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11')
+```
+
+If you want to use it for both bot and user accounts, you have to exclude the `bot` part before the `api_key` and add `bot` to your api key instead.account
+```python
+from pytgbot import Bot
+
+Bot._base_url = "https://api.telegram.rest/{api_key}/{command}"
+
+bot = Bot('bot123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11')
+```
 
 ## Bot VS User
 This API allows you to both use a API bot or a User account in the fully same way.
-It is a standalone API implementation, so this API will work even if api.telegram.org is down.
 It therefore supports the regular `/bot<token>/...` we're all used to and similarly `/user<token>/...`.
 
 ## Getting the User token
