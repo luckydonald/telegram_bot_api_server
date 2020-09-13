@@ -151,6 +151,10 @@ async def get_webhook_info(
 # end def
 
 
+class SuccessfulPhoneAuthorisationData(BaseModel):
+    user_token: str
+
+
 class PhoneAuthorisationData(BaseModel):
     token: Union[None, str]
     phone_code_hash: Union[None, str]
@@ -172,7 +176,7 @@ class PhoneAuthorisationReasons(Enum):
 class PhoneAuthorisation(BaseModel):
     message: str
     reason: PhoneAuthorisationReasons
-    data: PhoneAuthorisationData
+    data: Union[PhoneAuthorisationData, SuccessfulPhoneAuthorisationData]
 # end def
 
 
@@ -312,18 +316,7 @@ async def authorize_phone(
         secret = bot.session.save()
         user_token = f'user{chat_id!s}@{secret}'
         # noinspection PyTypeChecker
-        raise HTTPException(200, detail={'message': 'success', 'user_token': user_token})
-        return r_error(
-            result=PhoneAuthorisation(
-                message='We did it mate!',
-                reason=PhoneAuthorisationReasons.SUCCESS_PHONE,
-                data=PhoneAuthorisationData(
-                    token=user_token,
-                ),
-            ),
-            error_code=401,
-            description="OK: Logged in. Use the token to connect to this service.",
-        )
+        return r_success(result=SuccessfulPhoneAuthorisationData(user_token=user_token), description="OK: Logged in. Use the token to connect to this service.", status_code=200)
     # end if
 # end def
 
