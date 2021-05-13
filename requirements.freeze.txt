@@ -20,7 +20,7 @@ libmagic==1.0
 luckydonald-utils==0.76
 pyaes==1.6.1
 pyasn1==0.4.8
-pydantic==1.4
+pydantic==1.6.2
 -e git://github.com/luckydonald/pytgbot.git@930d69c866c4a3844d9d2563f2139b78404558de#egg=pytgbot
 python-dateutil==2.8.1
 python-magic==0.4.15
