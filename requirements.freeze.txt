@@ -5,7 +5,7 @@ chardet==3.0.4
 Click==7.0
 croniter==0.3.31
 DictObject==1.1.1
-fastapi==0.47.1
+fastapi==0.65.2
 gunicorn==20.0.4
 h11==0.9.0
 h2==3.1.1
