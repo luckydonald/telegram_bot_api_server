@@ -13,7 +13,7 @@ hachoir==3.1.1
 hpack==3.0.0
 hstspreload==2020.1.22
 httptools==0.0.13
-httpx==0.11.1
+httpx==0.23.0
 hyperframe==5.2.0
 idna==2.8
 libmagic==1.0
